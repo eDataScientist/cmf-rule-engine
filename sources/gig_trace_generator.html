@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Visual Trace Generator</title>
+    <!-- External Libraries for Zipping and Image Capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+
+        :root {
+            --background: #f4f4f5;
+            --foreground: #18181b;
+            --card: #ffffff;
+            --primary: #18181b;
+            --primary-foreground: #fafafa;
+            --secondary: #f4f4f5;
+            --border: #e4e4e7;
+            --radius: 0.75rem;
+            --destructive: #ef4444;
+            --green: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            margin: 2rem auto; /* Centering the app container */
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+            text-align: center;
+        }
+
+        #json-input {
+            width: 100%;
+            height: 250px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 2px);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 1.5rem;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .options-group label {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        #column-select, #mode-select {
+            padding: 0.75rem;
+            border-radius: calc(var(--radius) - 4px);
+            border: 1px solid var(--border);
+            background-color: var(--secondary);
+            font-size: 0.875rem;
+        }
+        
+        .actions-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (min-width: 640px) {
+            .actions-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .btn:disabled {
+            background-color: #a1a1aa;
+            cursor: not-allowed;
+            color: #fafafa;
+            border: none;
+        }
+
+        #status-area {
+            padding: 1rem;
+            background-color: var(--secondary);
+            border-radius: calc(var(--radius) - 2px);
+            text-align: center;
+            font-weight: 500;
+            min-height: 1.5em;
+        }
+        
+        /* --- Web View --- */
+        
+        #web-view {
+            display: none; /* Hidden by default */
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding-bottom: 80px; /* Space for control bar */
+        }
+        
+        #report-display-area {
+            text-align: center;
+            padding: 1rem;
+            display: flex; /* Use flex to center the child */
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        /* The report-image ID is gone, replaced by the report-wrapper directly */
+        
+        #control-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--card);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            box-sizing: border-box;
+            z-index: 100;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #report-counter {
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 250px;
+        }
+        
+        #download-current-btn {
+            background-color: var(--green);
+            color: var(--primary-foreground);
+        }
+        
+        #back-to-main-btn {
+            background-color: var(--secondary);
+            color: var(--foreground);
+        }
+        
+        /* Hidden container for rendering reports before capture (still needed for ZIP mode) */
+        #render-container {
+            position: absolute;
+            left: -9999px; /* Move it off-screen */
+            top: 0;
+        }
+
+        /* Styles for the COMPACT report template */
+        .report-wrapper {
+            padding: 25px;
+            background-color: #f9fafb;
+            font-family: 'Inter', sans-serif;
+            color: #09090b;
+            display: flex;
+            flex-direction: column;
+            /* Base font size for scaling */
+            font-size: 10px; 
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            background-color: var(--card);
+        }
+
+        .report-header {
+            font-size: 2.4em; /* Scaled */
+            font-weight: 700;
+            margin-bottom: 2em; /* Scaled */
+            text-align: center;
+        }
+
+        .report-grid {
+            display: grid;
+            gap: 2em; /* Scaled */
+            justify-content: center;
+        }
+
+        .report-tree-card {
+            background-color: #ffffff;
+            border: 1px solid #e4e4e7;
+            border-radius: 0.8em; /* Scaled */
+            padding: 1.5em; /* Scaled */
+            display: inline-block;
+            text-align: left;
+        }
+        
+        .report-tree-title {
+            font-size: 1.4em; /* Scaled */
+            font-weight: 600;
+            margin: 0 0 1.2em 0; /* Scaled */
+            padding-bottom: 0.6em; /* Scaled */
+            border-bottom: 1px solid #e4e4e7;
+        }
+
+        .report-tree { list-style-type: none; padding-left: 1.2em; margin: 0; } /* Scaled */
+        .report-tree ul { list-style-type: none; margin-top: 0.4em; padding-left: 1.5em; } /* Scaled */
+        .report-tree li { position: relative; padding: 0.1em 0; opacity: 0.3; } /* Scaled */
+        .report-tree li.path-active { opacity: 1; }
+
+        .report-tree li::before, .report-tree li::after {
+            content: ''; position: absolute; left: -1.2em; background-color: #d4d4d8; /* Scaled */
+        }
+        .report-tree li::before { border-top: 2px solid #d4d4d8; top: 1.2em; width: 1.2em; height: 0; } /* Scaled */
+        .report-tree li::after { border-left: 2px solid #d4d4d8; height: 100%; width: 0px; top: 0; }
+        .report-tree > li::after, .report-tree > li::before { display: none; }
+        .report-tree li:last-child::after { height: 1.2em; } /* Scaled */
+        .report-tree li.path-active::before { border-top-color: #18181b; }
+        .report-tree li.path-active::after { border-left-color: #18181b; }
+
+        .report-node-content {
+            display: inline-block; padding: 0.4em 0.8em; border-radius: 0.4em; /* Scaled */
+            background-color: #f4f4f5; border: 1px solid #e4e4e7;
+            font-family: 'Fira Code', monospace; font-size: 1.2em; /* Scaled */
+            font-weight: 500;
+        }
+        .report-tree li.active > .report-node-content { background-color: #d4d4d8; }
+        .report-tree .leaf .report-node-content { color: white; border-color: transparent; font-weight: 600; }
+        .report-tree .root > .report-node-content { font-weight: 600; background-color: #e0e7ff; }
+        .report-tree li.root.active > .report-node-content { background-color: #18181b; color: white; }
+        
+        .report-footer {
+            margin-top: 2em; padding-top: 2em; border-top: 2px dashed #d4d4d8; /* Scaled */
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .report-footer-item { text-align: center; }
+        .report-footer-item .label { font-size: 1.8em; font-weight: 500; color: #7171aA; } /* Scaled */
+        .report-footer-item .value { font-size: 4.2em; font-weight: 700; } /* Scaled */
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="main-app">
+        <h1>Bulk Visual Trace Generator</h1>
+        <textarea id="json-input" placeholder="Paste your JSON array of claims data here..."></textarea>
+        
+        <div class="options-container">
+            <div class="options-group">
+                <label for="column-select">Report Columns:</label>
+                <select id="column-select">
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div class="options-group">
+                <label for="mode-select">Generation Mode:</label>
+                <select id="mode-select">
+                    <option value="zip" selected>Download Zip</option>
+                    <option value="web">Web View</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="actions-container">
+            <button id="generate-sample-btn" type="button" class="btn btn-secondary">Generate Sample Data</button>
+            <button id="generate-btn" type="button" class="btn btn-primary">Generate Reports</button>
+        </div>
+        <div id="status-area">Ready</div>
+    </div>
+
+    <!-- New Web View Container -->
+    <div id="web-view">
+        <div id="report-display-area">
+            <!-- Live HTML report will be rendered here -->
+        </div>
+        <div id="control-bar">
+            <div class="control-group">
+                <button id="back-to-main-btn" class="btn btn-secondary">&larr; Back to App</button>
+            </div>
+            <div class="control-group">
+                <button id="prev-btn" class="btn btn-secondary">&laquo; Prev</button>
+                <span id="report-counter"></span>
+                <button id="next-btn" class="btn btn-secondary">Next &raquo;</button>
+            </div>
+            <div class="control-group">
+                <button id="download-current-btn" class="btn btn-primary">Download Current (.png)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden container for rendering reports (for ZIP mode) -->
+    <div id="render-container"></div>
+
+    <!-- Template for a single visual report -->
+    <template id="report-template">
+        <div class="report-wrapper">
+            <div class="report-header" data-claim-id>Claim ID</div>
+            <div class="report-grid">
+                <!-- Tree 0 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #0: Part & Damage Location</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t0-root"><span class="report-node-content">count_of_parts</span>
+                            <ul>
+                                <li id="t0-p1"><span class="report-node-content">&le; 1.5</span>
+                                    <ul>
+                                        <li id="t0-p1-1"><span class="report-node-content">damage_rear is No</span><ul><li class="leaf" id="t0-l1"><span class="report-node-content">+0.220</span></li></ul></li>
+                                        <li id="t0-p1-2"><span class="report-node-content">damage_rear is Yes</span><ul><li class="leaf" id="t0-l2"><span class="report-node-content">+0.339</span></li></ul></li>
+                                    </ul>
+                                </li>
+                                <li id="t0-p2"><span class="report-node-content">> 1.5</span>
+                                    <ul>
+                                        <li id="t0-p2-1"><span class="report-node-content">damage_rear is No</span><ul><li class="leaf" id="t0-l3"><span class="report-node-content">+0.353</span></li></ul></li>
+                                        <li id="t0-p2-2"><span class="report-node-content">damage_rear is Yes</span><ul><li class="leaf" id="t0-l4"><span class="report-node-content">+0.465</span></li></ul></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 1 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #1: Vehicle Origin</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t1-root"><span class="report-node-content">is_NA_continent</span>
+                            <ul>
+                                <li id="t1-p1"><span class="report-node-content">is No</span><ul><li class="leaf" id="t1-l1"><span class="report-node-content">-0.015</span></li></ul></li>
+                                <li id="t1-p2"><span class="report-node-content">is Yes</span><ul><li class="leaf" id="t1-l2"><span class="report-node-content">+0.224</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 2 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #2: Damage Context</div>
+                     <ul class="report-tree">
+                        <li class="root" id="t2-root"><span class="report-node-content">damage_right</span>
+                            <ul>
+                                <li id="t2-p1"><span class="report-node-content">is No</span>
+                                    <ul>
+                                        <li id="t2-p1-1"><span class="report-node-content">damage_left is No</span><ul><li class="leaf" id="t2-l1"><span class="report-node-content">-0.028</span></li></ul></li>
+                                        <li id="t2-p1-2"><span class="report-node-content">damage_left is Yes</span><ul><li class="leaf" id="t2-l2"><span class="report-node-content">+0.160</span></li></ul></li>
+                                    </ul>
+                                </li>
+                                <li id="t2-p2"><span class="report-node-content">is Yes</span><ul><li class="leaf" id="t2-l3"><span class="report-node-content">+0.195</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 3 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #3: Financial Ratios</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t3-root"><span class="report-node-content">claim_ratio</span>
+                            <ul>
+                                <li id="t3-p1"><span class="report-node-content">&le; 5.484</span><ul><li class="leaf" id="t3-l1"><span class="report-node-content">-0.018</span></li></ul></li>
+                                <li id="t3-p2"><span class="report-node-content">> 5.484</span><ul><li class="leaf" id="t3-l2"><span class="report-node-content">+0.089</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 4 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #4: Claim Timeline</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t4-root"><span class="report-node-content">loss_to_intm_days</span>
+                            <ul>
+                                <li id="t4-p1"><span class="report-node-content">&le; 12.5</span><ul><li class="leaf" id="t4-l1"><span class="report-node-content">-0.017</span></li></ul></li>
+                                <li id="t4-p2"><span class="report-node-content">> 12.5</span><ul><li class="leaf" id="t4-l2"><span class="report-node-content">+0.109</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 5 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #5: Claim Amount</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t5-root"><span class="report-node-content">Estimated Amount</span>
+                            <ul>
+                                <li id="t5-p1"><span class="report-node-content">&le; 141027</span><ul><li class="leaf" id="t5-l1"><span class="report-node-content">-0.005</span></li></ul></li>
+                                <li id="t5-p2"><span class="report-node-content">> 141027</span><ul><li class="leaf" id="t5-l2"><span class="report-node-content">+0.147</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 6 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #6: Policy Timeline</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t6-root"><span class="report-node-content">loss_days_from_policy</span>
+                            <ul>
+                                <li id="t6-p1"><span class="report-node-content">&le; 70.5</span><ul><li class="leaf" id="t6-l1"><span class="report-node-content">+0.058</span></li></ul></li>
+                                <li id="t6-p2"><span class="report-node-content">> 70.5</span>
+                                    <ul>
+                                        <li id="t6-p2-1"><span class="report-node-content">expiry_days &le; 37.5</span><ul><li class="leaf" id="t6-l2"><span class="report-node-content">+0.039</span></li></ul></li>
+                                        <li id="t6-p2-2"><span class="report-node-content">expiry_days > 37.5</span><ul><li class="leaf" id="t6-l3"><span class="report-node-content">-0.017</span></li></ul></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Tree 7 -->
+                <div class="report-tree-card">
+                    <div class="report-tree-title">Tree #7: Vehicle Age</div>
+                    <ul class="report-tree">
+                        <li class="root" id="t7-root"><span class="report-node-content">age_of_car</span>
+                            <ul>
+                                <li id="t7-p1"><span class="report-node-content">&le; 7.5</span><ul><li class="leaf" id="t7-l1"><span class="report-node-content">-0.006</span></li></ul></li>
+                                <li id="t7-p2"><span class="report-node-content">> 7.5</span><ul><li class="leaf" id="t7-l2"><span class="report-node-content">+0.051</span></li></ul></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="report-footer">
+                <div class="report-footer-item">
+                    <div class="label">Total Score</div>
+                    <div class="value" data-total-score>0.00</div>
+                </div>
+                <div class="report-footer-item">
+                    <div class="label">Probability</div>
+                    <div class="value" data-probability>0.0%</div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+<script>
+// --- Main App Elements ---
+const mainAppContainer = document.getElementById('main-app');
+const generateBtn = document.getElementById('generate-btn');
+const sampleBtn = document.getElementById('generate-sample-btn');
+const jsonInput = document.getElementById('json-input');
+const statusArea = document.getElementById('status-area');
+const renderContainer = document.getElementById('render-container');
+const reportTemplate = document.getElementById('report-template');
+const columnSelect = document.getElementById('column-select');
+const modeSelect = document.getElementById('mode-select');
+
+// --- Web View Elements ---
+const webViewContainer = document.getElementById('web-view');
+const reportDisplayArea = document.getElementById('report-display-area'); // Changed from reportImage
+const controlBar = document.getElementById('control-bar');
+const backToMainBtn = document.getElementById('back-to-main-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const reportCounter = document.getElementById('report-counter');
+const downloadCurrentBtn = document.getElementById('download-current-btn');
+
+// --- State ---
+let generatedClaims = []; // Changed from generatedReports
+let currentReportIndex = 0;
+
+// --- Main Event Listener ---
+generateBtn.addEventListener('click', async () => {
+    const jsonText = jsonInput.value.trim();
+    if (!jsonText) {
+        updateStatus('Please paste JSON data.', 'error');
+        return;
+    }
+
+    let claimsData;
+    try {
+        claimsData = JSON.parse(jsonText);
+        if (!Array.isArray(claimsData)) throw new Error();
+    } catch (e) {
+        updateStatus('Invalid JSON. Please provide an array of objects.', 'error');
+        return;
+    }
+
+    setLoading(true);
+    
+    const columns = columnSelect.value;
+    const mode = modeSelect.value;
+    const { minValue, maxValue } = getMinMaxLeafValues();
+
+    // Clear previous reports and store raw claim data
+    generatedClaims = claimsData;
+    currentReportIndex = 0;
+
+    // --- Handle output based on selected mode ---
+    if (mode === 'zip') {
+        updateStatus('Processing reports for ZIP download...');
+        const zip = new JSZip();
+        
+        for (let i = 0; i < generatedClaims.length; i++) {
+            const claim = generatedClaims[i];
+            const claimId = claim['Claim number'] || `report_${i+1}`;
+            updateStatus(`Processing claim ${i + 1} of ${generatedClaims.length}: ${claimId}`);
+            
+            await new Promise(resolve => setTimeout(resolve, 0)); // Allow UI to update
+
+            try {
+                const imageBlob = await generateReportImage(claim, minValue, maxValue, columns);
+                const fileName = `claim_${claimId.replace(/[^a-z0-9]/gi, '_')}.png`;
+                zip.file(fileName, imageBlob);
+            } catch (error) {
+                console.error(`Failed to generate report for claim ${claimId}:`, error);
+                updateStatus(`Skipped claim ${claimId} due to an error.`, 'error');
+            }
+        }
+        
+        updateStatus('Zipping files...');
+        zip.generateAsync({ type: "blob" }).then(content => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = 'claim_reports.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            updateStatus(`Done! ${generatedClaims.length} reports downloaded.`);
+            setLoading(false);
+        });
+
+    } else if (mode === 'web') {
+        updateStatus(`Generated ${generatedClaims.length} reports. Opening Web View...`);
+        setLoading(false);
+        if(generatedClaims.length > 0) {
+            mainAppContainer.style.display = 'none';
+            webViewContainer.style.display = 'block';
+            showReport(0); // Render the first report
+        } else {
+            updateStatus('No reports were generated.', 'error');
+        }
+    }
+});
+
+// --- Web View Functions ---
+
+function showReport(index) {
+    if (index < 0 || index >= generatedClaims.length) return;
+
+    currentReportIndex = index;
+    const claim = generatedClaims[index];
+    
+    // Get parameters for rendering
+    const { minValue, maxValue } = getMinMaxLeafValues();
+    const columns = columnSelect.value;
+    
+    // Create the live HTML element
+    const reportElement = createReportElement(claim, minValue, maxValue, columns);
+    
+    // Render it into the display area
+    reportDisplayArea.innerHTML = '';
+    reportDisplayArea.appendChild(reportElement);
+    
+    reportCounter.textContent = `Claim ${index + 1} of ${generatedClaims.length} (${claim['Claim number'] || 'N/A'})`;
+    
+    prevBtn.disabled = (index === 0);
+    nextBtn.disabled = (index === (generatedClaims.length - 1));
+}
+
+prevBtn.addEventListener('click', () => showReport(currentReportIndex - 1));
+nextBtn.addEventListener('click', () => showReport(currentReportIndex + 1));
+
+backToMainBtn.addEventListener('click', () => {
+    mainAppContainer.style.display = 'block';
+    webViewContainer.style.display = 'none';
+    
+    // Clean up
+    reportDisplayArea.innerHTML = '';
+    generatedClaims = [];
+});
+
+downloadCurrentBtn.addEventListener('click', async () => {
+    const reportElement = reportDisplayArea.querySelector('.report-wrapper');
+    if (!reportElement) {
+        alert("No report to download.");
+        return;
+    }
+    
+    const originalCounterText = reportCounter.textContent;
+    reportCounter.textContent = 'Capturing image...';
+    downloadCurrentBtn.disabled = true;
+
+    try {
+        const canvas = await html2canvas(reportElement, { 
+            scale: 2, 
+            useCORS: true 
+        });
+        
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        
+        const claim = generatedClaims[currentReportIndex];
+        const fileName = `claim_${(claim['Claim number'] || `report_${currentReportIndex+1}`).replace(/[^a-z0-9]/gi, '_')}.png`;
+
+        // Trigger download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
+    } catch (e) {
+        console.error("Failed to capture image:", e);
+        alert("Failed to capture image.");
+    } finally {
+        reportCounter.textContent = originalCounterText;
+        downloadCurrentBtn.disabled = false;
+    }
+});
+
+
+// --- New Sample Data Generator ---
+sampleBtn.addEventListener('click', () => {
+    setLoading(true);
+    updateStatus('Generating sample data...');
+    try {
+        const sampleData = generateRandomData(10);
+        jsonInput.value = JSON.stringify(sampleData, null, 4);
+        updateStatus('Sample data generated successfully.');
+    } catch (e) {
+        updateStatus('Failed to generate sample data.', 'error');
+    }
+    setLoading(false);
+});
+
+
+// --- Helper Functions ---
+
+function setLoading(isLoading) {
+    generateBtn.disabled = isLoading;
+    jsonInput.disabled = isLoading;
+    columnSelect.disabled = isLoading;
+    modeSelect.disabled = isLoading;
+    sampleBtn.disabled = isLoading;
+}
+
+function updateStatus(message, type = 'info') {
+    statusArea.textContent = message;
+    statusArea.style.color = type === 'error' ? 'var(--destructive)' : 'var(--foreground)';
+}
+
+function getMinMaxLeafValues() {
+    const leafNodes = reportTemplate.content.querySelectorAll('.leaf .report-node-content');
+    const leafValues = Array.from(leafNodes).map(node => parseFloat(node.textContent));
+    return { minValue: Math.min(...leafValues), maxValue: Math.max(...leafValues) };
+}
+
+function getColorForValue(value, min, max) {
+    if (max === min) return `hsl(60, 70%, 45%)`;
+    const normalized = (value - min) / (max - min);
+    const hue = (1 - normalized) * 120; // 0 (red) to 120 (green)
+    return `hsl(${hue}, 70%, 45%)`;
+}
+
+/**
+ * Creates the HTML Element for a single report.
+ * This is the core rendering logic used by both Web View and Zip mode.
+ * @returns {HTMLElement} - The .report-wrapper DOM element.
+ */
+function createReportElement(claimData, minValue, maxValue, columns) {
+    const reportFragment = reportTemplate.content.cloneNode(true);
+    const reportWrapper = reportFragment.querySelector('.report-wrapper');
+    const reportGrid = reportFragment.querySelector('.report-grid');
+
+    // --- Dynamic Sizing Logic ---
+    const columnWidths = { '1': 500, '2': 1000, '4': 1500 };
+    const baseFontSize = { '1': 10, '2': 12, '4': 12 };
+    
+    const width = columnWidths[columns] || 1000;
+    const fontSize = baseFontSize[columns] || 12;
+
+    reportWrapper.style.width = `${width}px`;
+    reportWrapper.style.fontSize = `${fontSize}px`;
+    // --- End Dynamic Sizing ---
+
+    reportGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    
+    const { totalScore, probability, paths } = calculateScoresAndPaths(claimData);
+
+    reportWrapper.querySelector('[data-claim-id]').textContent = `Claim: ${claimData['Claim number'] || 'N/A'}`;
+    reportWrapper.querySelector('[data-total-score]').textContent = totalScore.toFixed(3);
+    reportWrapper.querySelector('[data-probability]').textContent = `${(probability * 100).toFixed(1)}%`;
+
+    // Apply active paths
+    for (const treeId in paths) {
+        paths[treeId].forEach(nodeId => {
+            const el = reportWrapper.querySelector(`#${nodeId}`);
+            if (el) {
+                el.classList.add('active');
+                let current = el;
+                // Traverse up the DOM to light up the path
+                while(current && current !== reportGrid) {
+                    if (current.tagName === 'LI') current.classList.add('path-active');
+                    current = current.parentElement;
+                }
+            }
+        });
+    }
+
+    // Apply color scale to all leaves
+    reportWrapper.querySelectorAll('.leaf .report-node-content').forEach(leafNode => {
+        const value = parseFloat(leafNode.textContent);
+        leafNode.style.backgroundColor = getColorForValue(value, minValue, maxValue);
+    });
+    
+    return reportWrapper;
+}
+
+/**
+ * Generates an image blob for a single claim.
+ * Used by the 'Download Zip' mode.
+ */
+async function generateReportImage(claimData, minValue, maxValue, columns) {
+    // Create the element using the new function
+    const reportElement = createReportElement(claimData, minValue, maxValue, columns);
+    
+    // Add to DOM for rendering
+    renderContainer.appendChild(reportElement);
+    
+    const canvas = await html2canvas(renderContainer.firstElementChild, { 
+        scale: 2, // High-DPI capture
+        useCORS: true
+    });
+    
+    // Clean up
+    renderContainer.innerHTML = '';
+    
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+
+/**
+ * Generates an array of random claim data.
+ */
+function generateRandomData(count = 10) {
+    const data = [];
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const randInt = (min, max) => Math.floor(rand(min, max + 1));
+    const randBool = () => Math.random() > 0.5;
+
+    for (let i = 0; i < count; i++) {
+        data.push({
+            "Claim number": `C-${randInt(1, 30)}-2024-MOT-MOTPR-${randInt(230000, 250000)}`,
+            "count_of_parts": randInt(1, 15),
+            "damage_rear": randBool() ? 1 : 0,
+            "Make_Continent_North America": randBool(),
+            "damage_right": randBool() ? 1 : 0,
+            "damage_left": randBool() ? 1 : 0,
+            "claim_ratio": rand(0.5, 12.0),
+            "days_from_loss_intm": randInt(1, 40),
+            "Estimated Amount": rand(1500, 200000),
+            "loss_days_from_policy": randInt(10, 365),
+            "intm_days_till_expiry": randInt(-5, 360),
+            "age_of_car": randInt(0, 15)
+        });
+    }
+    return data;
+}
+
+
+function calculateScoresAndPaths(data) {
+    // Ensure data is in the correct format (handles boolean -> number)
+    const claim = { ...data };
+    for (const key in claim) {
+        if (typeof claim[key] === 'boolean') {
+            claim[key] = claim[key] ? 1 : 0;
+        }
+    }
+
+    let totalSum = 0;
+    const paths = {};
+
+    // Tree 0
+    let val0;
+    const t0_path = ['t0-root'];
+    if (claim['count_of_parts'] <= 1.5) {
+        t0_path.push('t0-p1');
+        if (claim['damage_rear'] <= 0.5) { t0_path.push('t0-p1-1', 't0-l1'); val0 = 0.220; } 
+        else { t0_path.push('t0-p1-2', 't0-l2'); val0 = 0.339; }
+    } else {
+        t0_path.push('t0-p2');
+        if (claim['damage_rear'] <= 0.5) { t0_path.push('t0-p2-1', 't0-l3'); val0 = 0.353; } 
+        else { t0_path.push('t0-p2-2', 't0-l4'); val0 = 0.465; }
+    }
+    paths['t0'] = t0_path;
+    totalSum += val0;
+
+    // Tree 1
+    let val1;
+    const t1_path = ['t1-root'];
+    if (claim['Make_Continent_North America'] <= 0.5) { t1_path.push('t1-p1', 't1-l1'); val1 = -0.015; } 
+    else { t1_path.push('t1-p2', 't1-l2'); val1 = 0.224; }
+    paths['t1'] = t1_path;
+    totalSum += val1;
+
+    // Tree 2
+    let val2;
+    const t2_path = ['t2-root'];
+    if (claim['damage_right'] <= 0.5) {
+        t2_path.push('t2-p1');
+        if (claim['damage_left'] <= 0.5) { t2_path.push('t2-p1-1', 't2-l1'); val2 = -0.028; } 
+        else { t2_path.push('t2-p1-2', 't2-l2'); val2 = 0.160; }
+    } else { t2_path.push('t2-p2', 't2-l3'); val2 = 0.195; }
+    paths['t2'] = t2_path;
+    totalSum += val2;
+    
+    // Tree 3
+    let val3;
+    const t3_path = ['t3-root'];
+    if (claim['claim_ratio'] <= 5.484) { t3_path.push('t3-p1', 't3-l1'); val3 = -0.018; } 
+    else { t3_path.push('t3-p2', 't3-l2'); val3 = 0.089; }
+    paths['t3'] = t3_path;
+    totalSum += val3;
+
+    // Tree 4
+    let val4;
+    const t4_path = ['t4-root'];
+    if (claim['days_from_loss_intm'] <= 12.5) { t4_path.push('t4-p1', 't4-l1'); val4 = -0.017; } 
+    else { t4_path.push('t4-p2', 't4-l2'); val4 = 0.109; }
+    paths['t4'] = t4_path;
+    totalSum += val4;
+
+    // Tree 5
+    let val5;
+    const t5_path = ['t5-root'];
+    if (claim['Estimated Amount'] <= 141027.0) { t5_path.push('t5-p1', 't5-l1'); val5 = -0.005; } 
+    else { t5_path.push('t5-p2', 't5-l2'); val5 = 0.147; }
+    paths['t5'] = t5_path;
+    totalSum += val5;
+
+    // Tree 6
+    let val6;
+    const t6_path = ['t6-root'];
+    if (claim['loss_days_from_policy'] <= 70.5) {
+        t6_path.push('t6-p1', 't6-l1');
+        val6 = 0.058;
+    } else {
+        t6_path.push('t6-p2');
+        if (claim['intm_days_till_expiry'] <= 37.5) { t6_path.push('t6-p2-1', 't6-l2'); val6 = 0.039; } 
+        else { t6_path.push('t6-p2-2', 't6-l3'); val6 = -0.017; }
+    }
+    paths['t6'] = t6_path;
+    totalSum += val6;
+
+    // Tree 7
+    let val7;
+    const t7_path = ['t7-root'];
+    if (claim['age_of_car'] <= 7.5) { t7_path.push('t7-p1', 't7-l1'); val7 = -0.006; } 
+    else { t7_path.push('t7-p2', 't7-l2'); val7 = 0.051; }
+    paths['t7'] = t7_path;
+    totalSum += val7;
+
+    const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+    
+    return {
+        totalScore: totalSum,
+        probability: sigmoid(totalSum),
+        paths: paths
+    };
+}
+
+</script>
+</body>
+</html>
+

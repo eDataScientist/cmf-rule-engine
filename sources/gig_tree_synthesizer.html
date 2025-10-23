@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIGS Tree Visualizer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+
+        :root {
+            --background: #f4f4f5;
+            --foreground: #18181b;
+            --card: #ffffff;
+            --primary: #18181b;
+            --primary-foreground: #fafafa;
+            --secondary: #f4f4f5;
+            --border: #e4e4e7;
+            --radius: 0.75rem;
+            --destructive: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .panel {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        
+        #input-panel {
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+        }
+
+        #tree-input {
+            width: 100%;
+            flex-grow: 1;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 2px);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            resize: none;
+            margin-bottom: 1.5rem;
+        }
+
+        #generate-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border: none;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #generate-btn:disabled {
+            background-color: #a1a1aa;
+            cursor: not-allowed;
+        }
+
+        #status-area {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--secondary);
+            border-radius: calc(var(--radius) - 2px);
+            text-align: center;
+            font-weight: 500;
+            min-height: 1.5em;
+        }
+        
+        #visual-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        /* Tree Visualization Styles */
+        .report-tree-card {
+            background-color: #ffffff;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
+            padding: 12px;
+            display: inline-block; /* Changed from flex */
+            text-align: left;
+        }
+        
+        .report-tree-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e4e4e7;
+        }
+
+        .report-tree { list-style-type: none; padding-left: 15px; margin: 0; }
+        .report-tree ul { list-style-type: none; margin-top: 5px; padding-left: 20px; }
+        .report-tree li { position: relative; padding: 2px 0; }
+
+        .report-tree li::before, .report-tree li::after {
+            content: ''; position: absolute; left: -15px; background-color: #d4d4d8;
+        }
+        .report-tree li::before { border-top: 2px solid #d4d4d8; top: 12px; width: 15px; height: 0; }
+        .report-tree li::after { border-left: 2px solid #d4d4d8; height: 100%; width: 0px; top: 0; }
+        .report-tree > li::after, .report-tree > li::before { display: none; }
+        .report-tree li:last-child::after { height: 12px; }
+
+        .report-node-content {
+            display: inline-block; padding: 4px 8px; border-radius: 4px;
+            background-color: #f4f4f5; border: 1px solid #e4e4e7;
+            font-family: 'Fira Code', monospace; font-size: 12px;
+            font-weight: 500;
+        }
+
+        .report-tree .leaf .report-node-content { font-weight: 600; background-color: #dcfce7; color: #166534; border-color: #a7f3d0; }
+        .report-tree .root > .report-node-content { font-weight: 600; background-color: #e0e7ff; }
+
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="panel" id="input-panel">
+            <h1>FIGS Tree Parser</h1>
+            <textarea id="tree-input" placeholder="Paste your text-based tree structure here..."></textarea>
+            <button id="generate-btn">Generate Visualization</button>
+            <div id="status-area">Ready</div>
+        </div>
+        <div class="panel" id="visual-container">
+            <!-- Visual trees will be rendered here -->
+        </div>
+    </div>
+
+<script>
+const generateBtn = document.getElementById('generate-btn');
+const treeInput = document.getElementById('tree-input');
+const statusArea = document.getElementById('status-area');
+const visualContainer = document.getElementById('visual-container');
+
+// Pre-fill with the example from the prompt
+treeInput.value = `veh_brand_TOYOTA <= 0.500 (Tree #0 root)
+	veh_brand_HYUNDAI <= 0.500 (split)
+		veh_brand_KIA <= 0.500 (split)
+			Val: 0.312 (leaf)
+			Val: 0.223 (leaf)
+		Val: 0.152 (leaf)
+	Val: 0.101 (leaf)
+
+	+
+approved_claim_amount <= 13376.425 (Tree #1 root)
+	days_between_intm_loss <= 204.500 (split)
+		value_class_ordinal <= 4.500 (split)
+			Val: -0.025 (leaf)
+			Val: 0.041 (leaf)
+		Val: 0.169 (leaf)
+	approved_claim_amount <= 25028.750 (split)
+		Val: 0.155 (leaf)
+		Val: 0.367 (leaf)
+
+	+
+value_class_ordinal <= 0.000 (Tree #2 root)
+	Val: 0.126 (leaf)
+	Val: -0.007 (leaf)
+
+	+
+involved_parties <= 1.500 (Tree #3 root)
+	Val: -0.013 (leaf)
+	Val: 0.055 (leaf)
+
+	+
+claim_ratio <= 1.589 (Tree #4 root)
+	Val: -0.005 (leaf)
+	Val: 0.077 (leaf)
+
+	+
+veh_brand_Other <= 0.500 (Tree #5 root)
+	Val: 0.004 (leaf)
+	Val: -0.060 (leaf)
+
+	+
+vehicle_age <= 20.500 (Tree #6 root)
+	Val: -0.003 (leaf)
+	Val: 0.090 (leaf)`;
+
+
+generateBtn.addEventListener('click', () => {
+    const inputText = treeInput.value.trim();
+    if (!inputText) {
+        updateStatus('Error: Input text is empty.', 'error');
+        return;
+    }
+
+    setLoading(true);
+    visualContainer.innerHTML = ''; 
+
+    try {
+        const treesJson = parseTreeText(inputText);
+        if (treesJson && Array.isArray(treesJson) && treesJson.length > 0) {
+            treesJson.forEach(treeData => {
+                const treeElement = createTreeElement(treeData);
+                visualContainer.appendChild(treeElement);
+            });
+            updateStatus(`Successfully rendered ${treesJson.length} trees.`, 'success');
+        } else {
+             updateStatus('Error: Failed to parse a valid tree structure.', 'error');
+        }
+    } catch (error) {
+        console.error('Error processing tree data:', error);
+        updateStatus(`An error occurred: ${error.message}`, 'error');
+    } finally {
+        setLoading(false);
+    }
+});
+
+/**
+ * Parses the raw text of a FIGS model into a structured JSON array.
+ * @param {string} text - The raw model text.
+ * @returns {Array} - An array of tree objects.
+ */
+function parseTreeText(text) {
+    // Split the entire text into individual tree strings
+    const treeStrings = text.split(/^\s*\+\s*$/m).map(s => s.trim()).filter(Boolean);
+    const trees = [];
+
+    for (const treeString of treeStrings) {
+        const lines = treeString.split('\n').map(line => {
+            const indentMatch = line.match(/^\t*/);
+            const level = indentMatch ? indentMatch[0].length : 0;
+            const content = line.trim();
+            return { level, content };
+        }).filter(line => line.content);
+
+        if (lines.length === 0) continue;
+
+        // Extract the title from the first line
+        const titleMatch = lines[0].content.match(/\((Tree #\d+.*?)\)/);
+        const title = titleMatch ? titleMatch[1] : "Tree";
+        
+        // Pass a copy of the lines array to the recursive builder
+        const linesCopy = [...lines];
+        const root = buildTreeRecursive(linesCopy, 0);
+
+        if (root) {
+            trees.push({ title, root });
+        }
+    }
+    return trees;
+}
+
+/**
+ * Recursively builds a tree node from an array of line objects.
+ * @param {Array} lines - Array of {level, content} objects. This array is modified (lines are shifted).
+ * @param {number} currentLevel - The indentation level of the current node.
+ * @returns {object|null} - A nested node object or null.
+ */
+function buildTreeRecursive(lines, currentLevel) {
+    // Stop if there are no more lines or the next line is less indented
+    if (!lines.length || lines[0].level < currentLevel) {
+        return null;
+    }
+
+    // Take the current line for this node
+    const currentLine = lines.shift();
+    
+    // Check for Leaf Node
+    if (currentLine.content.startsWith('Val:')) {
+        const value = parseFloat(currentLine.content.replace('Val:', '').trim());
+        return { value };
+    }
+
+    // It's a Decision Node
+    const condition = currentLine.content.replace(/\((split|root)\)/, '').trim();
+    const node = { condition };
+
+    // The "true" branch is the next node that is *more* indented
+    node.true_branch = buildTreeRecursive(lines, currentLevel + 1);
+
+    // The "false" branch is the next node at the *same* indentation level
+    node.false_branch = buildTreeRecursive(lines, currentLevel);
+    
+    return node;
+}
+
+
+function createTreeElement(treeData) {
+    const card = document.createElement('div');
+    card.className = 'report-tree-card';
+
+    const title = document.createElement('div');
+    title.className = 'report-tree-title';
+    title.textContent = treeData.title;
+    card.appendChild(title);
+
+    const treeList = document.createElement('ul');
+    treeList.className = 'report-tree';
+    
+    if (treeData.root) {
+        const rootNodeElement = renderNode(treeData.root, true);
+        treeList.appendChild(rootNodeElement);
+    }
+    
+    card.appendChild(treeList);
+    return card;
+}
+
+function renderNode(node, isRoot = false) {
+    const li = document.createElement('li');
+    if(isRoot) li.classList.add('root');
+    if(node.value !== undefined) li.classList.add('leaf');
+
+    const content = document.createElement('span');
+    content.className = 'report-node-content';
+    
+    if (node.value !== undefined) {
+        content.textContent = `Val: ${node.value}`;
+    } else {
+        content.textContent = node.condition;
+    }
+    li.appendChild(content);
+
+    // Render children if they exist
+    if (node.true_branch || node.false_branch) {
+        const ul = document.createElement('ul');
+        if (node.true_branch) {
+            const trueNode = renderNode(node.true_branch);
+            trueNode.dataset.branch = "True"; 
+            ul.appendChild(trueNode);
+        }
+        if (node.false_branch) {
+            const falseNode = renderNode(node.false_branch);
+            falseNode.dataset.branch = "False";
+             ul.appendChild(falseNode);
+        }
+        li.appendChild(ul);
+    }
+    
+    return li;
+}
+
+function setLoading(isLoading) {
+    generateBtn.disabled = isLoading;
+    treeInput.disabled = isLoading;
+    statusArea.textContent = isLoading ? 'Parsing & Rendering...' : 'Ready';
+}
+
+function updateStatus(message, type = 'info') {
+    statusArea.textContent = message;
+    statusArea.style.color = type === 'error' ? 'var(--destructive)' : (type === 'success' ? '#166534' : 'var(--foreground)');
+}
+</script>
+
+</body>
+</html>
+

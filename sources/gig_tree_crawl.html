@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpretable Fraud Detection Model</title>
+    <style>
+        /* Modern Font & Base Styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --background: #f9fafb;
+            --foreground: #09090b;
+            --card: #ffffff;
+            --card-foreground: #09090b;
+            --primary: #18181b;
+            --primary-foreground: #fafafa;
+            --secondary: #f4f4f5;
+            --secondary-foreground: #18181b;
+            --muted: #f4f4f5;
+            --muted-foreground: #71717a;
+            --accent: #18181b;
+            --accent-foreground: #fafafa;
+            --destructive: #ef4444;
+            --destructive-foreground: #fafafa;
+            --border: #e4e4e7;
+            --input: #e4e4e7;
+            --ring: #18181b;
+            --radius: 0.75rem;
+            --tree-line-color: #d4d4d8;
+            --tree-line-color-active: #18181b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Main App Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        /* Shared Panel Style */
+        .panel {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+        }
+        
+        /* Input Panel */
+        .inputs-panel h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            background-color: var(--background);
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--ring);
+            box-shadow: 0 0 0 1px var(--ring);
+        }
+
+        /* Results Panel */
+        .results-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+        .tree-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .tree-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 1.5rem 0; }
+        
+        /* Visual Tree Styles */
+        .tree { list-style-type: none; padding-left: 20px; }
+        .tree ul { list-style-type: none; margin-top: 10px; padding-left: 45px; }
+        .tree li { position: relative; padding: 4px 0; }
+
+        /* Connector Lines */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute;
+            left: -20px;
+            transition: all 0.3s ease;
+        }
+        .tree li::before {
+            border-top: 2px solid var(--tree-line-color);
+            top: 22px;
+            width: 20px;
+            height: 0;
+        }
+        .tree li::after {
+            border-left: 2px solid var(--tree-line-color);
+            height: 100%;
+            width: 0px;
+            top: -4px;
+        }
+        .tree > li::after, .tree > li::before { display: none; }
+        .tree li:last-child::after { height: 26px; }
+
+        /* Path Labels (True/False) */
+        .node-label {
+            position: absolute;
+            left: -50px;
+            top: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--muted-foreground);
+            background-color: var(--secondary);
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            z-index: 1;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        li.path-active > .node-label {
+            opacity: 1;
+            color: var(--secondary-foreground);
+            border-color: var(--tree-line-color-active);
+        }
+
+        /* Node & Leaf Content */
+        .node-content {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            background-color: var(--card);
+            border: 2px solid var(--tree-line-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+        .leaf .node-content { font-weight: 500; }
+        .root > .node-content { background-color: var(--secondary); }
+
+        /* Active State Styling */
+        .tree li.active > .node-content {
+            opacity: 1;
+            border-color: var(--tree-line-color-active);
+            background-color: var(--muted);
+        }
+        .tree li.root.active > .node-content {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+        }
+        .tree li.leaf.active > .node-content {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border-color: var(--primary);
+        }
+        .tree li.path-active::before { border-top-color: var(--tree-line-color-active); }
+        .tree li.path-active::after { border-left-color: var(--tree-line-color-active); }
+        
+        /* Final Score Card */
+        .score-card { background-color: var(--primary); color: var(--primary-foreground); border-radius: var(--radius); padding: 2rem; text-align: center; margin-top: 1rem; }
+        .score-card h2 { font-size: 1rem; font-weight: 500; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-foreground); opacity: 0.7; }
+        .score-value { font-size: 3.5rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.05em; }
+        .score-breakdown { font-family: 'Fira Code', monospace; margin-top: 1rem; background-color: rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 0.375rem; font-size: 0.9rem; color: var(--primary-foreground); opacity: 0.8; }
+        #classification-indicator { margin-top: 1.25rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 999px; display: inline-block; transition: all 0.3s ease-in-out; font-size: 0.875rem; }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            body { padding: 1rem; }
+            .app-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Input Panel -->
+        <div class="panel inputs-panel">
+            <h1>Claim Details</h1>
+            <div id="claim-form">
+                <div class="form-group"><label for="count_of_parts">Number of Damaged Parts</label><input type="number" id="count_of_parts" value="1" step="1" min="0"></div>
+                <div class="form-group"><label for="damage_left">Damage to Left Side?</label><select id="damage_left"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label for="damage_rear">Damage to Rear Side?</label><select id="damage_rear"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label for="damage_right">Damage to Right Side?</label><select id="damage_right"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label for="Make_Continent_North_America">Vehicle from North America?</label><select id="Make_Continent_North_America"><option value="0" selected>No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label for="Estimated_Amount">Estimated Claim Amount ($)</label><input type="number" id="Estimated_Amount" value="50000" step="1000"></div>
+                <div class="form-group"><label for="loss_days_from_policy">Days from Policy Start to Loss</label><input type="number" id="loss_days_from_policy" value="50"></div>
+                <div class="form-group"><label for="claim_ratio">Claim-to-Premium Ratio</label><input type="number" id="claim_ratio" value="5" step="0.1"></div>
+                <div class="form-group"><label for="intm_days_till_expiry">Days from Intermediation to Expiry</label><input type="number" id="intm_days_till_expiry" value="20"></div>
+                <div class="form-group"><label for="days_from_loss_intm">Days from Loss to Intermediation</label><input type="number" id="days_from_loss_intm" value="10"></div>
+            </div>
+        </div>
+
+        <!-- Visualization & Score Panel -->
+        <div class="results-panel">
+            <!-- Tree 0 -->
+            <div class="tree-card">
+                <div class="tree-title">Tree #0: Part & Damage Location</div>
+                <ul class="tree">
+                    <li class="root" id="t0-root"><span class="node-content">count_of_parts</span>
+                        <ul>
+                            <li id="t0-p1"><span class="node-label">True</span><span class="node-content">&le; 1.5</span>
+                                <ul>
+                                    <li id="t0-p1-1"><span class="node-label">True</span><span class="node-content">damage_left &le; 0.5</span>
+                                        <ul>
+                                            <li id="t0-p1-1-1"><span class="node-label">True</span><span class="node-content">damage_rear &le; 0.5</span>
+                                                <ul><li class="leaf" id="t0-l1"><span class="node-content">+0.212</span></li></ul>
+                                            </li>
+                                            <li id="t0-p1-1-2"><span class="node-label">False</span><span class="node-content">damage_rear > 0.5</span>
+                                                <ul><li class="leaf" id="t0-l2"><span class="node-content">+0.335</span></li></ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li id="t0-p1-2"><span class="node-label">False</span><span class="node-content">damage_left > 0.5</span>
+                                        <ul><li class="leaf" id="t0-l3"><span class="node-content">+0.454</span></li></ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li id="t0-p2"><span class="node-label">False</span><span class="node-content">> 1.5</span>
+                                <ul>
+                                    <li id="t0-p2-1"><span class="node-label">True</span><span class="node-content">damage_left &le; 0.5</span>
+                                        <ul>
+                                            <li id="t0-p2-1-1"><span class="node-label">True</span><span class="node-content">damage_rear &le; 0.5</span>
+                                                <ul><li class="leaf" id="t0-l4"><span class="node-content">+0.332</span></li></ul>
+                                            </li>
+                                            <li id="t0-p2-1-2"><span class="node-label">False</span><span class="node-content">damage_rear > 0.5</span>
+                                                <ul><li class="leaf" id="t0-l5"><span class="node-content">+0.455</span></li></ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li id="t0-p2-2"><span class="node-label">False</span><span class="node-content">damage_left > 0.5</span>
+                                        <ul><li class="leaf" id="t0-l6"><span class="node-content">+0.529</span></li></ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Tree 1 -->
+            <div class="tree-card">
+                <div class="tree-title">Tree #1: Policy & Damage Context</div>
+                <ul class="tree">
+                    <li class="root" id="t1-root"><span class="node-content">damage_right</span>
+                        <ul>
+                            <li id="t1-p1"><span class="node-label">True</span><span class="node-content">&le; 0.5</span>
+                                <ul>
+                                    <li id="t1-p1-1"><span class="node-label">True</span><span class="node-content">loss_days &le; 65.5</span>
+                                        <ul><li class="leaf" id="t1-l1"><span class="node-content">+0.041</span></li></ul>
+                                    </li>
+                                    <li id="t1-p1-2"><span class="node-label">False</span><span class="node-content">loss_days > 65.5</span>
+                                        <ul><li class="leaf" id="t1-l2"><span class="node-content">-0.030</span></li></ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li id="t1-p2"><span class="node-label">False</span><span class="node-content">> 0.5</span>
+                                <ul><li class="leaf" id="t1-l3"><span class="node-content">+0.199</span></li></ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Tree 2 -->
+             <div class="tree-card">
+                <div class="tree-title">Tree #2: Vehicle Origin</div>
+                <ul class="tree">
+                    <li class="root" id="t2-root"><span class="node-content">is_NA_continent</span>
+                        <ul>
+                            <li id="t2-p1"><span class="node-label">True</span><span class="node-content">&le; 0.5</span>
+                                <ul><li class="leaf" id="t2-l1"><span class="node-content">-0.015</span></li></ul>
+                            </li>
+                            <li id="t2-p2"><span class="node-label">False</span><span class="node-content">> 0.5</span>
+                                <ul><li class="leaf" id="t2-l2"><span class="node-content">+0.231</span></li></ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Tree 3 -->
+            <div class="tree-card">
+                <div class="tree-title">Tree #3: Financial Ratios</div>
+                <ul class="tree">
+                     <li class="root" id="t3-root"><span class="node-content">claim_ratio</span>
+                        <ul>
+                            <li id="t3-p1"><span class="node-label">True</span><span class="node-content">&le; 6.091</span>
+                                <ul>
+                                    <li id="t3-p1-1"><span class="node-label">True</span><span class="node-content">expiry_days &le; 29.5</span>
+                                        <ul><li class="leaf" id="t3-l1"><span class="node-content">+0.035</span></li></ul>
+                                    </li>
+                                    <li id="t3-p1-2"><span class="node-label">False</span><span class="node-content">expiry_days > 29.5</span>
+                                        <ul><li class="leaf" id="t3-l2"><span class="node-content">-0.028</span></li></ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li id="t3-p2"><span class="node-label">False</span><span class="node-content">> 6.091</span>
+                                <ul><li class="leaf" id="t3-l3"><span class="node-content">+0.096</span></li></ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Tree 4 -->
+            <div class="tree-card">
+                <div class="tree-title">Tree #4: Claim Timeline</div>
+                <ul class="tree">
+                    <li class="root" id="t4-root"><span class="node-content">loss_to_intm_days</span>
+                        <ul>
+                            <li id="t4-p1"><span class="node-label">True</span><span class="node-content">&le; 13.5</span>
+                                <ul><li class="leaf" id="t4-l1"><span class="node-content">-0.012</span></li></ul>
+                            </li>
+                            <li id="t4-p2"><span class="node-label">False</span><span class="node-content">> 13.5</span>
+                                <ul><li class="leaf" id="t4-l2"><span class="node-content">+0.121</span></li></ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- Tree 5 -->
+            <div class="tree-card">
+                <div class="tree-title">Tree #5: Claim Amount</div>
+                <ul class="tree">
+                    <li class="root" id="t5-root"><span class="node-content">Estimated Amount</span>
+                        <ul>
+                            <li id="t5-p1"><span class="node-label">True</span><span class="node-content">&le; 163446</span>
+                                <ul><li class="leaf" id="t5-l1"><span class="node-content">-0.005</span></li></ul>
+                            </li>
+                            <li id="t5-p2"><span class="node-label">False</span><span class="node-content">> 163446</span>
+                                <ul><li class="leaf" id="t5-l2"><span class="node-content">+0.180</span></li></ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Score Card -->
+            <div class="score-card">
+                <h2>Fraud Probability</h2>
+                <div id="final-score" class="score-value">...</div>
+                <div id="score-breakdown" class="score-breakdown">...</div>
+                <div id="classification-indicator">...</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('claim-form');
+        const inputs = form.querySelectorAll('input, select');
+
+        const getValues = () => {
+            const values = {};
+            inputs.forEach(input => { values[input.id] = parseFloat(input.value); });
+            return values;
+        };
+
+        const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+
+        const highlightPath = (nodeIds) => {
+            nodeIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.add('active');
+                    // Traverse up to activate parent connectors and labels
+                    let current = el;
+                    while (current && current.id !== 'app-container') {
+                        if (current.tagName === 'LI') {
+                           current.classList.add('path-active');
+                        }
+                        current = current.parentElement;
+                    }
+                }
+            });
+        };
+
+        const updatePrediction = () => {
+            const values = getValues();
+            let totalSum = 0;
+            const contributions = [];
+
+            // Deactivate all nodes and paths first
+            document.querySelectorAll('.tree li').forEach(el => {
+                el.classList.remove('active', 'path-active');
+            });
+            
+            // --- Tree 0 Logic ---
+            let val0;
+            const t0_path = ['t0-root'];
+            if (values.count_of_parts <= 1.5) {
+                t0_path.push('t0-p1');
+                if (values.damage_left <= 0.5) {
+                    t0_path.push('t0-p1-1');
+                    if (values.damage_rear <= 0.5) {
+                        t0_path.push('t0-p1-1-1', 't0-l1');
+                        val0 = 0.212;
+                    } else {
+                        t0_path.push('t0-p1-1-2', 't0-l2');
+                        val0 = 0.335;
+                    }
+                } else {
+                    t0_path.push('t0-p1-2', 't0-l3');
+                    val0 = 0.454;
+                }
+            } else {
+                t0_path.push('t0-p2');
+                if (values.damage_left <= 0.5) {
+                    t0_path.push('t0-p2-1');
+                    if (values.damage_rear <= 0.5) {
+                        t0_path.push('t0-p2-1-1', 't0-l4');
+                        val0 = 0.332;
+                    } else {
+                        t0_path.push('t0-p2-1-2', 't0-l5');
+                        val0 = 0.455;
+                    }
+                } else {
+                    t0_path.push('t0-p2-2', 't0-l6');
+                    val0 = 0.529;
+                }
+            }
+            highlightPath(t0_path);
+            totalSum += val0;
+            contributions.push(val0);
+
+            // --- Tree 1 Logic ---
+            let val1;
+            const t1_path = ['t1-root'];
+            if (values.damage_right <= 0.5) {
+                t1_path.push('t1-p1');
+                if (values.loss_days_from_policy <= 65.5) {
+                    t1_path.push('t1-p1-1', 't1-l1');
+                    val1 = 0.041;
+                } else {
+                    t1_path.push('t1-p1-2', 't1-l2');
+                    val1 = -0.030;
+                }
+            } else {
+                t1_path.push('t1-p2', 't1-l3');
+                val1 = 0.199;
+            }
+            highlightPath(t1_path);
+            totalSum += val1;
+            contributions.push(val1);
+
+            // --- Tree 2 Logic ---
+            let val2;
+            const t2_path = ['t2-root'];
+            if (values.Make_Continent_North_America <= 0.5) {
+                t2_path.push('t2-p1', 't2-l1');
+                val2 = -0.015;
+            } else {
+                t2_path.push('t2-p2', 't2-l2');
+                val2 = 0.231;
+            }
+            highlightPath(t2_path);
+            totalSum += val2;
+            contributions.push(val2);
+
+            // --- Tree 3 Logic ---
+            let val3;
+            const t3_path = ['t3-root'];
+            if (values.claim_ratio <= 6.091) {
+                t3_path.push('t3-p1');
+                if (values.intm_days_till_expiry <= 29.5) {
+                    t3_path.push('t3-p1-1', 't3-l1');
+                    val3 = 0.035;
+                } else {
+                    t3_path.push('t3-p1-2', 't3-l2');
+                    val3 = -0.028;
+                }
+            } else {
+                t3_path.push('t3-p2', 't3-l3');
+                val3 = 0.096;
+            }
+            highlightPath(t3_path);
+            totalSum += val3;
+            contributions.push(val3);
+
+            // --- Tree 4 Logic ---
+            let val4;
+            const t4_path = ['t4-root'];
+            if (values.days_from_loss_intm <= 13.5) {
+                t4_path.push('t4-p1', 't4-l1');
+                val4 = -0.012;
+            } else {
+                t4_path.push('t4-p2', 't4-l2');
+                val4 = 0.121;
+            }
+            highlightPath(t4_path);
+            totalSum += val4;
+            contributions.push(val4);
+
+            // --- Tree 5 Logic ---
+            let val5;
+            const t5_path = ['t5-root'];
+            if (values.Estimated_Amount <= 163446.0) {
+                t5_path.push('t5-p1', 't5-l1');
+                val5 = -0.005;
+            } else {
+                t5_path.push('t5-p2', 't5-l2');
+                val5 = 0.180;
+            }
+            highlightPath(t5_path);
+            totalSum += val5;
+            contributions.push(val5);
+            
+            // --- Update Score UI ---
+            const probability = sigmoid(totalSum);
+            document.getElementById('final-score').textContent = `${(probability * 100).toFixed(1)}%`;
+            const breakdownText = contributions.map(c => c.toFixed(3)).join(' + ') + ` = ${totalSum.toFixed(3)}`;
+            document.getElementById('score-breakdown').textContent = `Sum: ${breakdownText}`;
+            const indicator = document.getElementById('classification-indicator');
+            if (probability > 0.65) {
+                indicator.textContent = 'High Risk';
+                indicator.style.backgroundColor = 'var(--destructive)';
+                indicator.style.color = 'var(--destructive-foreground)';
+            } else if (probability > 0.4) {
+                indicator.textContent = 'Moderate Risk';
+                indicator.style.backgroundColor = '#f59e0b';
+                indicator.style.color = 'var(--primary-foreground)';
+            } else {
+                indicator.textContent = 'Low Risk';
+                indicator.style.backgroundColor = '#22c55e';
+                indicator.style.color = 'var(--primary-foreground)';
+            }
+        };
+
+        inputs.forEach(input => {
+            input.addEventListener('input', updatePrediction);
+        });
+
+        updatePrediction();
+    });
+</script>
+
+</body>
+</html>
