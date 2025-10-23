@@ -18,7 +18,23 @@ const SAMPLE_TREE = `veh_brand_TOYOTA <= 0.500 (Tree #0 root)
 \t\t\tVal: 0.312 (leaf)
 \t\t\tVal: 0.223 (leaf)
 \t\tVal: 0.152 (leaf)
-\tVal: 0.101 (leaf)`;
+\tVal: 0.101 (leaf)
+
+\t+
+approved_claim_amount <= 13376.425 (Tree #1 root)
+\tdays_between_intm_loss <= 204.500 (split)
+\t\tvalue_class_ordinal <= 4.500 (split)
+\t\t\tVal: -0.025 (leaf)
+\t\t\tVal: 0.041 (leaf)
+\t\tVal: 0.169 (leaf)
+\tapproved_claim_amount <= 25028.750 (split)
+\t\tVal: 0.155 (leaf)
+\t\tVal: 0.367 (leaf)
+
+\t+
+value_class_ordinal <= 0.000 (Tree #2 root)
+\tVal: 0.126 (leaf)
+\tVal: -0.007 (leaf)`;
 
 export function TreeForm() {
   const navigate = useNavigate();
