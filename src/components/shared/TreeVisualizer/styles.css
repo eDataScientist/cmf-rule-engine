@@ -1,0 +1,92 @@
+/* Tree Visualization Styles */
+.report-tree-card {
+  background-color: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 16px;
+  display: inline-block;
+  text-align: left;
+}
+
+.report-tree-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.report-tree {
+  list-style-type: none;
+  padding-left: 15px;
+  margin: 0;
+}
+
+.report-tree-list {
+  list-style-type: none;
+  margin-top: 5px;
+  padding-left: 20px;
+}
+
+.report-tree li {
+  position: relative;
+  padding: 2px 0;
+}
+
+/* Connector Lines */
+.report-tree li::before,
+.report-tree li::after {
+  content: '';
+  position: absolute;
+  left: -15px;
+  background-color: #d4d4d8;
+}
+
+.report-tree li::before {
+  border-top: 2px solid #d4d4d8;
+  top: 12px;
+  width: 15px;
+  height: 0;
+}
+
+.report-tree li::after {
+  border-left: 2px solid #d4d4d8;
+  height: 100%;
+  width: 0px;
+  top: 0;
+}
+
+.report-tree > li::after,
+.report-tree > li::before {
+  display: none;
+}
+
+.report-tree li:last-child::after {
+  height: 12px;
+}
+
+/* Node Content Styling */
+.report-node-content {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  font-family: 'Fira Code', monospace, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Leaf Nodes - Green */
+.report-tree .leaf .report-node-content {
+  font-weight: 600;
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #a7f3d0;
+}
+
+/* Root Nodes - Blue */
+.report-tree .root > .report-node-content {
+  font-weight: 600;
+  background-color: #e0e7ff;
+}

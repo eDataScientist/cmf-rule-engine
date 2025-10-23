@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
+import { TreeForm } from './components/TreeForm';
 
 export default function GenerateTree() {
   return (
@@ -7,9 +8,7 @@ export default function GenerateTree() {
         title="Generate Tree"
         description="Parse and create a new decision tree from FIGS format"
       />
-      <div className="grid gap-4">
-        <p className="text-muted-foreground">Generate tree page - Coming soon</p>
-      </div>
+      <TreeForm />
     </div>
   );
 }

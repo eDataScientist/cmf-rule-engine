@@ -1,0 +1,23 @@
+import type { Tree } from '@/lib/types/tree';
+import { TreeCard } from './TreeCard';
+
+interface TreeGridProps {
+  trees: Tree[];
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
+}
+
+export function TreeGrid({ trees, onDelete, isDeleting }: TreeGridProps) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {trees.map((tree) => (
+        <TreeCard
+          key={tree.id}
+          tree={tree}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
+        />
+      ))}
+    </div>
+  );
+}
