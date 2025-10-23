@@ -8,7 +8,7 @@ interface TreeVisualizerProps {
 
 export function TreeVisualizer({ trees }: TreeVisualizerProps) {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-wrap gap-4">
       {trees.map((tree, index) => (
         <div key={index} className="report-tree-card">
           <div className="report-tree-title">{tree.title}</div>

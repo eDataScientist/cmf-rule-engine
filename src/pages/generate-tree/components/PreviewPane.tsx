@@ -25,19 +25,21 @@ export function PreviewPane({ trees }: PreviewPaneProps) {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <CardTitle>Preview</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-2">
+      <CardContent className="space-y-4 flex-1 overflow-hidden flex flex-col">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Badge variant="secondary">{trees.length} Trees</Badge>
           <Badge variant="secondary">
             {trees.reduce((sum, tree) => sum + countLeafNodes(tree.root), 0)} Total Leaf Nodes
           </Badge>
         </div>
 
-        <TreeVisualizer trees={trees} />
+        <div className="overflow-auto flex-1 min-h-0 max-h-[600px]">
+          <TreeVisualizer trees={trees} />
+        </div>
       </CardContent>
     </Card>
   );
