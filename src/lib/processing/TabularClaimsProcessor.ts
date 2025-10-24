@@ -102,13 +102,19 @@ export class TabularClaimsProcessor {
    * Ensure claim data contains the canonical claim number key expected by the engine.
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
-    if ('Claim Number' in claim && !('Claim number' in claim)) {
-      return {
-        ...claim,
-        'Claim number': claim['Claim Number'],
-      };
+    const claimIdentifier = claim['Claim Number'] ?? claim['Claim number'];
+
+    if (claimIdentifier === undefined || claimIdentifier === null || claimIdentifier === '') {
+      return claim;
     }
-    return claim;
+
+    const normalized = typeof claimIdentifier === 'string' ? claimIdentifier : String(claimIdentifier);
+
+    return {
+      ...claim,
+      'Claim Number': normalized,
+      'Claim number': normalized,
+    };
   }
 
   /**
@@ -183,7 +189,8 @@ export class TabularClaimsProcessor {
    */
   exportResults(claims: ClaimData[], results: TraceResult[]): any[] {
     return claims.map((claim, idx) => {
-      const filtered = this.filterForExport(claim);
+      const normalized = this.normalizeClaimKeys(claim);
+      const filtered = this.filterForExport(normalized);
       const result = results[idx];
 
       return {
