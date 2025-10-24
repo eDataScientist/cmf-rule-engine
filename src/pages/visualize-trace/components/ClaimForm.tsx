@@ -40,14 +40,18 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Claim Details</CardTitle>
+        <CardTitle className="font-display text-2xl">Claim Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Always show claim number */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground">Basic Information</h3>
+          <h3 className="text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+            Basic Information
+          </h3>
           <div className="space-y-2">
-            <Label htmlFor="claim-number">Claim Number *</Label>
+            <Label htmlFor="claim-number" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Claim Number *
+            </Label>
             <Input
               id="claim-number"
               value={claim['Claim number'] || ''}
@@ -60,7 +64,7 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
         {/* Dynamic fields based on tree features */}
         {sortedFeatures.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground">
+            <h3 className="text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
               Tree Features ({sortedFeatures.length})
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
@@ -69,22 +73,26 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
 
                 if (feature.type === 'boolean') {
                   return (
-                    <div key={feature.name} className="flex items-center space-x-2">
+                    <div key={feature.name} className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-inner shadow-black/5">
                       <input
                         id={fieldId}
                         type="checkbox"
                         checked={!!claim[feature.name]}
                         onChange={(e) => handleCheckboxChange(feature.name, e.target.checked)}
-                        className="h-4 w-4"
+                        className="h-5 w-5 rounded-md border border-white/60 bg-white/90 text-primary focus:ring-primary/40"
                       />
-                      <Label htmlFor={fieldId}>{toLabel(feature.name)}</Label>
+                      <Label htmlFor={fieldId} className="text-sm font-medium text-foreground">
+                        {toLabel(feature.name)}
+                      </Label>
                     </div>
                   );
                 }
 
                 return (
                   <div key={feature.name} className="space-y-2">
-                    <Label htmlFor={fieldId}>{toLabel(feature.name)}</Label>
+                    <Label htmlFor={fieldId} className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                      {toLabel(feature.name)}
+                    </Label>
                     <Input
                       id={fieldId}
                       type="number"
@@ -101,7 +109,7 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
         )}
 
         {sortedFeatures.length === 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             No features found in the tree. Please select a valid tree.
           </p>
         )}

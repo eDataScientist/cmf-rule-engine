@@ -25,7 +25,7 @@ interface ClaimsTableProps {
 export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTableProps) {
   if (claims.length === 0) {
     return (
-      <Card className="p-8 text-center">
+      <Card className="border-white/60 bg-white/80 p-8 text-center shadow-lg shadow-black/5 backdrop-blur">
         <p className="text-muted-foreground">No claims data loaded</p>
       </Card>
     );
@@ -39,10 +39,10 @@ export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTab
       ).filter((key) => key !== 'Claim Number');
 
   return (
-    <Card className="overflow-hidden">
-      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-lg shadow-black/5 backdrop-blur">
+      <div className="max-h-[600px] overflow-y-auto overflow-x-auto">
         <Table>
-          <TableHeader className="sticky top-0 bg-background z-10">
+          <TableHeader className="sticky top-0 z-10 bg-white/85 backdrop-blur">
             <TableRow>
               <TableHead className="w-[120px]">Claim #</TableHead>
               {displayColumns.map((key) => (

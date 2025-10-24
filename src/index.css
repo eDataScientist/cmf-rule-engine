@@ -1,24 +1,72 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: light;
+  --font-display: "Playfair Display", "Times New Roman", serif;
+  --font-body: "Source Serif 4", Georgia, serif;
+}
+
 @theme {
-  --color-background: oklch(100% 0 0);
-  --color-foreground: oklch(9% 0 0);
-  --color-card: oklch(100% 0 0);
-  --color-card-foreground: oklch(9% 0 0);
-  --color-popover: oklch(100% 0 0);
-  --color-popover-foreground: oklch(9% 0 0);
-  --color-primary: oklch(10% 0 0);
+  --color-background: oklch(98% 0.014 95);
+  --color-foreground: oklch(18% 0.018 90);
+  --color-card: oklch(100% 0.01 95);
+  --color-card-foreground: oklch(18% 0.018 90);
+  --color-popover: oklch(100% 0.01 95);
+  --color-popover-foreground: oklch(18% 0.018 90);
+  --color-primary: oklch(72% 0.12 40);
   --color-primary-foreground: oklch(98% 0 0);
-  --color-secondary: oklch(96% 0 0);
-  --color-secondary-foreground: oklch(10% 0 0);
-  --color-muted: oklch(96% 0 0);
-  --color-muted-foreground: oklch(46% 0 0);
-  --color-accent: oklch(96% 0 0);
-  --color-accent-foreground: oklch(10% 0 0);
-  --color-destructive: oklch(60% 0.2 25);
+  --color-secondary: oklch(95% 0.04 130);
+  --color-secondary-foreground: oklch(34% 0.03 120);
+  --color-muted: oklch(96% 0.02 120);
+  --color-muted-foreground: oklch(54% 0.03 120);
+  --color-accent: oklch(94% 0.04 80);
+  --color-accent-foreground: oklch(28% 0.03 80);
+  --color-destructive: oklch(60% 0.19 25);
   --color-destructive-foreground: oklch(98% 0 0);
-  --color-border: oklch(90% 0 0);
-  --color-input: oklch(90% 0 0);
-  --color-ring: oklch(10% 0 0);
-  --radius: 0.5rem;
+  --color-border: oklch(92% 0.015 98);
+  --color-input: oklch(92% 0.015 98);
+  --color-ring: oklch(72% 0.12 40);
+  --radius: 0.75rem;
+}
+
+@layer base {
+  *, *::before, *::after {
+    @apply transition-colors duration-200 ease-out;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    line-height: 1.6;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(238, 220, 194, 0.35), transparent 45%),
+      radial-gradient(circle at 88% 0%, rgba(199, 210, 254, 0.45), transparent 55%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 246, 241, 0.9));
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(245, 182, 91, 0.35);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply rounded-3xl border border-white/60 bg-white/70 shadow-xl backdrop-blur;
+  }
+
+  .accent-pill {
+    @apply inline-flex h-9 items-center rounded-full bg-secondary px-4 text-xs font-semibold uppercase tracking-[0.3em] text-secondary-foreground;
+  }
 }

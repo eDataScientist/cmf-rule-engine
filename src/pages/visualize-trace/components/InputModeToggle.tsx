@@ -10,12 +10,12 @@ interface InputModeToggleProps {
 
 export function InputModeToggle({ mode, onChange }: InputModeToggleProps) {
   return (
-    <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
+    <div className="flex w-fit items-center gap-2 rounded-full border border-white/60 bg-white/70 p-1.5 shadow-inner shadow-black/5">
       <Button
         variant={mode === 'form' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onChange('form')}
-        className="gap-2"
+        className="gap-2 rounded-full px-5 text-[0.7rem] font-semibold uppercase tracking-[0.3em]"
       >
         <FormInput className="h-4 w-4" />
         Form
@@ -24,7 +24,7 @@ export function InputModeToggle({ mode, onChange }: InputModeToggleProps) {
         variant={mode === 'json' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onChange('json')}
-        className="gap-2"
+        className="gap-2 rounded-full px-5 text-[0.7rem] font-semibold uppercase tracking-[0.3em]"
       >
         <Code className="h-4 w-4" />
         JSON
