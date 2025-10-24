@@ -1,5 +1,4 @@
 export interface ClaimData {
-  'Claim Number'?: string;
   'Claim number'?: string;
   count_of_parts?: number;
   damage_left?: number | boolean;
