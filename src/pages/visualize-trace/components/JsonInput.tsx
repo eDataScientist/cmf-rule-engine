@@ -24,7 +24,7 @@ export function JsonInput({ value, onChange, onParsed, isValid, error }: JsonInp
     try {
       const parsed = JSON.parse(newValue);
       onParsed(parsed as ClaimData);
-    } catch (err) {
+    } catch {
       onParsed(null);
     }
   };

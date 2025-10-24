@@ -103,7 +103,7 @@ export function TreeForm() {
       await save(name, treeType, structureToSave);
       setShowSaveDialog(false);
       navigate('/review-trees');
-    } catch (err) {
+    } catch {
       // Error is already handled in the hook
     }
   };
@@ -185,7 +185,7 @@ export function TreeForm() {
                           [candidate.key]: e.target.value === 'boolean',
                         }))
                       }
-                      className="w-full rounded-md border bg-background p-2 text-sm sm:w-auto"
+                      className="w-full rounded-full border border-white/60 bg-white/80 px-4 py-2 text-sm shadow-inner shadow-white/40 transition focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-auto"
                     >
                       <option value="boolean">Use Yes/No</option>
                       <option value="numeric">Keep numeric ({candidate.operator} 0.5)</option>
