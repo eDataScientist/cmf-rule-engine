@@ -1,9 +1,9 @@
-/* Tree Visualization Styles */
+/* Tree Visualization Styles - Matching gig_trace_generator.html */
 .report-tree-card {
   background-color: #ffffff;
   border: 1px solid #e4e4e7;
   border-radius: 8px;
-  padding: 16px;
+  padding: 15px;
   display: inline-block;
   text-align: left;
 }
@@ -12,25 +12,30 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 12px 0;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid #e4e4e7;
 }
 
 .report-tree {
   list-style-type: none;
-  padding-left: 15px;
+  padding-left: 12px;
   margin: 0;
 }
 
-.report-tree-list {
+.report-tree ul {
   list-style-type: none;
-  margin-top: 5px;
-  padding-left: 20px;
+  margin-top: 4px;
+  padding-left: 15px;
 }
 
 .report-tree li {
   position: relative;
-  padding: 2px 0;
+  padding: 1px 0;
+  opacity: 0.3; /* CRITICAL: All nodes start dimmed */
+}
+
+.report-tree li.path-active {
+  opacity: 1; /* CRITICAL: Active path nodes are fully visible */
 }
 
 /* Connector Lines */
@@ -38,14 +43,14 @@
 .report-tree li::after {
   content: '';
   position: absolute;
-  left: -15px;
+  left: -12px;
   background-color: #d4d4d8;
 }
 
 .report-tree li::before {
   border-top: 2px solid #d4d4d8;
   top: 12px;
-  width: 15px;
+  width: 12px;
   height: 0;
 }
 
@@ -65,6 +70,15 @@
   height: 12px;
 }
 
+/* Active path connectors are black */
+.report-tree li.path-active::before {
+  border-top-color: #18181b;
+}
+
+.report-tree li.path-active::after {
+  border-left-color: #18181b;
+}
+
 /* Node Content Styling */
 .report-node-content {
   display: inline-block;
@@ -72,21 +86,44 @@
   border-radius: 4px;
   background-color: #f4f4f5;
   border: 1px solid #e4e4e7;
-  font-family: 'Fira Code', monospace, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-family: 'Fira Code', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 12px;
   font-weight: 500;
 }
 
-/* Leaf Nodes - Green */
+/* Active node styling */
+.report-tree li.active > .report-node-content {
+  background-color: #d4d4d8;
+}
+
+/* Leaf Nodes - Will be colored dynamically */
 .report-tree .leaf .report-node-content {
+  color: white;
+  border-color: transparent;
   font-weight: 600;
-  background-color: #dcfce7;
-  color: #166534;
-  border-color: #a7f3d0;
 }
 
 /* Root Nodes - Blue */
 .report-tree .root > .report-node-content {
   font-weight: 600;
   background-color: #e0e7ff;
+}
+
+/* Root node when active */
+.report-tree li.root.active > .report-node-content {
+  background-color: #18181b;
+  color: white;
+}
+
+/* Preview Mode - All nodes fully visible with colored connectors */
+.report-tree li.preview-mode {
+  opacity: 1 !important; /* Override the 0.3 opacity for preview */
+}
+
+.report-tree li.preview-mode::before {
+  border-top-color: #18181b;
+}
+
+.report-tree li.preview-mode::after {
+  border-left-color: #18181b;
 }

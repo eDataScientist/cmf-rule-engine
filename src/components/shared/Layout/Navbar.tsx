@@ -3,9 +3,8 @@ import { cn } from '@/lib/utils';
 import { Activity } from 'lucide-react';
 
 const navItems = [
-  { path: '/review-trees', label: 'Review Trees' },
+  { path: '/review-trees', label: 'Decision Trees' },
   { path: '/generate-tree', label: 'Generate Tree' },
-  { path: '/visualize-trace', label: 'Visualize Trace' },
   { path: '/table-visualizer', label: 'Table Visualizer' },
 ];
 

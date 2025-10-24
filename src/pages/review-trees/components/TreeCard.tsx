@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2, Activity, Heart, Calendar } from 'lucide-react';
+import { Trash2, Activity, Heart, Calendar, Eye } from 'lucide-react';
 import type { Tree } from '@/lib/types/tree';
 
 interface TreeCardProps {
   tree: Tree;
   onDelete: (id: string) => void;
+  onVisualize: (id: string) => void;
   isDeleting: boolean;
 }
 
-export function TreeCard({ tree, onDelete, isDeleting }: TreeCardProps) {
+export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = () => {
@@ -64,16 +65,27 @@ export function TreeCard({ tree, onDelete, isDeleting }: TreeCardProps) {
 
       <CardFooter className="flex gap-2">
         {!showConfirm ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowConfirm(true)}
-            disabled={isDeleting}
-            className="w-full"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          <>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onVisualize(tree.id)}
+              className="flex-1"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Visualize
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowConfirm(true)}
+              disabled={isDeleting}
+              className="flex-1"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </>
         ) : (
           <>
             <Button

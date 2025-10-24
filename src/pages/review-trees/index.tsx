@@ -1,16 +1,74 @@
+import { useState, useMemo } from 'react';
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Plus, Loader2, Play, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TreeGrid } from './components/TreeGrid';
 import { EmptyState } from './components/EmptyState';
 import { useTreeList } from './hooks/useTreeList';
 import { useTreeDelete } from './hooks/useTreeDelete';
+import { ClaimForm } from '../visualize-trace/components/ClaimForm';
+import { JsonInput } from '../visualize-trace/components/JsonInput';
+import { InputModeToggle, type InputMode } from '../visualize-trace/components/InputModeToggle';
+import { ScoreCard } from '@/components/shared/ScoreCard';
+import { TracedTreeVisualizer } from '../visualize-trace/components/TracedTreeVisualizer';
+import { useClaimEvaluation } from '../visualize-trace/hooks/useClaimEvaluation';
+import { useImageExport } from '../visualize-trace/hooks/useImageExport';
+import { extractFeatures } from '../visualize-trace/utils/extractFeatures';
+import type { ClaimData } from '@/lib/types/claim';
 
 export default function ReviewTrees() {
   const navigate = useNavigate();
   const { trees, isLoading, error } = useTreeList();
   const { remove, isDeleting } = useTreeDelete();
+
+  const [activeTab, setActiveTab] = useState('trees');
+  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>('form');
+  const [claim, setClaim] = useState<ClaimData>({});
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  const { result, isEvaluating, error: evalError, evaluate } = useClaimEvaluation();
+  const { exportAsImage, isExporting } = useImageExport();
+
+  const selectedTree = trees.find((t) => t.id === selectedTreeId);
+
+  const features = useMemo(() => {
+    if (!selectedTree) return new Map();
+    return extractFeatures(selectedTree.structure);
+  }, [selectedTree]);
+
+  const handleVisualize = (treeId: string) => {
+    setSelectedTreeId(treeId);
+    setClaim({});
+    setJsonInput('');
+    setActiveTab('form');
+  };
+
+  const handleEvaluate = () => {
+    if (!selectedTree) return;
+
+    const claimToEvaluate = inputMode === 'json'
+      ? (jsonInput ? JSON.parse(jsonInput) : {})
+      : claim;
+
+    evaluate(claimToEvaluate, selectedTree.structure);
+    setActiveTab('visualization');
+  };
+
+  const handleExport = () => {
+    if (!result) return;
+    exportAsImage('trace-result', `trace-${result.claimNumber}`);
+  };
+
+  const canEvaluate = selectedTree && (
+    inputMode === 'form'
+      ? !!claim['Claim number']
+      : jsonInput && !jsonError
+  );
 
   if (isLoading) {
     return (
@@ -29,10 +87,10 @@ export default function ReviewTrees() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
-        title="Review Trees"
-        description="View and manage your stored decision trees"
+        title="Decision Trees"
+        description="Manage trees and visualize claim evaluations"
         actions={
           trees.length > 0 && (
             <Button onClick={() => navigate('/generate-tree')}>
@@ -46,7 +104,110 @@ export default function ReviewTrees() {
       {trees.length === 0 ? (
         <EmptyState />
       ) : (
-        <TreeGrid trees={trees} onDelete={remove} isDeleting={isDeleting} />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="trees">All Trees</TabsTrigger>
+            <TabsTrigger value="form" disabled={!selectedTree}>Claim Form</TabsTrigger>
+            <TabsTrigger value="visualization" disabled={!result}>Visualization</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="trees">
+            <TreeGrid
+              trees={trees}
+              onDelete={remove}
+              onVisualize={handleVisualize}
+              isDeleting={isDeleting}
+            />
+          </TabsContent>
+
+          <TabsContent value="form">
+            {selectedTree && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">Selected Tree</h3>
+                        <p className="text-sm text-muted-foreground">{selectedTree.name}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <InputModeToggle mode={inputMode} onChange={setInputMode} />
+                        <Button
+                          onClick={handleEvaluate}
+                          disabled={!canEvaluate || isEvaluating}
+                          size="lg"
+                        >
+                          {isEvaluating ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4 mr-2" />
+                          )}
+                          Evaluate Claim
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {inputMode === 'form' ? (
+                  <ClaimForm claim={claim} onChange={setClaim} features={features} />
+                ) : (
+                  <JsonInput
+                    value={jsonInput}
+                    onChange={setJsonInput}
+                    onParsed={(parsed) => {
+                      if (parsed) {
+                        setJsonError(null);
+                        setClaim(parsed);
+                      } else if (jsonInput) {
+                        setJsonError('Invalid JSON format');
+                      }
+                    }}
+                    isValid={!jsonError && !!jsonInput}
+                    error={jsonError}
+                  />
+                )}
+
+                {evalError && (
+                  <Card className="border-red-200 bg-red-50">
+                    <CardContent className="py-4">
+                      <p className="text-sm text-red-600">{evalError}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="visualization">
+            {result && selectedTree && (
+              <div id="trace-result" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Evaluation Results</h2>
+                  <Button
+                    variant="outline"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export as PNG
+                  </Button>
+                </div>
+
+                <ScoreCard result={result} showBreakdown />
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <TracedTreeVisualizer
+                      trees={selectedTree.structure}
+                      paths={result.paths}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

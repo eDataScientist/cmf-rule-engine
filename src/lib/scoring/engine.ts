@@ -6,11 +6,47 @@ import { normalizeClaim, type ClaimData } from '../types/claim';
 import { calculateProbability } from './transforms';
 import { classifyRisk } from '../types/trace';
 
+interface EvaluationContext {
+  pathIds: string[];
+  leafCounter: { count: number };
+}
+
+function evaluateNodeWithId(
+  node: TreeNode,
+  claim: NormalizedClaim,
+  nodeId: string,
+  context: EvaluationContext
+): number {
+  context.pathIds.push(nodeId);
+
+  if (isLeafNode(node)) {
+    return node.value;
+  }
+
+  if (isDecisionNode(node)) {
+    const condition = (node as DecisionNode).condition;
+    const passes = evaluateCondition(condition, claim);
+
+    const branchSuffix = passes ? '1' : '2';
+    const childId = `${nodeId}-${branchSuffix}`;
+
+    return evaluateNodeWithId(
+      passes ? (node as DecisionNode).true_branch : (node as DecisionNode).false_branch,
+      claim,
+      childId,
+      context
+    );
+  }
+
+  throw new Error('Invalid node type');
+}
+
 export function evaluateNode(
   node: TreeNode,
   claim: NormalizedClaim,
   nodeIds: string[] = []
 ): { value: number; nodeIds: string[] } {
+  // This is kept for backwards compatibility but not used in new code
   if (isLeafNode(node)) {
     return { value: node.value, nodeIds };
   }
@@ -69,11 +105,17 @@ export function evaluateClaim(
   let totalScore = 0;
 
   treeStructure.forEach((tree, index) => {
-    const { value, nodeIds } = evaluateNode(tree.root, claim, []);
+    const context: EvaluationContext = {
+      pathIds: [],
+      leafCounter: { count: 0 }
+    };
+
+    const rootId = `t${index}-root`;
+    const value = evaluateNodeWithId(tree.root, claim, rootId, context);
 
     paths.push({
       treeIndex: index,
-      nodeIds,
+      nodeIds: context.pathIds,
       leafValue: value,
     });
 
