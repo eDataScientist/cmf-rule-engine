@@ -181,7 +181,7 @@ export default function ReviewTrees() {
 
           <TabsContent value="visualization">
             {result && selectedTree && (
-              <div id="trace-result" className="space-y-6">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">Evaluation Results</h2>
                   <Button
@@ -194,16 +194,22 @@ export default function ReviewTrees() {
                   </Button>
                 </div>
 
-                <ScoreCard result={result} showBreakdown />
+                <div id="trace-result" className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+                  {/* Left: Score Card */}
+                  <div>
+                    <ScoreCard result={result} showBreakdown />
+                  </div>
 
-                <Card>
-                  <CardContent className="pt-6">
-                    <TracedTreeVisualizer
-                      trees={selectedTree.structure}
-                      paths={result.paths}
-                    />
-                  </CardContent>
-                </Card>
+                  {/* Right: Tree Visualizer */}
+                  <Card>
+                    <CardContent className="pt-6">
+                      <TracedTreeVisualizer
+                        trees={selectedTree.structure}
+                        paths={result.paths}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             )}
           </TabsContent>
