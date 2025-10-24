@@ -407,26 +407,67 @@
 
 ---
 
+## Phase 13: UI Refinements & Documentation ✅
+
+### UI Fixes
+- [x] Fix preview pane scrollbar issue
+  - [x] Add max-h-[600px] to preview container
+  - [x] Enable overflow-auto for scrolling
+  - [x] Set h-full on Card for proper sizing
+
+- [x] Fix tree spacing in preview
+  - [x] Change from vertical stack to flex wrap
+  - [x] Add gap-4 for horizontal and vertical spacing
+  - [x] Trees now display side-by-side when space permits
+
+### Project Documentation
+- [x] Create CLAUDE.md with comprehensive guidelines
+  - [x] Task tracking workflow (read/update TASK_LOG.md)
+  - [x] Tech stack documentation
+  - [x] Project architecture overview
+  - [x] Page module pattern explanation
+  - [x] Core concepts (trees, FIGS, scoring)
+  - [x] Database persistence details
+  - [x] Common development tasks
+  - [x] Styling guidelines (Tailwind v4)
+  - [x] Troubleshooting guide
+  - [x] Code quality standards with file size limits
+
+- [x] Update TASK_LOG.md (this file)
+  - [x] Add Phase 13 for recent work
+  - [x] Mark all UI fixes as complete
+  - [x] Mark documentation tasks as complete
+  - [x] Update task counts
+  - [x] Update timestamp
+
+### Git Commits
+- [x] Commit: Fix preview pane UI (scrollbar + spacing)
+- [x] Commit: Add CLAUDE.md documentation
+- [x] Commit: Update TASK_LOG.md (this commit)
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 215
+**Total Tasks Completed:** 230
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Ready to begin Visualize Trace page
+**Current Phase:** Ready to begin ScoreCard component and Visualize Trace page
 
 ---
 
 ## Next Steps (Priority Order)
 
-1. [ ] Fix preview scrollbar issue (UI bug)
-2. [ ] Commit UI fixes
-3. [ ] Build ScoreCard component module
-4. [ ] Build Visualize Trace page with scoring
-5. [ ] Build Table Visualizer page with CSV upload
-6. [ ] Implement Medical/Motor theme variants
-7. [ ] Add error boundaries and loading states
-8. [ ] Add DB export/import functionality
-9. [ ] Final testing and polish
+1. [x] Fix preview scrollbar issue (UI bug) ✅
+2. [x] Commit UI fixes ✅
+3. [x] Create CLAUDE.md documentation ✅
+4. [ ] Build ScoreCard component module
+5. [ ] Build Visualize Trace page with scoring
+6. [ ] Build Table Visualizer page with CSV upload
+7. [ ] Implement Medical/Motor theme variants
+8. [ ] Add error boundaries and loading states
+9. [ ] Add DB export/import functionality
+10. [ ] Final testing and polish
 
 ---
 
-_Last Updated: 2025-10-23 16:30_
+_Last Updated: 2025-10-23 17:00_
