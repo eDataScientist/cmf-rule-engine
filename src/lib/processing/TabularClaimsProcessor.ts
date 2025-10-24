@@ -97,9 +97,22 @@ export class TabularClaimsProcessor {
   }
 
   /**
-   * Filter claim data to only include required columns
+   * Ensure claim data contains the canonical claim number key expected by the engine.
    */
-  private filterClaimData(claim: ClaimData): ClaimData {
+  private normalizeClaimKeys(claim: ClaimData): ClaimData {
+    if ('Claim Number' in claim && !('Claim number' in claim)) {
+      return {
+        ...claim,
+        'Claim number': claim['Claim Number'],
+      };
+    }
+    return claim;
+  }
+
+  /**
+   * Filter claim data to include only the columns we want to export.
+   */
+  private filterForExport(claim: ClaimData): ClaimData {
     const filtered: ClaimData = {};
 
     this.requiredColumns.forEach((column) => {
@@ -108,6 +121,14 @@ export class TabularClaimsProcessor {
       }
     });
 
+    if ('Claim Number' in claim && !('Claim Number' in filtered)) {
+      filtered['Claim Number'] = claim['Claim Number'];
+    }
+
+    if ('Claim number' in claim && !('Claim number' in filtered)) {
+      filtered['Claim number'] = claim['Claim number'];
+    }
+
     return filtered;
   }
 
@@ -115,8 +136,8 @@ export class TabularClaimsProcessor {
    * Process a single claim
    */
   processClaim(claim: ClaimData): TraceResult {
-    const filteredClaim = this.filterClaimData(claim);
-    return this.engine.evaluate(filteredClaim);
+    const normalized = this.normalizeClaimKeys(claim);
+    return this.engine.evaluate(normalized);
   }
 
   /**
@@ -160,7 +181,7 @@ export class TabularClaimsProcessor {
    */
   exportResults(claims: ClaimData[], results: TraceResult[]): any[] {
     return claims.map((claim, idx) => {
-      const filtered = this.filterClaimData(claim);
+      const filtered = this.filterForExport(claim);
       const result = results[idx];
 
       return {

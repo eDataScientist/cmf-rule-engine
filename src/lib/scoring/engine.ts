@@ -65,6 +65,33 @@ export function evaluateNode(
   throw new Error('Invalid node type');
 }
 
+function toNumeric(value: unknown): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 1 : 0;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    // parseFloat gracefully ignores trailing non-numeric characters (e.g. "4.5 (split)")
+    const parsed = parseFloat(trimmed);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  const coerced = Number(value);
+  return Number.isNaN(coerced) ? 0 : coerced;
+}
+
+function normalizeText(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value).trim().toLowerCase();
+}
+
 function evaluateCondition(condition: string, claim: NormalizedClaim): boolean {
   const lteMatch = condition.match(/(.+?)\s*<=\s*(.+)/);
   const gtMatch = condition.match(/(.+?)\s*>\s*(.+)/);
@@ -72,25 +99,29 @@ function evaluateCondition(condition: string, claim: NormalizedClaim): boolean {
 
   if (lteMatch) {
     const [, feature, threshold] = lteMatch;
-    const value = claim[feature.trim()] ?? 0;
-    return Number(value) <= Number(threshold.trim());
+    const claimValue = toNumeric(claim[feature.trim()]);
+    const thresholdValue = toNumeric(threshold);
+    return claimValue <= thresholdValue;
   }
 
   if (gtMatch) {
     const [, feature, threshold] = gtMatch;
-    const value = claim[feature.trim()] ?? 0;
-    return Number(value) > Number(threshold.trim());
+    const claimValue = toNumeric(claim[feature.trim()]);
+    const thresholdValue = toNumeric(threshold);
+    return claimValue > thresholdValue;
   }
 
   if (isMatch) {
     const [, feature, expectedValue] = isMatch;
     const value = claim[feature.trim()] ?? 0;
-    const expected = expectedValue.trim().toLowerCase();
+    const expectedRaw = expectedValue.replace(/\(.*\)$/, '');
+    const expected = normalizeText(expectedRaw);
+    const actual = normalizeText(value);
 
-    if (expected === 'yes') return Number(value) > 0.5;
-    if (expected === 'no') return Number(value) <= 0.5;
+    if (expected === 'yes') return toNumeric(value) > 0.5;
+    if (expected === 'no') return toNumeric(value) <= 0.5;
 
-    return String(value) === expected;
+    return actual === expected;
   }
 
   return false;
@@ -126,7 +157,7 @@ export function evaluateClaim(
   const riskLevel = classifyRisk(probability);
 
   return {
-    claimNumber: claimData['Claim number'] || 'N/A',
+    claimNumber: claimData['Claim Number'] || claimData['Claim number'] || 'N/A',
     claim: claimData,
     paths,
     totalScore,
