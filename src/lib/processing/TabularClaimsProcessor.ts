@@ -103,10 +103,16 @@ export class TabularClaimsProcessor {
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
     if ('Claim Number' in claim && !('Claim number' in claim)) {
-      return {
-        ...claim,
-        'Claim number': claim['Claim Number'],
-      };
+      const rawClaimNumber = claim['Claim Number'];
+
+      if (rawClaimNumber !== undefined && rawClaimNumber !== null) {
+        return {
+          ...claim,
+          'Claim number': typeof rawClaimNumber === 'string'
+            ? rawClaimNumber
+            : String(rawClaimNumber),
+        };
+      }
     }
     return claim;
   }

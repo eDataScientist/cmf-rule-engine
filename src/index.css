@@ -1,24 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(100% 0 0);
-  --color-foreground: oklch(9% 0 0);
-  --color-card: oklch(100% 0 0);
-  --color-card-foreground: oklch(9% 0 0);
-  --color-popover: oklch(100% 0 0);
-  --color-popover-foreground: oklch(9% 0 0);
-  --color-primary: oklch(10% 0 0);
-  --color-primary-foreground: oklch(98% 0 0);
-  --color-secondary: oklch(96% 0 0);
-  --color-secondary-foreground: oklch(10% 0 0);
-  --color-muted: oklch(96% 0 0);
-  --color-muted-foreground: oklch(46% 0 0);
-  --color-accent: oklch(96% 0 0);
-  --color-accent-foreground: oklch(10% 0 0);
-  --color-destructive: oklch(60% 0.2 25);
-  --color-destructive-foreground: oklch(98% 0 0);
-  --color-border: oklch(90% 0 0);
-  --color-input: oklch(90% 0 0);
-  --color-ring: oklch(10% 0 0);
-  --radius: 0.5rem;
+  --color-background: oklch(98% 0.015 100);
+  --color-foreground: oklch(28% 0.045 25);
+  --color-card: oklch(99% 0.01 95);
+  --color-card-foreground: oklch(30% 0.035 27);
+  --color-popover: oklch(99% 0.01 95);
+  --color-popover-foreground: oklch(30% 0.035 27);
+  --color-primary: oklch(72% 0.12 45);
+  --color-primary-foreground: oklch(99% 0.02 96);
+  --color-secondary: oklch(97% 0.035 110);
+  --color-secondary-foreground: oklch(34% 0.04 30);
+  --color-muted: oklch(95% 0.02 100);
+  --color-muted-foreground: oklch(50% 0.03 32);
+  --color-accent: oklch(96% 0.05 100);
+  --color-accent-foreground: oklch(30% 0.04 32);
+  --color-destructive: oklch(65% 0.2 25);
+  --color-destructive-foreground: oklch(98% 0.01 100);
+  --color-border: oklch(92% 0.02 100);
+  --color-input: oklch(93% 0.015 100);
+  --color-ring: oklch(72% 0.12 45);
+  --radius: 1.25rem;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Serif 4", "Playfair Display", "Times New Roman", serif;
+  background: radial-gradient(circle at top right, oklch(99% 0.02 100) 0%, transparent 45%),
+    radial-gradient(circle at 20% 20%, oklch(96% 0.07 80) 0%, transparent 40%),
+    linear-gradient(135deg, oklch(100% 0 0), oklch(97% 0.03 120));
+  color: var(--color-foreground);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+::selection {
+  background: oklch(88% 0.08 60);
+  color: oklch(30% 0.04 27);
+}
+
+#root {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.45s ease-out both;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

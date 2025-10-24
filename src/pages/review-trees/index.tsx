@@ -104,7 +104,7 @@ export default function ReviewTrees() {
       {trees.length === 0 ? (
         <EmptyState />
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList>
             <TabsTrigger value="trees">All Trees</TabsTrigger>
             <TabsTrigger value="form" disabled={!selectedTree}>Claim Form</TabsTrigger>
