@@ -586,14 +586,34 @@
   - [x] Rename "Review Trees" to "Decision Trees"
   - [x] Update navigation items array
 
+### Visualization Layout Enhancements
+- [x] Restructure visualization tab to side-by-side grid layout
+  - [x] Left column: 380px fixed width for ScoreCard
+  - [x] Right column: Flexible width for tree visualizer
+  - [x] Responsive breakpoint (stacks on mobile)
+
+- [x] Redesign ScoreCard to match gig_tree_crawl.html
+  - [x] Dark background (#18181b) with white text
+  - [x] Large percentage display (3.5rem font)
+  - [x] Monospace score breakdown
+  - [x] Risk badge as colored pill (green/yellow/red)
+
+- [x] Add expandable tree breakdown section
+  - [x] Clickable sum row with chevron icon
+  - [x] Individual tree contributions display
+  - [x] Color-coded values (red=positive, green=negative)
+  - [x] Smooth expand/collapse animation
+  - [x] Semi-transparent row backgrounds
+
 ### Git Commits
 - [x] Commit: Implement 3-tab Decision Trees workflow with traced visualization
+- [x] Commit: Update visualization layout - side-by-side with expandable breakdown
 
 ---
 
 ## Current Status
 
-**Total Tasks Completed:** 318 (+88 from Phase 14)
+**Total Tasks Completed:** 327 (+97 from Phase 14)
 **Total Tasks Pending:** 94 (in TODO.md)
 **Current Phase:** ScoreCard and 3-Tab Workflow Complete - Ready for Table Visualizer
 
@@ -614,4 +634,4 @@
 
 ---
 
-_Last Updated: 2025-10-24 18:30_
+_Last Updated: 2025-10-24 19:45_
