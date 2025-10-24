@@ -55,12 +55,14 @@ export class TabularClaimsProcessor {
    * Extract feature name from condition string
    */
   private extractFeatureFromCondition(condition: string): string | null {
-    // Match patterns: "feature <= value", "feature > value", "feature is Yes/No"
+    // Match patterns: "feature <= value", "feature >= value", "feature > value", "feature is Yes/No"
     const leMatch = condition.match(/^(.+?)\s*<=\s*(.+)$/);
+    const geMatch = condition.match(/^(.+?)\s*>=\s*(.+)$/);
     const gtMatch = condition.match(/^(.+?)\s*>\s*(.+)$/);
     const isMatch = condition.match(/^(.+?)\s+is\s+(Yes|No)$/i);
 
     if (leMatch) return leMatch[1].trim();
+    if (geMatch) return geMatch[1].trim();
     if (gtMatch) return gtMatch[1].trim();
     if (isMatch) return isMatch[1].trim();
 

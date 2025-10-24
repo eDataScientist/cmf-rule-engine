@@ -17,14 +17,15 @@ export function extractFeatures(trees: { title: string; root: TreeNode }[]): Map
 
     // Extract feature name from condition
     const lteMatch = condition.match(/^(.+?)\s*<=\s*(.+)$/);
+    const gteMatch = condition.match(/^(.+?)\s*>=\s*(.+)$/);
     const gtMatch = condition.match(/^(.+?)\s*>\s*(.+)$/);
     const isMatch = condition.match(/^(.+?)\s+is\s+(.+)$/);
 
     let featureName: string | null = null;
     let conditionType: 'number' | 'boolean' = 'number';
 
-    if (lteMatch || gtMatch) {
-      const match = lteMatch || gtMatch;
+    if (lteMatch || gteMatch || gtMatch) {
+      const match = lteMatch || gteMatch || gtMatch;
       featureName = match![1].trim();
       conditionType = 'number';
     } else if (isMatch) {

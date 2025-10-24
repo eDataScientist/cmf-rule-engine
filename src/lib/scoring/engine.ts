@@ -94,6 +94,7 @@ function normalizeText(value: unknown): string {
 
 function evaluateCondition(condition: string, claim: NormalizedClaim): boolean {
   const lteMatch = condition.match(/(.+?)\s*<=\s*(.+)/);
+  const gteMatch = condition.match(/(.+?)\s*>=\s*(.+)/);
   const gtMatch = condition.match(/(.+?)\s*>\s*(.+)/);
   const isMatch = condition.match(/(.+?)\s+is\s+(.+)/);
 
@@ -102,6 +103,13 @@ function evaluateCondition(condition: string, claim: NormalizedClaim): boolean {
     const claimValue = toNumeric(claim[feature.trim()]);
     const thresholdValue = toNumeric(threshold);
     return claimValue <= thresholdValue;
+  }
+
+  if (gteMatch) {
+    const [, feature, threshold] = gteMatch;
+    const claimValue = toNumeric(claim[feature.trim()]);
+    const thresholdValue = toNumeric(threshold);
+    return claimValue >= thresholdValue;
   }
 
   if (gtMatch) {
