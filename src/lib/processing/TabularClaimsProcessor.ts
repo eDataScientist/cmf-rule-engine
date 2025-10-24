@@ -103,9 +103,17 @@ export class TabularClaimsProcessor {
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
     if ('Claim Number' in claim && !('Claim number' in claim)) {
+      const claimNumberRaw = claim['Claim Number'];
+      const claimNumber =
+        typeof claimNumberRaw === 'string'
+          ? claimNumberRaw
+          : claimNumberRaw !== undefined && claimNumberRaw !== null
+            ? String(claimNumberRaw)
+            : undefined;
+
       return {
         ...claim,
-        'Claim number': claim['Claim Number'],
+        'Claim number': claimNumber,
       };
     }
     return claim;
