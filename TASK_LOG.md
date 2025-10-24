@@ -447,11 +447,155 @@
 
 ---
 
+## Phase 14: ScoreCard & 3-Tab Decision Trees Workflow ✅
+
+### ScoreCard Component Module
+- [x] Create components/shared/ScoreCard/RiskBadge.tsx
+  - [x] Badge variants for low/moderate/high risk
+  - [x] Color-coded icons (CheckCircle2, AlertCircle, AlertTriangle)
+  - [x] Size variants (sm, default, lg)
+
+- [x] Create components/shared/ScoreCard/ProbabilityIndicator.tsx
+  - [x] Fraud probability percentage display
+  - [x] Animated progress bar with color gradient
+  - [x] Risk-level color coding (green/yellow/red)
+
+- [x] Create components/shared/ScoreCard/ScoreBreakdown.tsx
+  - [x] Display score contribution per tree
+  - [x] Color-coded values (positive=red, negative=green)
+  - [x] Total score summary
+
+- [x] Create components/shared/ScoreCard/index.tsx
+  - [x] Integrate all sub-components
+  - [x] Optional breakdown toggle
+  - [x] Claim number display
+
+### Tabs UI Component
+- [x] Create components/ui/tabs.tsx
+  - [x] Tabs context for state management
+  - [x] TabsList container
+  - [x] TabsTrigger buttons with active states
+  - [x] TabsContent conditional rendering
+
+### Visualize Trace Components
+- [x] Create pages/visualize-trace/components/TreeSelector.tsx
+  - [x] Dropdown to select saved trees
+  - [x] Empty state when no trees available
+
+- [x] Create pages/visualize-trace/components/InputModeToggle.tsx
+  - [x] Toggle between Form and JSON input modes
+  - [x] Icons for each mode
+
+- [x] Create pages/visualize-trace/components/ClaimForm.tsx
+  - [x] Dynamic form generation based on tree features
+  - [x] Extract features from tree conditions
+  - [x] Auto-detect field types (number vs boolean)
+  - [x] Convert snake_case to readable labels
+  - [x] Always show Claim Number field
+  - [x] Sort fields alphabetically
+  - [x] Responsive grid layout
+
+- [x] Create pages/visualize-trace/components/JsonInput.tsx
+  - [x] JSON textarea with validation
+  - [x] Real-time parsing feedback
+  - [x] Valid/Invalid indicators
+
+- [x] Create pages/visualize-trace/components/TracedTreeVisualizer.tsx
+  - [x] Render trees with proper node IDs
+  - [x] Apply path highlighting with opacity
+  - [x] Color leaf nodes using HSL scale (red to green)
+  - [x] Show active/inactive path states
+
+### Visualize Trace Hooks
+- [x] Create pages/visualize-trace/hooks/useClaimEvaluation.ts
+  - [x] Call evaluateClaim from scoring engine
+  - [x] Handle loading and error states
+  - [x] Validate claim number requirement
+
+- [x] Create pages/visualize-trace/hooks/useImageExport.ts
+  - [x] Export trace as PNG using html2canvas
+  - [x] Handle export loading state
+  - [x] Generate filename from claim number
+
+### Visualize Trace Utilities
+- [x] Create pages/visualize-trace/utils/extractFeatures.ts
+  - [x] Traverse tree nodes to extract feature names
+  - [x] Detect field types from conditions
+  - [x] Return Map of unique features with metadata
+
+### Review Trees Page Restructure
+- [x] Restructure pages/review-trees/index.tsx with 3 tabs
+  - [x] Tab 1: All Trees grid view
+  - [x] Tab 2: Claim Form (form/JSON toggle)
+  - [x] Tab 3: Visualization (ScoreCard + TracedTree)
+  - [x] State management for selected tree and claim data
+  - [x] Auto-navigate to form tab on Visualize click
+  - [x] Auto-navigate to visualization tab on Evaluate click
+
+- [x] Update pages/review-trees/components/TreeCard.tsx
+  - [x] Add "Visualize" button with Eye icon
+  - [x] Keep "Delete" button with confirmation flow
+  - [x] Update button layout (Visualize + Delete side-by-side)
+
+- [x] Update pages/review-trees/components/TreeGrid.tsx
+  - [x] Add onVisualize callback prop
+  - [x] Pass through to TreeCard components
+
+### Scoring Engine Enhancements
+- [x] Update lib/scoring/engine.ts
+  - [x] Create evaluateNodeWithId function
+  - [x] Generate proper node IDs during traversal (t0-root, t0-root-1, etc.)
+  - [x] Track path as array of node ID strings
+  - [x] Update evaluateClaim to use new ID-based evaluation
+  - [x] Return node IDs in TreePath for DOM highlighting
+
+### Tree Visualization Complete Rewrite
+- [x] Rewrite components/shared/TreeVisualizer/styles.css
+  - [x] All nodes start at opacity: 0.3 (dimmed)
+  - [x] path-active class sets opacity: 1 (highlighted)
+  - [x] Gray connectors by default, black for active paths
+  - [x] Leaf nodes colored dynamically via inline styles
+  - [x] Root node special styling
+  - [x] Preview mode: opacity: 1 !important, all connectors black
+
+- [x] Rewrite components/shared/TreeVisualizer/TreeNode.tsx
+  - [x] Add preview-mode class to all nodes
+  - [x] Calculate min/max leaf values for color scaling
+  - [x] Apply HSL color to leaf nodes
+  - [x] Show +/- prefix on leaf values
+  - [x] Full opacity for preview, no path dependency
+
+- [x] Update components/shared/TreeVisualizer/index.tsx
+  - [x] Calculate min/max leaf values
+  - [x] Pass to TreeNodeComponent for coloring
+
+- [x] Complete rewrite of TracedTreeVisualizer
+  - [x] Assign HTML id attributes matching scoring engine IDs
+  - [x] Build path Set from nodeIds array
+  - [x] Apply path-active + active classes conditionally
+  - [x] Color leaf nodes with HSL gradient
+  - [x] Recursive rendering with proper ID propagation
+
+### Router & Navigation Updates
+- [x] Update App.tsx
+  - [x] Remove /visualize-trace route
+  - [x] Keep /review-trees, /generate-tree, /table-visualizer
+
+- [x] Update components/shared/Layout/Navbar.tsx
+  - [x] Remove "Visualize Trace" nav item
+  - [x] Rename "Review Trees" to "Decision Trees"
+  - [x] Update navigation items array
+
+### Git Commits
+- [x] Commit: Implement 3-tab Decision Trees workflow with traced visualization
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 230
+**Total Tasks Completed:** 318 (+88 from Phase 14)
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Ready to begin ScoreCard component and Visualize Trace page
+**Current Phase:** ScoreCard and 3-Tab Workflow Complete - Ready for Table Visualizer
 
 ---
 
@@ -460,8 +604,8 @@
 1. [x] Fix preview scrollbar issue (UI bug) ✅
 2. [x] Commit UI fixes ✅
 3. [x] Create CLAUDE.md documentation ✅
-4. [ ] Build ScoreCard component module
-5. [ ] Build Visualize Trace page with scoring
+4. [x] Build ScoreCard component module ✅
+5. [x] Build Visualize Trace page with scoring ✅ (merged into Decision Trees)
 6. [ ] Build Table Visualizer page with CSV upload
 7. [ ] Implement Medical/Motor theme variants
 8. [ ] Add error boundaries and loading states
@@ -470,4 +614,4 @@
 
 ---
 
-_Last Updated: 2025-10-23 17:00_
+_Last Updated: 2025-10-24 18:30_
