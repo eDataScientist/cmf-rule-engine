@@ -50,7 +50,7 @@ function recordToTree(record: TreeRecord): Tree {
     id: record.id,
     name: record.name,
     treeType: record.treeType as 'medical' | 'motor',
-    structure: JSON.parse(record.structure),
+    structure: JSON.parse(record.structure as string),
     createdAt: new Date(record.createdAt),
   };
 }

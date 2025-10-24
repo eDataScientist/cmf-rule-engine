@@ -611,11 +611,104 @@
 
 ---
 
+## Phase 15: Table Visualizer with Bulk CSV Processing ✅
+
+### UI Components (shadcn/ui)
+- [x] Create components/ui/table.tsx
+  - [x] Table wrapper with overflow container
+  - [x] TableHeader with border styling
+  - [x] TableBody component
+  - [x] TableRow with hover effects
+  - [x] TableHead for column headers
+  - [x] TableCell for data cells
+
+### Table Visualizer Components
+- [x] Create pages/table-visualizer/components/CsvUploader.tsx
+  - [x] Drag and drop file upload
+  - [x] File type validation (.csv only)
+  - [x] Display selected file info (name, size)
+  - [x] Clear file functionality
+  - [x] Loading state support
+
+- [x] Create pages/table-visualizer/components/ClaimsTable.tsx
+  - [x] Display claims in scrollable table
+  - [x] Show first 5 feature columns dynamically
+  - [x] Display score, probability, and risk columns
+  - [x] RiskBadge integration
+  - [x] Empty state placeholder
+  - [x] Processing state indicators
+
+- [x] Create pages/table-visualizer/components/ProcessControls.tsx
+  - [x] Tree selector dropdown
+  - [x] Process Claims button with loading state
+  - [x] Export Results button
+  - [x] Responsive grid layout
+  - [x] Disabled states for buttons
+
+### Table Visualizer Hooks
+- [x] Create pages/table-visualizer/hooks/useCsvParser.ts
+  - [x] Parse CSV files using PapaParse
+  - [x] Dynamic typing for numeric values
+  - [x] Skip empty lines
+  - [x] Error handling for invalid CSV
+  - [x] Loading state management
+  - [x] Clear function to reset state
+
+- [x] Create pages/table-visualizer/hooks/useBulkEvaluation.ts
+  - [x] Evaluate multiple claims sequentially
+  - [x] Call evaluateClaim for each claim
+  - [x] Return TraceResult array
+  - [x] Error handling with descriptive messages
+  - [x] Processing state management
+
+- [x] Create pages/table-visualizer/hooks/useCsvExport.ts
+  - [x] Export results to CSV using PapaParse
+  - [x] Combine claim data with evaluation results
+  - [x] Add fraud_score, fraud_probability, risk_level columns
+  - [x] Generate downloadable CSV file
+  - [x] Custom filename support
+
+### Table Visualizer Page
+- [x] Update pages/table-visualizer/index.tsx
+  - [x] Integrate all components and hooks
+  - [x] Load trees from database on mount
+  - [x] Handle file upload and parsing
+  - [x] Manage claim evaluation workflow
+  - [x] Display results in ClaimsTable
+  - [x] Export functionality
+  - [x] Error display for parse/eval errors
+  - [x] Loading states throughout
+
+### Bug Fixes & Type Safety
+- [x] Fix TypeScript errors in existing code
+  - [x] Update DrizzleSqliteWasmDatabase to SQLJsDatabase
+  - [x] Add disabled prop to TabsTrigger component
+  - [x] Fix ClaimForm number input type handling
+  - [x] Fix RiskBadge prop name (riskLevel not risk)
+  - [x] Fix CsvUploader button structure
+  - [x] Fix JSON.parse type assertion in recordToTree
+  - [x] Fix PapaParse error callback type
+
+### Test Data
+- [x] Create simple-claims.csv (3 features, 10 claims)
+  - [x] Vehicle brand boolean features (0/1)
+  - [x] Simple test dataset
+
+- [x] Create complex-claims.csv (6 features, 15 claims)
+  - [x] Numeric features (Approved Claim Amount, Days, Value Class)
+  - [x] Boolean vehicle brand features (0/1)
+  - [x] More comprehensive test dataset
+
+### Git Commits
+- [x] Commit: Implement Table Visualizer with bulk CSV processing
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 327 (+97 from Phase 14)
+**Total Tasks Completed:** 369 (+42 from Phase 15)
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** ScoreCard and 3-Tab Workflow Complete - Ready for Table Visualizer
+**Current Phase:** Table Visualizer Complete - Ready for Theme Variants & Polish
 
 ---
 
@@ -626,7 +719,7 @@
 3. [x] Create CLAUDE.md documentation ✅
 4. [x] Build ScoreCard component module ✅
 5. [x] Build Visualize Trace page with scoring ✅ (merged into Decision Trees)
-6. [ ] Build Table Visualizer page with CSV upload
+6. [x] Build Table Visualizer page with CSV upload ✅
 7. [ ] Implement Medical/Motor theme variants
 8. [ ] Add error boundaries and loading states
 9. [ ] Add DB export/import functionality
@@ -634,4 +727,4 @@
 
 ---
 
-_Last Updated: 2025-10-24 19:45_
+_Last Updated: 2025-10-24 22:15_

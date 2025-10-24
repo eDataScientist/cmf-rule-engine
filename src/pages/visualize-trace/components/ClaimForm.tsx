@@ -16,7 +16,7 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
   };
 
   const handleNumberChange = (field: keyof ClaimData, value: string) => {
-    const num = value === '' ? undefined : parseFloat(value);
+    const num = value === '' ? 0 : parseFloat(value);
     updateField(field, num);
   };
 
@@ -89,7 +89,7 @@ export function ClaimForm({ claim, onChange, features }: ClaimFormProps) {
                       id={fieldId}
                       type="number"
                       step="0.01"
-                      value={claim[feature.name] ?? ''}
+                      value={claim[feature.name] !== undefined ? String(claim[feature.name]) : ''}
                       onChange={(e) => handleNumberChange(feature.name, e.target.value)}
                       placeholder="0"
                     />

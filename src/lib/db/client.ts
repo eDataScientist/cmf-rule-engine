@@ -1,12 +1,13 @@
 import initSqlJs, { type Database } from 'sql.js';
-import { drizzle, type DrizzleSqliteWasmDatabase } from 'drizzle-orm/sql-js';
+import { drizzle } from 'drizzle-orm/sql-js';
+import type { SQLJsDatabase } from 'drizzle-orm/sql-js';
 import * as schema from './schema';
 import { loadDatabase, saveDatabase } from './persistence';
 
-let db: DrizzleSqliteWasmDatabase<typeof schema> | null = null;
+let db: SQLJsDatabase<typeof schema> | null = null;
 let sqliteDb: Database | null = null;
 
-export async function initDB(): Promise<DrizzleSqliteWasmDatabase<typeof schema>> {
+export async function initDB(): Promise<SQLJsDatabase<typeof schema>> {
   if (db) return db;
 
   const SQL = await initSqlJs({
@@ -41,7 +42,7 @@ export async function persistDB(): Promise<void> {
   await saveDatabase(data);
 }
 
-export function getDB(): DrizzleSqliteWasmDatabase<typeof schema> {
+export function getDB(): SQLJsDatabase<typeof schema> {
   if (!db) {
     throw new Error('Database not initialized. Call initDB() first.');
   }

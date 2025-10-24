@@ -1,0 +1,11 @@
+Claim Number,count_of_parts,sum_of_days,count_of_days,multiple_suppliers,vehicle_age,is_total_loss
+CLM001,2,15,3,0,5,0
+CLM002,5,45,8,1,12,0
+CLM003,1,7,2,0,3,0
+CLM004,8,90,15,1,15,1
+CLM005,3,20,5,0,7,0
+CLM006,6,60,12,1,10,0
+CLM007,1,5,1,0,2,0
+CLM008,10,120,20,1,18,1
+CLM009,4,30,6,1,8,0
+CLM010,2,12,3,0,4,0
