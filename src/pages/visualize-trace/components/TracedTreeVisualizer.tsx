@@ -3,32 +3,18 @@ import type { TreePath } from '@/lib/types/trace';
 import { isLeafNode } from '@/lib/types/tree';
 import { useMemo } from 'react';
 import '../../../components/shared/TreeVisualizer/styles.css';
+import {
+  parseCondition,
+  formatTrueLabel,
+  formatFalseLabel,
+  getMinMaxLeafValues,
+} from '@/components/shared/TreeVisualizer/utils';
 
 function getColorForValue(value: number, min: number, max: number): string {
   if (max === min) return `hsl(60, 70%, 45%)`;
   const normalized = (value - min) / (max - min);
   const hue = (1 - normalized) * 120; // 0 (red) to 120 (green)
   return `hsl(${hue}, 70%, 45%)`;
-}
-
-function getMinMaxLeafValues(trees: { title: string; root: TreeNode }[]): { min: number; max: number } {
-  const values: number[] = [];
-
-  function traverse(node: TreeNode) {
-    if (isLeafNode(node)) {
-      values.push(node.value);
-      return;
-    }
-    traverse(node.true_branch);
-    traverse(node.false_branch);
-  }
-
-  trees.forEach(tree => traverse(tree.root));
-
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values)
-  };
 }
 
 interface TracedTreeNodeProps {
@@ -41,19 +27,16 @@ interface TracedTreeNodeProps {
 }
 
 function TracedTreeNode({ node, nodeId, isRoot = false, pathSet, minValue, maxValue }: TracedTreeNodeProps) {
-  const isOnPath = pathSet.has(nodeId);
   const isLeaf = isLeafNode(node);
-
-  // Build classes
-  const classes = [];
-  if (isLeaf) classes.push('leaf');
-  if (isRoot) classes.push('root');
-  if (isOnPath) {
-    classes.push('path-active');
-    classes.push('active');
-  }
+  const isOnPath = pathSet.has(nodeId);
 
   if (isLeaf) {
+    const classes = ['leaf'];
+    if (isOnPath) {
+      classes.push('path-active');
+      classes.push('active');
+    }
+
     const color = getColorForValue(node.value, minValue, maxValue);
 
     return (
@@ -68,30 +51,72 @@ function TracedTreeNode({ node, nodeId, isRoot = false, pathSet, minValue, maxVa
     );
   }
 
-  // Decision node
+  const parsed = parseCondition(node.condition);
+  const featureLabel = parsed ? parsed.feature : node.condition;
+  const classes = [] as string[];
+  if (isRoot) classes.push('root');
+  if (isOnPath) {
+    classes.push('path-active');
+    classes.push('active');
+  }
+
   const trueBranchId = `${nodeId}-1`;
   const falseBranchId = `${nodeId}-2`;
+  const trueOnPath = pathSet.has(trueBranchId);
+  const falseOnPath = pathSet.has(falseBranchId);
+
+  if (!parsed) {
+    return (
+      <li id={nodeId} className={classes.join(' ')}>
+        <span className="report-node-content">{featureLabel}</span>
+        <ul>
+          <TracedTreeNode
+            node={node.true_branch}
+            nodeId={trueBranchId}
+            pathSet={pathSet}
+            minValue={minValue}
+            maxValue={maxValue}
+          />
+          <TracedTreeNode
+            node={node.false_branch}
+            nodeId={falseBranchId}
+            pathSet={pathSet}
+            minValue={minValue}
+            maxValue={maxValue}
+          />
+        </ul>
+      </li>
+    );
+  }
 
   return (
     <li id={nodeId} className={classes.join(' ')}>
-      <span className="report-node-content">
-        {node.condition}
-      </span>
+      <span className="report-node-content">{featureLabel}</span>
       <ul>
-        <TracedTreeNode
-          node={node.true_branch}
-          nodeId={trueBranchId}
-          pathSet={pathSet}
-          minValue={minValue}
-          maxValue={maxValue}
-        />
-        <TracedTreeNode
-          node={node.false_branch}
-          nodeId={falseBranchId}
-          pathSet={pathSet}
-          minValue={minValue}
-          maxValue={maxValue}
-        />
+        <li className={trueOnPath ? 'path-active active' : undefined}>
+          <span className="report-node-content">{formatTrueLabel(parsed)}</span>
+          <ul>
+            <TracedTreeNode
+              node={node.true_branch}
+              nodeId={trueBranchId}
+              pathSet={pathSet}
+              minValue={minValue}
+              maxValue={maxValue}
+            />
+          </ul>
+        </li>
+        <li className={falseOnPath ? 'path-active active' : undefined}>
+          <span className="report-node-content">{formatFalseLabel(parsed)}</span>
+          <ul>
+            <TracedTreeNode
+              node={node.false_branch}
+              nodeId={falseBranchId}
+              pathSet={pathSet}
+              minValue={minValue}
+              maxValue={maxValue}
+            />
+          </ul>
+        </li>
       </ul>
     </li>
   );

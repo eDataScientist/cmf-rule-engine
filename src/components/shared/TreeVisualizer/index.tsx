@@ -1,31 +1,11 @@
 import type { TreeNode } from '@/lib/types/tree';
-import { isLeafNode } from '@/lib/types/tree';
 import { TreeNodeComponent } from './TreeNode';
 import { useMemo } from 'react';
 import './styles.css';
+import { getMinMaxLeafValues } from './utils';
 
 interface TreeVisualizerProps {
   trees: { title: string; root: TreeNode }[];
-}
-
-function getMinMaxLeafValues(trees: { title: string; root: TreeNode }[]): { min: number; max: number } {
-  const values: number[] = [];
-
-  function traverse(node: TreeNode) {
-    if (isLeafNode(node)) {
-      values.push(node.value);
-      return;
-    }
-    traverse(node.true_branch);
-    traverse(node.false_branch);
-  }
-
-  trees.forEach(tree => traverse(tree.root));
-
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values)
-  };
 }
 
 export function TreeVisualizer({ trees }: TreeVisualizerProps) {
