@@ -4,7 +4,7 @@ import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
 import type { TreeNode } from '@/lib/types/tree';
 
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   missingColumns: string[];
   availableColumns: string[];

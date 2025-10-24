@@ -30,7 +30,7 @@ export function TabsList({ children, className }: { children: React.ReactNode; c
   return (
     <div
       className={cn(
-        'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+        'inline-flex h-12 items-center justify-center rounded-full border border-white/60 bg-white/70 p-1 text-muted-foreground shadow-inner shadow-slate-200/50 backdrop-blur',
         className
       )}
     >
@@ -59,10 +59,10 @@ export function TabsTrigger({
       onClick={() => !disabled && context.onValueChange(value)}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40',
         isActive
-          ? 'bg-background text-foreground shadow-sm'
-          : 'hover:bg-background/50'
+          ? 'bg-gradient-to-r from-primary/90 to-sky-400/80 text-primary-foreground shadow-lg shadow-sky-200/60'
+          : 'text-muted-foreground hover:bg-white/70 hover:shadow-sm'
       )}
     >
       {children}
