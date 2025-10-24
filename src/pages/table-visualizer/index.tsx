@@ -114,8 +114,8 @@ export default function TableVisualizer() {
       />
 
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error}</p>
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive shadow-inner">
+          {error}
         </div>
       )}
 
@@ -138,7 +138,7 @@ export default function TableVisualizer() {
                   <Label htmlFor="tree-select">Choose a tree model for evaluation</Label>
                   <select
                     id="tree-select"
-                    className="w-full p-2 border rounded-md bg-background"
+                    className="w-full rounded-xl border border-white/60 bg-white/80 px-4 py-2 text-sm text-slate-600 shadow-inner outline-none transition-all focus:border-slate-300 focus:ring-2 focus:ring-sky-200"
                     value={selectedTreeId || ''}
                     onChange={(e) => handleTreeSelect(e.target.value)}
                   >

@@ -167,7 +167,7 @@ export function TreeForm() {
                 return (
                   <div
                     key={candidate.key}
-                    className="flex flex-col gap-2 rounded-md border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/70 p-4 shadow-inner sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="space-y-1">
                       <p className="font-medium">
@@ -185,7 +185,7 @@ export function TreeForm() {
                           [candidate.key]: e.target.value === 'boolean',
                         }))
                       }
-                      className="w-full rounded-md border bg-background p-2 text-sm sm:w-auto"
+                      className="w-full rounded-xl border border-white/60 bg-white/80 px-4 py-2 text-sm text-slate-600 shadow-inner outline-none transition-all focus:border-slate-300 focus:ring-2 focus:ring-sky-200 sm:w-auto"
                     >
                       <option value="boolean">Use Yes/No</option>
                       <option value="numeric">Keep numeric ({candidate.operator} 0.5)</option>

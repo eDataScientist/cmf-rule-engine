@@ -103,9 +103,14 @@ export class TabularClaimsProcessor {
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
     if ('Claim Number' in claim && !('Claim number' in claim)) {
+      const claimNumber = claim['Claim Number'];
+      if (claimNumber == null) {
+        return claim;
+      }
+
       return {
         ...claim,
-        'Claim number': claim['Claim Number'],
+        'Claim number': typeof claimNumber === 'string' ? claimNumber : String(claimNumber),
       };
     }
     return claim;
@@ -128,7 +133,10 @@ export class TabularClaimsProcessor {
     }
 
     if ('Claim number' in claim && !('Claim number' in filtered)) {
-      filtered['Claim number'] = claim['Claim number'];
+      const claimNumber = claim['Claim number'];
+      if (claimNumber != null) {
+        filtered['Claim number'] = typeof claimNumber === 'string' ? claimNumber : String(claimNumber);
+      }
     }
 
     return filtered;
