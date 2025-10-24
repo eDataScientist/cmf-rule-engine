@@ -6,6 +6,7 @@
   padding: 15px;
   display: inline-block;
   text-align: left;
+  color: #111827;
 }
 
 .report-tree-title {
@@ -14,6 +15,7 @@
   margin: 0 0 12px 0;
   padding-bottom: 6px;
   border-bottom: 1px solid #e4e4e7;
+  color: #0f172a;
 }
 
 .report-tree {
@@ -31,7 +33,7 @@
 .report-tree li {
   position: relative;
   padding: 1px 0;
-  opacity: 0.3; /* CRITICAL: All nodes start dimmed */
+  opacity: 0.75; /* Keep inactive nodes legible while still dimmed */
 }
 
 .report-tree li.path-active {
@@ -89,6 +91,7 @@
   font-family: 'Fira Code', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 12px;
   font-weight: 500;
+  color: #0f172a;
 }
 
 /* Active node styling */

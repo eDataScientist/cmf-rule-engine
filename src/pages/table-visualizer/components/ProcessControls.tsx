@@ -35,14 +35,16 @@ export function ProcessControls({
           <Label htmlFor="tree-select">Select Decision Tree</Label>
           <select
             id="tree-select"
-            className="w-full p-2 border rounded-md bg-background disabled:opacity-50"
+            className="w-full rounded-md border border-border bg-white p-2 text-slate-900 shadow-sm transition focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
             value={selectedTreeId || ''}
             onChange={(e) => onTreeSelect(e.target.value)}
             disabled={isProcessing || trees.length === 0}
           >
-            <option value="">-- Select a tree --</option>
+            <option value="" style={{ color: '#0f172a' }}>
+              -- Select a tree --
+            </option>
             {trees.map((tree) => (
-              <option key={tree.id} value={tree.id}>
+              <option key={tree.id} value={tree.id} style={{ color: '#0f172a' }}>
                 {tree.name} ({tree.treeType})
               </option>
             ))}
