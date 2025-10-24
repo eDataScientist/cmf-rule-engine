@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { CsvUploader } from './components/CsvUploader';
-import { ColumnValidation } from './components/ColumnValidation';
+import { ColumnValidation, type ValidationResult } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
@@ -28,7 +28,7 @@ export default function TableVisualizer() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
   const [claimsWithResults, setClaimsWithResults] = useState<ClaimWithResult[]>([]);
-  const [validation, setValidation] = useState<any>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
 
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
@@ -114,8 +114,8 @@ export default function TableVisualizer() {
       />
 
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error}</p>
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive backdrop-blur">
+          {error}
         </div>
       )}
 
@@ -129,16 +129,18 @@ export default function TableVisualizer() {
         {/* Tab 1: Setup - Tree Selection + CSV Upload */}
         <TabsContent value="setup">
           <div className="space-y-6">
-            <Card>
+            <Card className="border-white/60 bg-white/80 shadow-lg shadow-black/5 backdrop-blur">
               <CardHeader>
-                <CardTitle>1. Select Decision Tree</CardTitle>
+                <CardTitle className="font-display text-xl">1. Select Decision Tree</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Label htmlFor="tree-select">Choose a tree model for evaluation</Label>
+                  <Label htmlFor="tree-select" className="text-[0.65rem] uppercase tracking-[0.35em] text-muted-foreground">
+                    Choose a tree model for evaluation
+                  </Label>
                   <select
                     id="tree-select"
-                    className="w-full p-2 border rounded-md bg-background"
+                    className="w-full rounded-2xl border border-white/60 bg-white/75 px-4 py-3 text-sm text-foreground shadow-inner shadow-black/5 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     value={selectedTreeId || ''}
                     onChange={(e) => handleTreeSelect(e.target.value)}
                   >
@@ -153,9 +155,9 @@ export default function TableVisualizer() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-white/60 bg-white/80 shadow-lg shadow-black/5 backdrop-blur">
               <CardHeader>
-                <CardTitle>2. Upload CSV File</CardTitle>
+                <CardTitle className="font-display text-xl">2. Upload CSV File</CardTitle>
               </CardHeader>
               <CardContent>
                 <CsvUploader
@@ -194,6 +196,8 @@ export default function TableVisualizer() {
                 onClick={handleExport}
                 disabled={!hasResults || isExporting}
                 variant="outline"
+                size="lg"
+                className="rounded-full px-8 text-[0.7rem] tracking-[0.25em] uppercase"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Export Results

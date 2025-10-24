@@ -103,9 +103,14 @@ export class TabularClaimsProcessor {
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
     if ('Claim Number' in claim && !('Claim number' in claim)) {
+      const canonical = claim['Claim Number'];
+      if (canonical === undefined || canonical === null) {
+        return claim;
+      }
+
       return {
         ...claim,
-        'Claim number': claim['Claim Number'],
+        'Claim number': typeof canonical === 'string' ? canonical : String(canonical),
       };
     }
     return claim;
@@ -181,13 +186,19 @@ export class TabularClaimsProcessor {
   /**
    * Export results with only required columns plus scores
    */
-  exportResults(claims: ClaimData[], results: TraceResult[]): any[] {
+  exportResults(
+    claims: ClaimData[],
+    results: TraceResult[]
+  ): Array<Record<string, string | number | boolean>> {
     return claims.map((claim, idx) => {
       const filtered = this.filterForExport(claim);
       const result = results[idx];
+      const sanitized = Object.fromEntries(
+        Object.entries(filtered).filter(([, value]) => value !== undefined)
+      ) as Record<string, string | number | boolean>;
 
       return {
-        ...filtered,
+        ...sanitized,
         fraud_score: parseFloat(result.totalScore.toFixed(3)),
         fraud_probability: parseFloat((result.probability * 100).toFixed(1)),
         risk_level: result.riskLevel,

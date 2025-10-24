@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   missingColumns: string[];
   availableColumns: string[];
@@ -23,20 +23,20 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-white/60 bg-white/80 shadow-lg shadow-black/5 backdrop-blur">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileCheck className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3 font-display text-xl">
+            <FileCheck className="h-5 w-5 text-primary" />
             Column Validation
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           {/* Validation Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/50 bg-white/70 p-4">
             {validation.isValid ? (
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <span className="text-green-600 font-medium">
+                <span className="font-medium text-green-700">
                   All required columns present
                 </span>
               </>
@@ -51,8 +51,10 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
           </div>
 
           {/* Required Columns */}
-          <div>
-            <h3 className="font-medium mb-2">Required Columns ({validation.requiredColumns.length})</h3>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Required Columns ({validation.requiredColumns.length})
+            </h3>
             <div className="flex flex-wrap gap-2">
               {validation.requiredColumns.map((col) => {
                 const isPresent = validation.availableColumns.includes(col);
@@ -72,16 +74,16 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
 
           {/* Missing Columns Warning */}
           {validation.missingColumns.length > 0 && (
-            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+            <div className="space-y-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-5">
               <p className="font-medium text-destructive mb-2">
                 Missing Columns ({validation.missingColumns.length}):
               </p>
-              <ul className="list-disc list-inside text-sm text-destructive/80 space-y-1">
+              <ul className="list-disc list-inside space-y-1 text-sm text-destructive/80">
                 {validation.missingColumns.map((col) => (
                   <li key={col} className="font-mono">{col}</li>
                 ))}
               </ul>
-              <p className="text-sm text-muted-foreground mt-3">
+              <p className="text-sm text-muted-foreground">
                 Please ensure your CSV file contains all required columns with exact matching names (including underscores and capitalization).
               </p>
             </div>
@@ -89,8 +91,8 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
 
           {/* Extra Columns Info */}
           {extraColumns.length > 0 && validation.isValid && (
-            <div className="p-4 bg-muted/50 border rounded-md">
-              <p className="font-medium mb-2">
+            <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
+              <p className="font-medium">
                 Extra Columns ({extraColumns.length}) - Will be ignored:
               </p>
               <div className="flex flex-wrap gap-2">
@@ -110,7 +112,7 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
                 onClick={onProceed}
                 disabled={isProcessing}
                 size="lg"
-                className="w-full"
+                className="w-full rounded-full px-8 text-[0.75rem] tracking-[0.3em] uppercase"
               >
                 {isProcessing ? 'Processing...' : 'Process Claims'}
               </Button>

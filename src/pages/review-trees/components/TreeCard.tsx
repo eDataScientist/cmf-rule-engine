@@ -3,7 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trash2, Activity, Heart, Calendar, Eye } from 'lucide-react';
-import type { Tree } from '@/lib/types/tree';
+import type { Tree, TreeNode } from '@/lib/types/tree';
+import { isLeafNode } from '@/lib/types/tree';
 
 interface TreeCardProps {
   tree: Tree;
@@ -26,19 +27,25 @@ export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardPr
   }, 0);
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
+    <Card className="group relative overflow-hidden border-white/60 bg-white/70 shadow-lg shadow-black/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/30" />
+      </div>
+
+      <CardHeader className="relative">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{tree.name}</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
+          <div className="space-y-2">
+            <CardTitle className="font-display text-xl font-semibold text-foreground">
+              {tree.name}
+            </CardTitle>
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 text-primary" />
               {new Date(tree.createdAt).toLocaleDateString()}
             </div>
           </div>
           <Badge
             variant={tree.treeType === 'motor' ? 'default' : 'secondary'}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 rounded-full px-3 py-1 text-[0.65rem] tracking-[0.3em] uppercase"
           >
             {tree.treeType === 'motor' ? (
               <Activity className="h-3 w-3" />
@@ -50,59 +57,61 @@ export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardPr
         </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="flex gap-3">
-          <div className="flex-1 space-y-1">
-            <p className="text-sm text-muted-foreground">Trees</p>
-            <p className="text-2xl font-bold">{treeCount}</p>
-          </div>
-          <div className="flex-1 space-y-1">
-            <p className="text-sm text-muted-foreground">Leaf Nodes</p>
-            <p className="text-2xl font-bold">{totalLeaves}</p>
-          </div>
+      <CardContent className="relative grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-inner shadow-black/5">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+            Trees
+          </p>
+          <p className="mt-3 font-display text-3xl text-foreground">{treeCount}</p>
+        </div>
+        <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-inner shadow-black/5">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+            Leaf Nodes
+          </p>
+          <p className="mt-3 font-display text-3xl text-foreground">{totalLeaves}</p>
         </div>
       </CardContent>
 
-      <CardFooter className="flex gap-2">
+      <CardFooter className="relative flex flex-col gap-3 p-6 pt-0 sm:flex-row">
         {!showConfirm ? (
           <>
             <Button
               variant="default"
-              size="sm"
+              size="lg"
               onClick={() => onVisualize(tree.id)}
-              className="flex-1"
+              className="flex-1 rounded-full px-8 text-[0.7rem] tracking-[0.25em] uppercase"
             >
-              <Eye className="h-4 w-4 mr-2" />
+              <Eye className="mr-2 h-4 w-4" />
               Visualize
             </Button>
             <Button
-              variant="destructive"
-              size="sm"
+              variant="outline"
+              size="lg"
               onClick={() => setShowConfirm(true)}
               disabled={isDeleting}
-              className="flex-1"
+              className="flex-1 rounded-full px-8 text-[0.7rem] tracking-[0.25em] uppercase"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
           </>
         ) : (
           <>
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="lg"
               onClick={() => setShowConfirm(false)}
               disabled={isDeleting}
-              className="flex-1"
+              className="flex-1 rounded-full px-8 text-[0.7rem] tracking-[0.25em] uppercase"
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
-              size="sm"
+              size="lg"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex-1"
+              className="flex-1 rounded-full px-8 text-[0.7rem] tracking-[0.25em] uppercase"
             >
               {isDeleting ? 'Deleting...' : 'Confirm'}
             </Button>
@@ -113,7 +122,7 @@ export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardPr
   );
 }
 
-function countLeaves(node: any): number {
-  if ('value' in node) return 1;
+function countLeaves(node: TreeNode): number {
+  if (isLeafNode(node)) return 1;
   return countLeaves(node.true_branch) + countLeaves(node.false_branch);
 }

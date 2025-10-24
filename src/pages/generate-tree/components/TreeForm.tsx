@@ -103,7 +103,7 @@ export function TreeForm() {
       await save(name, treeType, structureToSave);
       setShowSaveDialog(false);
       navigate('/review-trees');
-    } catch (err) {
+    } catch {
       // Error is already handled in the hook
     }
   };
