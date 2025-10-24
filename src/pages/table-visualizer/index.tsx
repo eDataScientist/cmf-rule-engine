@@ -11,6 +11,7 @@ import { ColumnValidation } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
+import type { ValidationResult } from './hooks/useBulkEvaluation';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
 import { getTrees } from '@/lib/db/operations';
@@ -28,7 +29,7 @@ export default function TableVisualizer() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
   const [claimsWithResults, setClaimsWithResults] = useState<ClaimWithResult[]>([]);
-  const [validation, setValidation] = useState<any>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
 
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();

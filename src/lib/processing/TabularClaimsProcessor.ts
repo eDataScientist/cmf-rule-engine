@@ -11,6 +11,12 @@ interface ValidationResult {
   requiredColumns: string[];
 }
 
+type ExportedClaimRow = ClaimData & {
+  fraud_score: number;
+  fraud_probability: number;
+  risk_level: TraceResult['riskLevel'];
+};
+
 /**
  * Comprehensive class for handling tabular claims data ingestion and processing
  */
@@ -103,12 +109,36 @@ export class TabularClaimsProcessor {
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
     if ('Claim Number' in claim && !('Claim number' in claim)) {
-      return {
-        ...claim,
-        'Claim number': claim['Claim Number'],
-      };
+      const normalizedClaimNumber = this.normalizeClaimNumberValue(
+        claim['Claim Number']
+      );
+
+      if (normalizedClaimNumber !== undefined) {
+        return {
+          ...claim,
+          'Claim number': normalizedClaimNumber,
+        };
+      }
     }
     return claim;
+  }
+
+  private normalizeClaimNumberValue(
+    value: string | number | boolean | undefined
+  ): string | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    return undefined;
   }
 
   /**
@@ -181,7 +211,7 @@ export class TabularClaimsProcessor {
   /**
    * Export results with only required columns plus scores
    */
-  exportResults(claims: ClaimData[], results: TraceResult[]): any[] {
+  exportResults(claims: ClaimData[], results: TraceResult[]): ExportedClaimRow[] {
     return claims.map((claim, idx) => {
       const filtered = this.filterForExport(claim);
       const result = results[idx];
@@ -191,7 +221,7 @@ export class TabularClaimsProcessor {
         fraud_score: parseFloat(result.totalScore.toFixed(3)),
         fraud_probability: parseFloat((result.probability * 100).toFixed(1)),
         risk_level: result.riskLevel,
-      };
+      } satisfies ExportedClaimRow;
     });
   }
 }

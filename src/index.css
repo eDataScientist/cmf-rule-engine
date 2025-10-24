@@ -1,24 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(100% 0 0);
-  --color-foreground: oklch(9% 0 0);
-  --color-card: oklch(100% 0 0);
-  --color-card-foreground: oklch(9% 0 0);
-  --color-popover: oklch(100% 0 0);
-  --color-popover-foreground: oklch(9% 0 0);
-  --color-primary: oklch(10% 0 0);
-  --color-primary-foreground: oklch(98% 0 0);
-  --color-secondary: oklch(96% 0 0);
-  --color-secondary-foreground: oklch(10% 0 0);
-  --color-muted: oklch(96% 0 0);
-  --color-muted-foreground: oklch(46% 0 0);
-  --color-accent: oklch(96% 0 0);
-  --color-accent-foreground: oklch(10% 0 0);
-  --color-destructive: oklch(60% 0.2 25);
+  --color-background: oklch(97% 0.015 250);
+  --color-foreground: oklch(23% 0.015 250);
+  --color-card: oklch(100% 0 0 / 0.82);
+  --color-card-foreground: oklch(20% 0.012 250);
+  --color-popover: oklch(100% 0 0 / 0.9);
+  --color-popover-foreground: oklch(22% 0.012 250);
+  --color-primary: oklch(63% 0.12 240);
+  --color-primary-foreground: oklch(98% 0.01 250);
+  --color-secondary: oklch(93% 0.02 230 / 0.75);
+  --color-secondary-foreground: oklch(25% 0.01 240);
+  --color-muted: oklch(92% 0.01 240);
+  --color-muted-foreground: oklch(52% 0.02 245);
+  --color-accent: oklch(95% 0.04 220 / 0.75);
+  --color-accent-foreground: oklch(28% 0.015 245);
+  --color-destructive: oklch(63% 0.17 25);
   --color-destructive-foreground: oklch(98% 0 0);
-  --color-border: oklch(90% 0 0);
-  --color-input: oklch(90% 0 0);
-  --color-ring: oklch(10% 0 0);
-  --radius: 0.5rem;
+  --color-border: oklch(88% 0.01 230 / 0.6);
+  --color-input: oklch(92% 0.01 230 / 0.9);
+  --color-ring: oklch(60% 0.12 240);
+  --radius: 1.25rem;
+}
+
+:root {
+  color-scheme: light;
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+      radial-gradient(circle at 20% 20%, rgba(136, 193, 255, 0.22), transparent 55%),
+      radial-gradient(circle at 80% 0%, rgba(209, 233, 255, 0.4), transparent 65%),
+      linear-gradient(120deg, rgba(248, 250, 255, 0.85), rgba(248, 252, 255, 0.95));
+  color: var(--color-foreground);
+  min-height: 100vh;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-primary) 65%, white);
+  color: var(--color-primary-foreground);
 }
