@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { Loader2, Download, ChevronDown } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { ColumnValidation } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
+import type { ValidationResult } from './hooks/useBulkEvaluation';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
 import { getTrees } from '@/lib/db/operations';
@@ -28,7 +29,7 @@ export default function TableVisualizer() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
   const [claimsWithResults, setClaimsWithResults] = useState<ClaimWithResult[]>([]);
-  const [validation, setValidation] = useState<any>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
 
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
@@ -114,8 +115,8 @@ export default function TableVisualizer() {
       />
 
       {error && (
-        <div className="rounded-2xl border border-destructive/25 bg-destructive/10 p-4 shadow-[0_18px_45px_-35px_rgba(248,113,113,0.8)]">
-          <p className="text-sm font-medium text-destructive">{error}</p>
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
@@ -134,26 +135,21 @@ export default function TableVisualizer() {
                 <CardTitle>1. Select Decision Tree</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <Label htmlFor="tree-select" className="text-xs uppercase tracking-[0.3em] text-muted-foreground/80">
-                    Choose a tree model for evaluation
-                  </Label>
-                  <div className="relative">
-                    <select
-                      id="tree-select"
-                      className="w-full appearance-none rounded-2xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm font-medium text-foreground transition focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-primary/60"
-                      value={selectedTreeId || ''}
-                      onChange={(e) => handleTreeSelect(e.target.value)}
-                    >
-                      <option value="">-- Select a tree --</option>
-                      {trees.map((tree) => (
-                        <option key={tree.id} value={tree.id}>
-                          {tree.name} ({tree.treeType})
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tree-select">Choose a tree model for evaluation</Label>
+                  <select
+                    id="tree-select"
+                    className="w-full p-2 border rounded-md bg-background"
+                    value={selectedTreeId || ''}
+                    onChange={(e) => handleTreeSelect(e.target.value)}
+                  >
+                    <option value="">-- Select a tree --</option>
+                    {trees.map((tree) => (
+                      <option key={tree.id} value={tree.id}>
+                        {tree.name} ({tree.treeType})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </CardContent>
             </Card>

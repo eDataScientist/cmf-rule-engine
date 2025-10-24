@@ -164,13 +164,24 @@ export function evaluateClaim(
   const probability = calculateProbability(totalScore);
   const riskLevel = classifyRisk(probability);
 
-  const claimIdentifier = claimData['Claim Number'] ?? claimData['Claim number'];
-  const claimNumber =
-    claimIdentifier === undefined || claimIdentifier === null || claimIdentifier === ''
-      ? 'N/A'
-      : typeof claimIdentifier === 'string'
-        ? claimIdentifier
-        : String(claimIdentifier);
+  const rawClaimNumber =
+    claimData['Claim Number'] ?? claimData['Claim number'];
+
+  const claimNumber = (() => {
+    if (rawClaimNumber === undefined || rawClaimNumber === null) {
+      return 'N/A';
+    }
+
+    if (typeof rawClaimNumber === 'string') {
+      return rawClaimNumber || 'N/A';
+    }
+
+    if (typeof rawClaimNumber === 'number' || typeof rawClaimNumber === 'boolean') {
+      return String(rawClaimNumber);
+    }
+
+    return 'N/A';
+  })();
 
   return {
     claimNumber,

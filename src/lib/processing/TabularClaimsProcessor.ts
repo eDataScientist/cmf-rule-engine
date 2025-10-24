@@ -11,6 +11,12 @@ interface ValidationResult {
   requiredColumns: string[];
 }
 
+type ExportedClaimRow = ClaimData & {
+  fraud_score: number;
+  fraud_probability: number;
+  risk_level: TraceResult['riskLevel'];
+};
+
 /**
  * Comprehensive class for handling tabular claims data ingestion and processing
  */
@@ -102,19 +108,37 @@ export class TabularClaimsProcessor {
    * Ensure claim data contains the canonical claim number key expected by the engine.
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
-    const claimIdentifier = claim['Claim Number'] ?? claim['Claim number'];
+    if ('Claim Number' in claim && !('Claim number' in claim)) {
+      const normalizedClaimNumber = this.normalizeClaimNumberValue(
+        claim['Claim Number']
+      );
 
-    if (claimIdentifier === undefined || claimIdentifier === null || claimIdentifier === '') {
-      return claim;
+      if (normalizedClaimNumber !== undefined) {
+        return {
+          ...claim,
+          'Claim number': normalizedClaimNumber,
+        };
+      }
+    }
+    return claim;
+  }
+
+  private normalizeClaimNumberValue(
+    value: string | number | boolean | undefined
+  ): string | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
     }
 
-    const normalized = typeof claimIdentifier === 'string' ? claimIdentifier : String(claimIdentifier);
+    if (typeof value === 'string') {
+      return value;
+    }
 
-    return {
-      ...claim,
-      'Claim Number': normalized,
-      'Claim number': normalized,
-    };
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    return undefined;
   }
 
   /**
@@ -187,10 +211,9 @@ export class TabularClaimsProcessor {
   /**
    * Export results with only required columns plus scores
    */
-  exportResults(claims: ClaimData[], results: TraceResult[]): any[] {
+  exportResults(claims: ClaimData[], results: TraceResult[]): ExportedClaimRow[] {
     return claims.map((claim, idx) => {
-      const normalized = this.normalizeClaimKeys(claim);
-      const filtered = this.filterForExport(normalized);
+      const filtered = this.filterForExport(claim);
       const result = results[idx];
 
       return {
@@ -198,7 +221,7 @@ export class TabularClaimsProcessor {
         fraud_score: parseFloat(result.totalScore.toFixed(3)),
         fraud_probability: parseFloat((result.probability * 100).toFixed(1)),
         risk_level: result.riskLevel,
-      };
+      } satisfies ExportedClaimRow;
     });
   }
 }
