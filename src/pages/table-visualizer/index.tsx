@@ -11,7 +11,7 @@ import { ColumnValidation } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
-import type { ValidationResult } from './hooks/useBulkEvaluation';
+import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
 import { getTrees } from '@/lib/db/operations';
@@ -73,6 +73,16 @@ export default function TableVisualizer() {
     setValidation(null);
     clearParse();
     setActiveTab('setup');
+  };
+
+  const handleClaimNumberChange = (columnName: string) => {
+    if (processor) {
+      processor.setClaimNumberColumn(columnName);
+      // Re-validate with the new claim number column
+      const csvColumns = Object.keys(claims[0] || {});
+      const validationResult = validateColumns(csvColumns);
+      setValidation(validationResult);
+    }
   };
 
   const handleProcess = async () => {
@@ -182,6 +192,7 @@ export default function TableVisualizer() {
             <ColumnValidation
               validation={validation}
               onProceed={handleProcess}
+              onClaimNumberChange={handleClaimNumberChange}
               isProcessing={isProcessing}
             />
           )}

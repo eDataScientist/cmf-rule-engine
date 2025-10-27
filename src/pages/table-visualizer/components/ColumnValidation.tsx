@@ -2,24 +2,23 @@ import { CheckCircle2, AlertCircle, FileCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-
-interface ValidationResult {
-  isValid: boolean;
-  missingColumns: string[];
-  availableColumns: string[];
-  requiredColumns: string[];
-}
+import { Label } from '@/components/ui/label';
+import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
 
 interface ColumnValidationProps {
   validation: ValidationResult;
   onProceed: () => void;
+  onClaimNumberChange: (columnName: string) => void;
   isProcessing?: boolean;
 }
 
-export function ColumnValidation({ validation, onProceed, isProcessing }: ColumnValidationProps) {
+export function ColumnValidation({ validation, onProceed, onClaimNumberChange, isProcessing }: ColumnValidationProps) {
   const extraColumns = validation.availableColumns.filter(
     (col) => !validation.requiredColumns.includes(col)
   );
+
+  const hasClaimNumber = validation.claimNumberColumn !== null;
+  const allRequiredPresent = validation.missingColumns.length === 0;
 
   return (
     <div className="space-y-6">
@@ -31,20 +30,44 @@ export function ColumnValidation({ validation, onProceed, isProcessing }: Column
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Claim Number Selector */}
+          <div className="p-4 bg-muted/50 border rounded-md">
+            <Label htmlFor="claim-number-select" className="font-medium mb-2 block">
+              Select Claim Number Column *
+            </Label>
+            <select
+              id="claim-number-select"
+              className="w-full p-2 border rounded-md bg-background"
+              value={validation.claimNumberColumn || ''}
+              onChange={(e) => onClaimNumberChange(e.target.value)}
+            >
+              <option value="">-- Select a column --</option>
+              {validation.availableColumns.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-2">
+              Choose which column contains the claim identifier/number
+            </p>
+          </div>
+
           {/* Validation Status */}
           <div className="flex items-center gap-2">
             {validation.isValid ? (
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <span className="text-green-600 font-medium">
-                  All required columns present
+                  All required columns present and claim number selected
                 </span>
               </>
             ) : (
               <>
                 <AlertCircle className="h-5 w-5 text-destructive" />
                 <span className="text-destructive font-medium">
-                  Missing required columns
+                  {!hasClaimNumber && 'Claim number column not selected'}
+                  {hasClaimNumber && !allRequiredPresent && 'Missing required columns'}
                 </span>
               </>
             )}

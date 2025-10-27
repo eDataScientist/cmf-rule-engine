@@ -4,11 +4,12 @@ import type { TraceResult } from '../types/trace';
 import type { TreeNode, DecisionNode } from '../types/tree';
 import { isDecisionNode } from '../types/tree';
 
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   missingColumns: string[];
   availableColumns: string[];
   requiredColumns: string[];
+  claimNumberColumn: string | null;
 }
 
 type ExportedClaimRow = ClaimData & {
@@ -24,11 +25,26 @@ export class TabularClaimsProcessor {
   private treeStructure: { title: string; root: TreeNode }[];
   private requiredColumns: Set<string>;
   private engine: RuleEngine;
+  private claimNumberColumn: string | null = null;
 
   constructor(treeStructure: { title: string; root: TreeNode }[]) {
     this.treeStructure = treeStructure;
     this.requiredColumns = this.extractRequiredColumns();
     this.engine = new RuleEngine(treeStructure);
+  }
+
+  /**
+   * Set which column should be used as the claim number
+   */
+  setClaimNumberColumn(columnName: string): void {
+    this.claimNumberColumn = columnName;
+  }
+
+  /**
+   * Get the current claim number column mapping
+   */
+  getClaimNumberColumn(): string | null {
+    return this.claimNumberColumn;
   }
 
   /**
@@ -50,9 +66,6 @@ export class TabularClaimsProcessor {
     };
 
     this.treeStructure.forEach((tree) => traverse(tree.root));
-
-    // Always require Claim Number
-    columns.add('Claim Number');
 
     return columns;
   }
@@ -82,18 +95,23 @@ export class TabularClaimsProcessor {
     const availableColumns = new Set(csvColumns);
     const missingColumns: string[] = [];
 
-    // Check for missing required columns
+    // Check for missing required columns (excluding claim number)
     this.requiredColumns.forEach((required) => {
       if (!availableColumns.has(required)) {
         missingColumns.push(required);
       }
     });
 
+    // Validation is successful if all required columns are present
+    // Claim number column must be set separately
+    const isValid = missingColumns.length === 0 && this.claimNumberColumn !== null;
+
     return {
-      isValid: missingColumns.length === 0,
+      isValid,
       missingColumns,
       availableColumns: csvColumns,
       requiredColumns: Array.from(this.requiredColumns),
+      claimNumberColumn: this.claimNumberColumn,
     };
   }
 
@@ -108,9 +126,15 @@ export class TabularClaimsProcessor {
    * Ensure claim data contains the canonical claim number key expected by the engine.
    */
   private normalizeClaimKeys(claim: ClaimData): ClaimData {
-    if ('Claim Number' in claim && !('Claim number' in claim)) {
+    // If no claim number column is mapped, return as-is
+    if (!this.claimNumberColumn) {
+      return claim;
+    }
+
+    // Map the selected column to the canonical 'Claim number' key
+    if (this.claimNumberColumn in claim && !('Claim number' in claim)) {
       const normalizedClaimNumber = this.normalizeClaimNumberValue(
-        claim['Claim Number']
+        claim[this.claimNumberColumn]
       );
 
       if (normalizedClaimNumber !== undefined) {
@@ -120,6 +144,7 @@ export class TabularClaimsProcessor {
         };
       }
     }
+
     return claim;
   }
 
@@ -153,11 +178,13 @@ export class TabularClaimsProcessor {
       }
     });
 
-    if ('Claim Number' in claim && !('Claim Number' in filtered)) {
-      filtered['Claim Number'] = claim['Claim Number'];
+    // Include the mapped claim number column
+    if (this.claimNumberColumn && this.claimNumberColumn in claim) {
+      filtered[this.claimNumberColumn] = claim[this.claimNumberColumn];
     }
 
-    if ('Claim number' in claim && !('Claim number' in filtered)) {
+    // Include normalized claim number if present
+    if ('Claim number' in claim) {
       filtered['Claim number'] = claim['Claim number'];
     }
 

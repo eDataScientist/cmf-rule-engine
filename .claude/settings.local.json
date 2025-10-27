@@ -4,7 +4,9 @@
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
       "Bash(npm run build:*)",
-      "Read(//c/Users/Mohammed Ali/Pictures/Screenshots/**)"
+      "Read(//c/Users/Mohammed Ali/Pictures/Screenshots/**)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

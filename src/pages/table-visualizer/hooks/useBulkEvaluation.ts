@@ -1,15 +1,8 @@
 import { useState, useCallback } from 'react';
-import { TabularClaimsProcessor } from '@/lib/processing/TabularClaimsProcessor';
+import { TabularClaimsProcessor, type ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
 import type { TreeNode } from '@/lib/types/tree';
-
-export interface ValidationResult {
-  isValid: boolean;
-  missingColumns: string[];
-  availableColumns: string[];
-  requiredColumns: string[];
-}
 
 interface UseBulkEvaluationReturn {
   processor: TabularClaimsProcessor | null;
