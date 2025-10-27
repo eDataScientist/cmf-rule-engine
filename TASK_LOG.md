@@ -1,20 +1,89 @@
 # Claims Rule Engine - Detailed Task Log
 
-## Session: 2025-10-28 - Analytics & Probability Refresh
+## Phase 18: Probability Scaling, Analytics Tab & Table Enhancements ✅
 
----
+### Session: 2025-10-28 - Major Table Visualizer & Scoring Refactor
 
-### Scoring & Risk Calculation
-- [x] Replaced sigmoid-based probability mapping with min-max scaling using cached tree score bounds.
-- [x] Updated batch processor normalization to reclassify claims with STP / Moderate / High thresholds after scaling.
+### Probability Calculation Refactor
+- [x] Replaced sigmoid-based probability with min-max scaling approach
+  - [x] Probability now: (score - minBatchScore) / (maxBatchScore - minBatchScore)
+  - [x] Results in intuitive 0-100% probability scale
+  - [x] Added ScoreBounds interface to scoring engine
+  - [x] Bounds cached and reused per batch evaluation
+  - [x] NaN safety checks throughout pipeline
 
-### Table Visualizer UX
-- [x] Added an Analytics tab with score distribution charts and KPI cards to review batch insights before tabular results.
-- [x] Redirected post-processing navigation to land on analytics for better review flow.
-- [x] Implemented table pagination (10 rows), sticky headers, and horizontal scrolling support for wide CSV datasets.
+- [x] Updated scoring engine architecture
+  - [x] Added computeScoreBounds() function
+  - [x] Added computeNodeBounds() for recursive bounds
+  - [x] Updated evaluateClaim() to accept optional ScoreBounds
+  - [x] Removed sigmoid function (no longer needed)
+  - [x] RuleEngine updated to pass bounds during evaluation
 
-### Tooling
-- [x] Added Recharts dependency to support analytical visualizations.
+- [x] Updated risk classification thresholds
+  - [x] STP (Safe to Process): probability < 0.5
+  - [x] Moderate Non-STP: 0.5 ≤ probability < 0.75
+  - [x] High Risk STP: probability ≥ 0.75
+
+### Analytics Tab Implementation (NEW)
+- [x] Created AnalyticsOverview component with Recharts
+  - [x] Score distribution histogram (10% buckets from 0-100%)
+  - [x] Responsive bar chart with tooltips
+  - [x] KPI metric cards showing:
+    - [x] Total claims processed count
+    - [x] STP count (< 50% probability)
+    - [x] Moderate Non-STP count (50-75%)
+    - [x] High Risk STP count (> 75%)
+  - [x] Percentage breakdown for each category
+  - [x] Empty state handling
+
+- [x] Enhanced table visualizer workflow
+  - [x] Added analytics as 4th tab: Setup → Validation → Analytics → Results
+  - [x] Auto-navigate to analytics after processing
+  - [x] Users review batch insights before drilling into detail table
+  - [x] Tab disabled states based on data availability
+
+### Validation Enhancements
+- [x] Claim number column selector
+  - [x] Added dropdown showing all CSV columns
+  - [x] Users select which column is the claim identifier
+  - [x] Validation requires both required columns AND column selection
+  - [x] TabularClaimsProcessor maps selected column to canonical 'Claim number'
+  - [x] Dynamic validation feedback based on selection state
+
+### Table Results Display Enhancements
+- [x] Risk level filter buttons
+  - [x] Added filter section at top of results table
+  - [x] Color-coded buttons for each risk level:
+    - [x] All: light slate background
+    - [x] Low: light green background with green text
+    - [x] Moderate: light yellow background with yellow text
+    - [x] High: light red background with red text
+  - [x] Shows count of claims in each category
+  - [x] Buttons have hover states with darker shades
+  - [x] Pagination respects active filter
+  - [x] Footer shows filtered/total counts
+
+- [x] Risk badge size optimization
+  - [x] Added 'xs' size variant to RiskBadge component
+  - [x] Smaller icon size (h-2.5) and text (text-2xs)
+  - [x] Updated table results to use xs size for compact display
+  - [x] Maintains icon and text proportion
+
+### Dependencies
+- [x] Added recharts (^2.14.0) for analytics visualizations
+
+### Type Safety & Error Handling
+- [x] NaN handling in probability calculation
+- [x] Edge case: equal min/max scores (returns 0.5)
+- [x] Clamped probability to [0, 1] range
+- [x] Type-safe RiskLevel type definition
+
+### Git Commits
+- [x] Commit: feat: implement probability scaling, analytics tab, and table enhancements
+  - 11 files changed, 787 insertions(+), 79 deletions(-)
+- [x] Commit: added claim number selection
+- [x] Commit: feat: enhance table visualizer UI - smaller risk badges and colorful filter buttons
+  - 2 files changed, 89 insertions(+), 12 deletions(-)
 
 ## Session: 2025-10-23 - Initial Development
 
@@ -935,9 +1004,26 @@
 
 ## Current Status
 
-**Total Tasks Completed:** 437 (+14 from Phase 17)
+**Total Tasks Completed:** 451 (+14 from Phase 18)
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Theme System Complete - Ready for Error Boundaries & Loading States
+**Current Phase:** Table Visualizer Complete with Analytics - Ready for Error Boundaries & Polish
+
+### Phase 18 Statistics
+- **Commits This Phase:** 3 major commits
+- **Files Modified:** 13 files
+- **Lines Added:** 876 insertions(+), 91 deletions(-)
+- **New Components:** AnalyticsOverview, Enhanced RiskBadge
+- **Dependencies Added:** recharts
+
+### Completed Features Summary
+1. ✅ Probability scaling from sigmoid to min-max (0-100%)
+2. ✅ Analytics tab with score distribution & KPI metrics
+3. ✅ Claim number column selector in validation
+4. ✅ Risk level filter buttons with color coding
+5. ✅ Pagination with filter support
+6. ✅ Sticky table headers with horizontal scroll
+7. ✅ Smaller risk badge sizes
+8. ✅ Enhanced UI/UX for better visibility
 
 ---
 
@@ -950,10 +1036,11 @@
 5. [x] Build Visualize Trace page with scoring ✅ (merged into Decision Trees)
 6. [x] Build Table Visualizer page with CSV upload ✅
 7. [x] Implement Medical/Motor theme variants ✅
-8. [ ] Add error boundaries and loading states
-9. [ ] Add DB export/import functionality
-10. [ ] Final testing and polish
+8. [x] Add Analytics tab with probability scaling ✅
+9. [ ] Add error boundaries and loading states
+10. [ ] Add DB export/import functionality
+11. [ ] Final testing and polish
 
 ---
 
-_Last Updated: 2025-10-27 16:45_
+_Last Updated: 2025-10-28 14:10_
