@@ -1,4 +1,4 @@
-import { evaluateClaim } from './engine';
+import { evaluateClaim, computeScoreBounds, type ScoreBounds } from './engine';
 import type { ClaimData } from '../types/claim';
 import type { TraceResult } from '../types/trace';
 import type { TreeNode } from '../types/tree';
@@ -8,16 +8,18 @@ import type { TreeNode } from '../types/tree';
  */
 export class RuleEngine {
   private trees: { title: string; root: TreeNode }[];
+  private scoreBounds: ScoreBounds;
 
   constructor(trees: { title: string; root: TreeNode }[]) {
     this.trees = trees;
+    this.scoreBounds = computeScoreBounds(trees);
   }
 
   /**
    * Evaluate a single claim and return the trace result
    */
   evaluate(claim: ClaimData): TraceResult {
-    return evaluateClaim(claim, this.trees);
+    return evaluateClaim(claim, this.trees, this.scoreBounds);
   }
 
   /**
@@ -36,7 +38,7 @@ export class RuleEngine {
   }
 
   /**
-   * Get the fraud probability for a claim (0-1)
+   * Get the fraud probability for a claim scaled between 0 and 1
    */
   getProbability(claim: ClaimData): number {
     const result = this.evaluate(claim);

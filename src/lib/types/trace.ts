@@ -16,7 +16,7 @@ export interface TraceResult {
 }
 
 export function classifyRisk(probability: number): 'low' | 'moderate' | 'high' {
-  if (probability > 0.65) return 'high';
-  if (probability > 0.4) return 'moderate';
+  if (probability >= 0.75) return 'high';
+  if (probability >= 0.5) return 'moderate';
   return 'low';
 }

@@ -6,6 +6,11 @@ import { normalizeClaim, type ClaimData } from '../types/claim';
 import { calculateProbability } from './transforms';
 import { classifyRisk } from '../types/trace';
 
+export interface ScoreBounds {
+  min: number;
+  max: number;
+}
+
 interface EvaluationContext {
   pathIds: string[];
   leafCounter: { count: number };
@@ -137,11 +142,13 @@ function evaluateCondition(condition: string, claim: NormalizedClaim): boolean {
 
 export function evaluateClaim(
   claimData: ClaimData,
-  treeStructure: { title: string; root: TreeNode }[]
+  treeStructure: { title: string; root: TreeNode }[],
+  scoreBounds?: ScoreBounds
 ): TraceResult {
   const claim = normalizeClaim(claimData);
   const paths: TreePath[] = [];
   let totalScore = 0;
+  const bounds = scoreBounds ?? computeScoreBounds(treeStructure);
 
   treeStructure.forEach((tree, index) => {
     const context: EvaluationContext = {
@@ -161,7 +168,7 @@ export function evaluateClaim(
     totalScore += value;
   });
 
-  const probability = calculateProbability(totalScore);
+  const probability = calculateProbability(totalScore, bounds.min, bounds.max);
   const riskLevel = classifyRisk(probability);
 
   const rawClaimNumber =
@@ -191,4 +198,38 @@ export function evaluateClaim(
     probability,
     riskLevel,
   };
+}
+
+function computeNodeBounds(node: TreeNode): ScoreBounds {
+  if (isLeafNode(node)) {
+    return { min: node.value, max: node.value };
+  }
+
+  if (isDecisionNode(node)) {
+    const decisionNode = node as DecisionNode;
+    const trueBounds = computeNodeBounds(decisionNode.true_branch);
+    const falseBounds = computeNodeBounds(decisionNode.false_branch);
+
+    return {
+      min: Math.min(trueBounds.min, falseBounds.min),
+      max: Math.max(trueBounds.max, falseBounds.max),
+    };
+  }
+
+  throw new Error('Invalid node type');
+}
+
+export function computeScoreBounds(
+  treeStructure: { title: string; root: TreeNode }[]
+): ScoreBounds {
+  return treeStructure.reduce<ScoreBounds>(
+    (acc, tree) => {
+      const bounds = computeNodeBounds(tree.root);
+      return {
+        min: acc.min + bounds.min,
+        max: acc.max + bounds.max,
+      };
+    },
+    { min: 0, max: 0 }
+  );
 }

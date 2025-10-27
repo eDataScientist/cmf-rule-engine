@@ -1,5 +1,21 @@
 # Claims Rule Engine - Detailed Task Log
 
+## Session: 2025-10-28 - Analytics & Probability Refresh
+
+---
+
+### Scoring & Risk Calculation
+- [x] Replaced sigmoid-based probability mapping with min-max scaling using cached tree score bounds.
+- [x] Updated batch processor normalization to reclassify claims with STP / Moderate / High thresholds after scaling.
+
+### Table Visualizer UX
+- [x] Added an Analytics tab with score distribution charts and KPI cards to review batch insights before tabular results.
+- [x] Redirected post-processing navigation to land on analytics for better review flow.
+- [x] Implemented table pagination (10 rows), sticky headers, and horizontal scrolling support for wide CSV datasets.
+
+### Tooling
+- [x] Added Recharts dependency to support analytical visualizations.
+
 ## Session: 2025-10-23 - Initial Development
 
 ---
@@ -940,4 +956,4 @@
 
 ---
 
-_Last Updated: 2025-10-27 13:00_
+_Last Updated: 2025-10-27 16:45_

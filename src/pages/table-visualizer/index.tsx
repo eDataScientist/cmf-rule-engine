@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CsvUploader } from './components/CsvUploader';
 import { ColumnValidation } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
+import { AnalyticsOverview } from './components/AnalyticsOverview';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
 import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
@@ -97,24 +98,24 @@ export default function TableVisualizer() {
     }));
     setClaimsWithResults(merged);
 
-    // Auto-navigate to results tab
-    setActiveTab('results');
+    // Auto-navigate to analytics tab to review insights first
+    setActiveTab('analytics');
   };
 
   const handleExport = () => {
-    const dataToExport = claimsWithResults.filter((item) => item.result !== undefined) as {
-      claim: ClaimData;
-      result: TraceResult;
-    }[];
-
-    if (dataToExport.length > 0) {
-      exportToCsv(dataToExport);
+    if (evaluatedResults.length > 0) {
+      exportToCsv(evaluatedResults);
     }
   };
 
-  const hasResults = claimsWithResults.some((item) => item.result !== undefined);
+  const evaluatedResults = claimsWithResults.filter(
+    (item): item is { claim: ClaimData; result: TraceResult } => item.result !== undefined
+  );
+  const processedResults = evaluatedResults.map((item) => item.result);
+  const hasResults = evaluatedResults.length > 0;
   const error = parseError || evalError;
   const canValidate = selectedTreeId && claims.length > 0;
+  const canShowAnalytics = hasResults;
   const canShowResults = hasResults;
 
   return (
@@ -134,6 +135,7 @@ export default function TableVisualizer() {
         <TabsList>
           <TabsTrigger value="setup">Setup</TabsTrigger>
           <TabsTrigger value="validation" disabled={!canValidate}>Validation</TabsTrigger>
+          <TabsTrigger value="analytics" disabled={!canShowAnalytics}>Analytics</TabsTrigger>
           <TabsTrigger value="results" disabled={!canShowResults}>Results</TabsTrigger>
         </TabsList>
 
@@ -198,7 +200,11 @@ export default function TableVisualizer() {
           )}
         </TabsContent>
 
-        {/* Tab 3: Results Table */}
+        <TabsContent value="analytics">
+          <AnalyticsOverview results={processedResults} />
+        </TabsContent>
+
+        {/* Tab 4: Results Table */}
         <TabsContent value="results">
           <div className="space-y-4">
             <div className="flex justify-end">

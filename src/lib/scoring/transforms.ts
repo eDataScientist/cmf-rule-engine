@@ -1,7 +1,16 @@
-export function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
-}
+export function calculateProbability(totalScore: number, minScore: number, maxScore: number): number {
+  if (Number.isNaN(totalScore)) {
+    return 0;
+  }
 
-export function calculateProbability(totalScore: number): number {
-  return sigmoid(totalScore);
+  if (maxScore === minScore) {
+    return 0.5;
+  }
+
+  const scaled = (totalScore - minScore) / (maxScore - minScore);
+  if (Number.isNaN(scaled)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, scaled));
 }

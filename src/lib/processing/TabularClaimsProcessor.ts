@@ -1,6 +1,6 @@
 import { RuleEngine } from '../scoring/RuleEngine';
 import type { ClaimData } from '../types/claim';
-import type { TraceResult } from '../types/trace';
+import { classifyRisk, type TraceResult } from '../types/trace';
 import type { TreeNode, DecisionNode } from '../types/tree';
 import { isDecisionNode } from '../types/tree';
 
@@ -203,7 +203,33 @@ export class TabularClaimsProcessor {
    * Process multiple claims in batch
    */
   processBatch(claims: ClaimData[]): TraceResult[] {
-    return claims.map((claim) => this.processClaim(claim));
+    const evaluated = claims.map((claim) => this.processClaim(claim));
+
+    if (evaluated.length === 0) {
+      return evaluated;
+    }
+
+    const scores = evaluated.map((result) => result.totalScore);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
+
+    if (maxScore === minScore) {
+      return evaluated.map((result) => ({
+        ...result,
+        probability: 0.5,
+        riskLevel: classifyRisk(0.5),
+      }));
+    }
+
+    return evaluated.map((result) => {
+      const probability = (result.totalScore - minScore) / (maxScore - minScore);
+      const clamped = Math.min(1, Math.max(0, probability));
+      return {
+        ...result,
+        probability: clamped,
+        riskLevel: classifyRisk(clamped),
+      };
+    });
   }
 
   /**
