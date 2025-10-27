@@ -1037,31 +1037,45 @@
 ### Datasets Feature (PLANNED - Phase 20)
 - [ ] Create datasets table in SQL schema
   - [ ] Track uploaded CSV files with metadata
+  - [ ] Link dataset to specific tree (tree_id foreign key)
   - [ ] Store data rows in relational format (with foreign key to dataset)
   - [ ] Add created_at, updated_at timestamps
-  - [ ] Index on dataset_id for quick lookups
+  - [ ] Index on dataset_id and tree_id for quick lookups
 
 - [ ] Database schema expansion
-  - [ ] Add datasets table (id, name, file_name, row_count, created_at)
+  - [ ] Add datasets table (id, name, tree_id, file_name, row_count, created_at)
   - [ ] Add dataset_rows table (id, dataset_id, claim_number, claim_data_json)
-  - [ ] Foreign key relationship (dataset_rows → datasets)
+  - [ ] Foreign key: datasets.tree_id → trees.id
+  - [ ] Foreign key: dataset_rows.dataset_id → datasets.id
+  - [ ] Cascade delete on tree deletion
 
 - [ ] Dataset management page
-  - [ ] List all uploaded datasets with basic info
-  - [ ] View dataset details (# of rows, created date)
-  - [ ] Re-process dataset with different tree
+  - [ ] List all uploaded datasets with tree association
+  - [ ] View dataset details (# of rows, linked tree, created date)
   - [ ] Delete dataset (cascade delete rows)
+  - [ ] Future: Export dataset results to CSV
 
-- [ ] Enhanced table visualizer
-  - [ ] Load dataset from storage instead of CSV
+- [ ] Enhanced table visualizer workflow
+  - [ ] Step 1: Select tree (same as now)
+  - [ ] Step 2: Upload CSV or select existing dataset
+  - [ ] Step 3: Validation, Analytics, Results tabs (same as now)
+  - [ ] If new upload: Create new dataset linked to selected tree
+  - [ ] If existing dataset: Load from storage instead of CSV
   - [ ] Persist results across navigation
-  - [ ] Show dataset selector at top
+  - [ ] Can load same dataset again without re-upload
+
+### Dataset Workflow
+1. User selects a tree → uploads CSV → creates Dataset(tree_id, data)
+2. CSV processed → results stored → can navigate freely, data persists
+3. User can load saved dataset again with same tree
+4. If want to test different tree: upload same CSV again (creates new dataset with different tree)
 
 ### Benefits
-- Data persists across page navigation
-- Users can compare results from same dataset with different trees
-- Enables historical tracking of dataset evaluations
-- Foundation for batch processing features
+- CSV data persists in database (no re-upload needed)
+- Quick access to previously evaluated datasets
+- Each dataset linked to specific tree (clear audit trail)
+- Foundation for batch processing and historical tracking
+- Can compare different tree results (create multiple datasets from same CSV)
 
 ### Git Commits
 - [x] Commit: feat: add direct row-to-visualization navigation from table visualizer
