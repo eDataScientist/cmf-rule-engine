@@ -817,11 +817,111 @@
 
 ---
 
+## Phase 17: Medical/Motor Theme System ✅
+
+### Theme Architecture
+- [x] Create appThemeAtom with localStorage persistence
+  - [x] Add atom to src/store/atoms/ui.ts
+  - [x] Type as 'medical' | 'motor'
+  - [x] Default to 'motor' theme
+  - [x] Persist selection using atomWithStorage
+
+- [x] Build ThemeProvider component
+  - [x] Create src/components/shared/ThemeProvider.tsx
+  - [x] Use useEffect to monitor appThemeAtom changes
+  - [x] Apply CSS variables via root.style.setProperty
+  - [x] Update body gradient backgrounds dynamically
+  - [x] Add smooth 0.5s transitions for theme changes
+
+- [x] Wrap App with ThemeProvider
+  - [x] Import ThemeProvider in App.tsx
+  - [x] Wrap entire app tree with provider
+
+### Color System Design
+- [x] Define Motor theme colors (blue tones)
+  - [x] Create src/lib/themes/colors.ts
+  - [x] Define ThemeColors interface
+  - [x] Set primary hue to 240 (blue) in OKLCH format
+  - [x] Define background, foreground, card colors
+  - [x] Define primary, secondary, muted, accent colors
+  - [x] Define border, input, ring colors
+  - [x] Define blue gradient colors (rgba)
+  - [x] Match existing application colors
+
+- [x] Define Medical theme colors (green tones)
+  - [x] Set primary hue to 155 (green) in OKLCH format
+  - [x] Shift all color hues to 140-155 range
+  - [x] Define green gradient colors (rgba)
+  - [x] Maintain same lightness/chroma as Motor theme
+  - [x] Export medicalTheme object
+
+- [x] Export themes object
+  - [x] Create themes map with motor and medical keys
+  - [x] Type-safe theme selection
+
+### UI Components
+- [x] Add theme toggle to Navbar
+  - [x] Import useAtom and appThemeAtom
+  - [x] Import Activity and Heart icons
+  - [x] Create toggleTheme function
+  - [x] Add Button component for theme toggle
+  - [x] Show Motor/Activity icon when motor theme active
+  - [x] Show Medical/Heart icon when medical theme active
+  - [x] Hide label text on mobile (sm:inline)
+  - [x] Position toggle button next to nav items
+
+- [x] Update logo icon dynamically
+  - [x] Create ThemeIcon variable based on appTheme
+  - [x] Replace static Activity icon with ThemeIcon
+  - [x] Icon changes automatically on theme switch
+
+### CSS Variable System
+- [x] Apply all color variables
+  - [x] --color-background
+  - [x] --color-foreground
+  - [x] --color-card and --color-card-foreground
+  - [x] --color-popover and --color-popover-foreground
+  - [x] --color-primary and --color-primary-foreground
+  - [x] --color-secondary and --color-secondary-foreground
+  - [x] --color-muted and --color-muted-foreground
+  - [x] --color-accent and --color-accent-foreground
+  - [x] --color-destructive and --color-destructive-foreground
+  - [x] --color-border
+  - [x] --color-input
+  - [x] --color-ring
+
+- [x] Apply body background gradients
+  - [x] Radial gradient at 20% 20% with theme gradientStart
+  - [x] Radial gradient at 80% 0% with theme gradientMid
+  - [x] Linear gradient with theme gradientEnd
+  - [x] Smooth transition between theme backgrounds
+
+### Transitions & Polish
+- [x] Add smooth theme transitions
+  - [x] Set root transition for background-color and color
+  - [x] Set body transition for background
+  - [x] 0.5s ease-in-out duration
+  - [x] All components adapt automatically
+
+### Testing
+- [x] Test theme switching functionality
+  - [x] Toggle between Motor and Medical themes
+  - [x] Verify CSS variables update correctly
+  - [x] Verify background gradients change
+  - [x] Verify all pages adapt to theme
+  - [x] Verify theme persists on page refresh
+  - [x] Verify icon changes in navbar and logo
+
+### Git Commits
+- [x] Commit: feat: implement Medical/Motor theme system with dynamic color switching
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 423 (+54 from Phase 16)
+**Total Tasks Completed:** 437 (+14 from Phase 17)
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Tree Structure Visualizer Complete - Ready for Theme Variants & Polish
+**Current Phase:** Theme System Complete - Ready for Error Boundaries & Loading States
 
 ---
 
@@ -833,11 +933,11 @@
 4. [x] Build ScoreCard component module ✅
 5. [x] Build Visualize Trace page with scoring ✅ (merged into Decision Trees)
 6. [x] Build Table Visualizer page with CSV upload ✅
-7. [ ] Implement Medical/Motor theme variants
+7. [x] Implement Medical/Motor theme variants ✅
 8. [ ] Add error boundaries and loading states
 9. [ ] Add DB export/import functionality
 10. [ ] Final testing and polish
 
 ---
 
-_Last Updated: 2025-10-27 12:05_
+_Last Updated: 2025-10-27 13:00_
