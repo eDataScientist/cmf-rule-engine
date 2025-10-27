@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { RiskBadge } from '@/components/shared/ScoreCard/RiskBadge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
+
+type RiskLevel = 'low' | 'moderate' | 'high';
 
 interface ClaimWithResult {
   claim: ClaimData;
@@ -17,6 +20,12 @@ interface ClaimsTableProps {
 }
 
 const ROWS_PER_PAGE = 10;
+const RISK_FILTERS: { label: string; value: RiskLevel | 'all' }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Low', value: 'low' },
+  { label: 'Moderate', value: 'moderate' },
+  { label: 'High', value: 'high' },
+];
 
 export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTableProps) {
   if (claims.length === 0) {
@@ -35,29 +44,83 @@ export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTab
       ).filter((key) => key !== 'Claim Number');
 
   const [page, setPage] = useState(1);
+  const [selectedRiskFilter, setSelectedRiskFilter] = useState<RiskLevel | 'all'>('all');
+
+  // Filter claims based on selected risk level
+  const filteredClaims = useMemo(() => {
+    if (selectedRiskFilter === 'all') {
+      return claims;
+    }
+    return claims.filter((item) => item.result?.riskLevel === selectedRiskFilter);
+  }, [claims, selectedRiskFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [claims.length]);
+  }, [claims.length, selectedRiskFilter]);
 
   useEffect(() => {
     setPage((prev) => {
-      const totalPages = Math.max(1, Math.ceil(claims.length / ROWS_PER_PAGE));
+      const totalPages = Math.max(1, Math.ceil(filteredClaims.length / ROWS_PER_PAGE));
       return Math.min(prev, totalPages);
     });
-  }, [claims.length]);
+  }, [filteredClaims.length]);
 
-  const totalPages = Math.max(1, Math.ceil(claims.length / ROWS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredClaims.length / ROWS_PER_PAGE));
   const startIndex = (page - 1) * ROWS_PER_PAGE;
-  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, claims.length);
+  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, filteredClaims.length);
 
   const paginatedClaims = useMemo(
-    () => claims.slice(startIndex, endIndex),
-    [claims, startIndex, endIndex]
+    () => filteredClaims.slice(startIndex, endIndex),
+    [filteredClaims, startIndex, endIndex]
   );
 
   return (
     <Card className="overflow-hidden">
+      {/* Risk Level Filter Buttons */}
+      <div className="border-b border-border/60 bg-muted/30 p-4">
+        <p className="mb-3 text-sm font-medium text-foreground">Filter by Risk Level:</p>
+        <div className="flex flex-wrap gap-2">
+          {RISK_FILTERS.map((filter) => {
+            const getButtonColor = () => {
+              if (selectedRiskFilter === filter.value) return '';
+              switch (filter.value) {
+                case 'all':
+                  return 'bg-slate-100 hover:bg-slate-200';
+                case 'low':
+                  return 'bg-green-100 hover:bg-green-200 text-green-900 border-green-300';
+                case 'moderate':
+                  return 'bg-yellow-100 hover:bg-yellow-200 text-yellow-900 border-yellow-300';
+                case 'high':
+                  return 'bg-red-100 hover:bg-red-200 text-red-900 border-red-300';
+                default:
+                  return '';
+              }
+            };
+
+            return (
+              <Button
+                key={filter.value}
+                variant={selectedRiskFilter === filter.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRiskFilter(filter.value)}
+                className={cn(
+                  'transition-colors',
+                  selectedRiskFilter === filter.value && 'shadow-md',
+                  selectedRiskFilter !== filter.value && getButtonColor()
+                )}
+              >
+                {filter.label}
+                {filter.value !== 'all' && (
+                  <span className="ml-2 text-xs">
+                    ({claims.filter((c) => c.result?.riskLevel === filter.value).length})
+                  </span>
+                )}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="relative">
         <div className="max-h-[600px] overflow-auto">
           <table className="w-full min-w-[960px] border-collapse text-sm">
@@ -109,7 +172,7 @@ export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTab
                     </td>
                     <td className="px-4 py-3">
                       {item.result ? (
-                        <RiskBadge riskLevel={item.result.riskLevel} size="sm" />
+                        <RiskBadge riskLevel={item.result.riskLevel} size="xs" />
                       ) : isProcessing ? (
                         <span className="text-xs text-muted-foreground">Processing...</span>
                       ) : (
@@ -127,7 +190,21 @@ export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTab
         <div className="text-sm text-muted-foreground">
           Showing <span className="font-medium">{startIndex + 1}</span>-
           <span className="font-medium">{endIndex}</span> of{' '}
-          <span className="font-medium">{claims.length}</span> claims
+          <span className="font-medium">{filteredClaims.length}</span>
+          {selectedRiskFilter !== 'all' && (
+            <>
+              {' '}
+              <span className="text-xs text-muted-foreground/70">
+                ({selectedRiskFilter} risk)
+              </span>
+            </>
+          )}{' '}
+          claims
+          {filteredClaims.length < claims.length && (
+            <span className="ml-2 text-xs text-muted-foreground/70">
+              ({claims.length} total)
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button
