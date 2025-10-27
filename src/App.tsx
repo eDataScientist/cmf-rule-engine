@@ -7,6 +7,7 @@ import { lazy, Suspense } from 'react';
 const ReviewTrees = lazy(() => import('@/pages/review-trees'));
 const GenerateTree = lazy(() => import('@/pages/generate-tree'));
 const TableVisualizer = lazy(() => import('@/pages/table-visualizer'));
+const TreeVisualizer = lazy(() => import('@/pages/tree-visualizer'));
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/review-trees" element={<ReviewTrees />} />
             <Route path="/generate-tree" element={<GenerateTree />} />
             <Route path="/table-visualizer" element={<TableVisualizer />} />
+            <Route path="/tree-visualizer/:treeId" element={<TreeVisualizer />} />
           </Routes>
         </Suspense>
       </AppLayout>

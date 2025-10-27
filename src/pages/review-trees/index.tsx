@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Loader2, Play, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { TreeGrid } from './components/TreeGrid';
 import { EmptyState } from './components/EmptyState';
 import { useTreeList } from './hooks/useTreeList';
@@ -21,6 +21,7 @@ import type { ClaimData } from '@/lib/types/claim';
 
 export default function ReviewTrees() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { trees, isLoading, error } = useTreeList();
   const { remove, isDeleting } = useTreeDelete();
 
@@ -41,11 +42,31 @@ export default function ReviewTrees() {
     return extractFeatures(selectedTree.structure);
   }, [selectedTree]);
 
+  // Handle tree pre-selection from navigation state
+  useEffect(() => {
+    const state = location.state as { selectedTreeId?: string } | null;
+    if (state?.selectedTreeId && trees.length > 0) {
+      const treeExists = trees.some((t) => t.id === state.selectedTreeId);
+      if (treeExists) {
+        setSelectedTreeId(state.selectedTreeId);
+        setClaim({});
+        setJsonInput('');
+        setActiveTab('form');
+        // Clear the state to prevent re-triggering
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, trees, navigate, location.pathname]);
+
   const handleVisualize = (treeId: string) => {
     setSelectedTreeId(treeId);
     setClaim({});
     setJsonInput('');
     setActiveTab('form');
+  };
+
+  const handleViewStructure = (treeId: string) => {
+    navigate(`/tree-visualizer/${treeId}`);
   };
 
   const handleEvaluate = () => {
@@ -116,6 +137,7 @@ export default function ReviewTrees() {
               trees={trees}
               onDelete={remove}
               onVisualize={handleVisualize}
+              onViewStructure={handleViewStructure}
               isDeleting={isDeleting}
             />
           </TabsContent>

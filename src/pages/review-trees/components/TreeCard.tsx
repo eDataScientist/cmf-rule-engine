@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2, Activity, Heart, Calendar, Eye } from 'lucide-react';
+import { Trash2, Activity, Heart, Calendar, Eye, Network } from 'lucide-react';
 import type { Tree, TreeNode } from '@/lib/types/tree';
 import { isLeafNode } from '@/lib/types/tree';
 
@@ -10,10 +10,11 @@ interface TreeCardProps {
   tree: Tree;
   onDelete: (id: string) => void;
   onVisualize: (id: string) => void;
+  onViewStructure: (id: string) => void;
   isDeleting: boolean;
 }
 
-export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardProps) {
+export function TreeCard({ tree, onDelete, onVisualize, onViewStructure, isDeleting }: TreeCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = () => {
@@ -84,6 +85,16 @@ export function TreeCard({ tree, onDelete, onVisualize, isDeleting }: TreeCardPr
             >
               <Eye className="h-4 w-4 mr-2" />
               Visualize
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewStructure(tree.id)}
+              className="flex-1"
+            >
+              <Network className="h-4 w-4 mr-2" />
+              <span className="hidden xl:inline">View Structure</span>
+              <span className="xl:hidden">Structure</span>
             </Button>
             <Button
               variant="destructive"

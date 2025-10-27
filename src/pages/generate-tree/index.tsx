@@ -3,7 +3,7 @@ import { TreeForm } from './components/TreeForm';
 
 export default function GenerateTree() {
   return (
-    <div>
+    <div className='flex gap-6 flex-col'>
       <PageHeader
         title="Generate Tree"
         description="Parse and create a new decision tree from FIGS format"
