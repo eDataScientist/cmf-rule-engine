@@ -704,11 +704,124 @@
 
 ---
 
+## Phase 16: Table Visualizer Refactor & Tree Structure Visualizer ✅
+
+### TabularClaimsProcessor Class
+- [x] Create lib/processing/TabularClaimsProcessor.ts
+  - [x] Extract required columns from tree conditions
+  - [x] Validate CSV columns against tree requirements
+  - [x] Filter claim data to only include required columns
+  - [x] Batch process claims using RuleEngine
+  - [x] Calculate statistics (risk distribution, averages)
+  - [x] Export results with required columns + scores
+  - [x] Handle feature extraction from conditions (<=, >, is patterns)
+
+### Table Visualizer Refactor
+- [x] Rebuild with 3-tab workflow
+  - [x] Tab 1: Setup (Tree Selection + CSV Upload)
+  - [x] Tab 2: Validation (Column validation with indicators)
+  - [x] Tab 3: Results (Table + Export)
+  - [x] Auto-navigation between tabs on upload/process
+
+- [x] Create ColumnValidation component
+  - [x] Show required columns with presence indicators
+  - [x] Display missing columns with error messages
+  - [x] List extra columns that will be ignored
+  - [x] Enable/disable Process button based on validation
+  - [x] Glass-morphism styling with decorative blur orbs
+
+- [x] Update ClaimsTable component
+  - [x] Accept requiredColumns prop
+  - [x] Display only required columns in sorted order
+  - [x] Show scores, probability, and risk badges
+  - [x] Scrollable container for large datasets
+
+- [x] Refactor hooks to use TabularClaimsProcessor
+  - [x] useBulkEvaluation: createProcessor, validateColumns, evaluate
+  - [x] Return processor instance for column inspection
+  - [x] Proper error handling throughout
+
+- [x] Fix CSV test data
+  - [x] Update simple-claims.csv with underscore column names
+  - [x] Update complex-claims.csv with underscore column names
+  - [x] Ensure all columns match tree feature names
+
+### Tree Structure Visualizer (NEW)
+- [x] Add "View Structure" button to TreeCard
+  - [x] 3-button layout (Visualize | View Structure | Delete)
+  - [x] Responsive text (shortens on smaller screens)
+  - [x] Network icon for structure button
+
+- [x] Create route /tree-visualizer/:treeId
+  - [x] Add to App.tsx with lazy loading
+  - [x] Dynamic slug-based routing
+
+- [x] Build tree-visualizer page
+  - [x] Load tree by ID from database
+  - [x] Error handling for missing trees
+  - [x] Loading state with spinner
+  - [x] Glass-morphism page header
+  - [x] Carousel controls for subtree navigation
+  - [x] Badge showing "X of Y" subtrees
+  - [x] Previous/Next buttons with chevron icons
+
+- [x] Create TreeDiagram component
+  - [x] **Horizontal spreading layout** (left=true, right=false)
+  - [x] Calculate node positions with binary space partitioning
+  - [x] Use 90-degree connector lines (vertical → horizontal → vertical)
+  - [x] Match TracedTreeVisualizer design:
+    - [x] Fira Code monospace font
+    - [x] Color-coded leaf nodes (red to green gradient)
+    - [x] Root nodes with blue background (#e0e7ff)
+    - [x] Decision nodes show parsed feature names
+    - [x] Formatted branch labels (≤, >, is patterns)
+    - [x] Black connector lines (#18181b, 2px width)
+    - [x] All nodes fully visible (no muting)
+  - [x] Parse conditions using shared utils
+  - [x] Format labels with formatTrueLabel/formatFalseLabel
+  - [x] Calculate min/max for color scaling
+  - [x] SVG-based rendering for smooth scaling
+  - [x] Fix top node cropping with viewBox padding (-40px)
+  - [x] Remove ellipsis truncation for long variable names
+  - [x] Glass-morphism card container
+
+- [x] Add Visualize button to tree-visualizer page
+  - [x] Navigate to /review-trees with state
+  - [x] Pass selected tree ID via navigation state
+  - [x] Pre-select tree and activate Claim Form tab
+
+- [x] Update ReviewTrees to handle navigation state
+  - [x] Add useLocation hook
+  - [x] Check for selectedTreeId in location.state
+  - [x] Pre-select tree if exists
+  - [x] Auto-activate Claim Form tab
+  - [x] Clear state after handling
+
+### Bug Fixes
+- [x] Fix CSV upload button click interaction
+  - [x] Use onClick handler instead of label wrapping
+  - [x] Trigger file input click programmatically
+
+- [x] Fix tree structure evaluation
+  - [x] Pass tree.structure instead of entire tree object
+  - [x] Match visualize-trace evaluation pattern
+
+- [x] Fix TypeScript errors
+  - [x] Import SQLJsDatabase correctly
+  - [x] Add disabled prop to TabsTrigger
+  - [x] Fix ClaimForm number input handling
+  - [x] Fix export return type in TabularClaimsProcessor
+
+### Git Commits
+- [x] Commit: feat: implement table visualizer and tree structure visualizer
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 369 (+42 from Phase 15)
+**Total Tasks Completed:** 423 (+54 from Phase 16)
 **Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Table Visualizer Complete - Ready for Theme Variants & Polish
+**Current Phase:** Tree Structure Visualizer Complete - Ready for Theme Variants & Polish
 
 ---
 
@@ -727,4 +840,4 @@
 
 ---
 
-_Last Updated: 2025-10-24 22:15_
+_Last Updated: 2025-10-27 12:05_
