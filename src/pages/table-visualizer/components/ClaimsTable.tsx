@@ -17,6 +17,7 @@ interface ClaimsTableProps {
   claims: ClaimWithResult[];
   requiredColumns?: string[];
   isProcessing?: boolean;
+  onRowClick?: (claim: ClaimData) => void;
 }
 
 const ROWS_PER_PAGE = 10;
@@ -27,7 +28,7 @@ const RISK_FILTERS: { label: string; value: RiskLevel | 'all' }[] = [
   { label: 'High', value: 'high' },
 ];
 
-export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTableProps) {
+export function ClaimsTable({ claims, requiredColumns, isProcessing, onRowClick }: ClaimsTableProps) {
   if (claims.length === 0) {
     return (
       <Card className="p-8 text-center">
@@ -154,7 +155,11 @@ export function ClaimsTable({ claims, requiredColumns, isProcessing }: ClaimsTab
                 return (
                   <tr
                     key={absoluteIndex}
-                    className="border-b border-border/40 transition-colors hover:bg-muted/40"
+                    onClick={() => onRowClick?.(item.claim)}
+                    className={cn(
+                      'border-b border-border/40 transition-colors hover:bg-muted/40',
+                      onRowClick && 'cursor-pointer'
+                    )}
                   >
                     <td className="px-4 py-3 font-mono text-sm text-foreground">
                       {item.claim['Claim Number'] || `#${absoluteIndex + 1}`}

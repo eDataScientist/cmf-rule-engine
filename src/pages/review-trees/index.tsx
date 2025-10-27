@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, Loader2, Play, Download } from 'lucide-react';
+import { Plus, Loader2, Play, Download, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TreeGrid } from './components/TreeGrid';
 import { EmptyState } from './components/EmptyState';
@@ -17,6 +18,7 @@ import { TracedTreeVisualizer } from '../visualize-trace/components/TracedTreeVi
 import { useClaimEvaluation } from '../visualize-trace/hooks/useClaimEvaluation';
 import { useImageExport } from '../visualize-trace/hooks/useImageExport';
 import { extractFeatures } from '../visualize-trace/utils/extractFeatures';
+import { selectedTableTreeIdAtom, selectedTableClaimDataAtom, selectedTableTabAtom, isFromTableVisualizerAtom } from '@/store/atoms/tableVisualization';
 import type { ClaimData } from '@/lib/types/claim';
 
 export default function ReviewTrees() {
@@ -25,12 +27,19 @@ export default function ReviewTrees() {
   const { trees, isLoading, error } = useTreeList();
   const { remove, isDeleting } = useTreeDelete();
 
+  // Table visualization atoms
+  const [tableTreeId, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
+  const [tableClaimData, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
+  const [tableTab] = useAtom(selectedTableTabAtom);
+  const [isFromTable, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
+
   const [activeTab, setActiveTab] = useState('trees');
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>('form');
   const [claim, setClaim] = useState<ClaimData>({});
   const [jsonInput, setJsonInput] = useState('');
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [cameFromTable, setCameFromTable] = useState(false);
 
   const { result, isEvaluating, error: evalError, evaluate } = useClaimEvaluation();
   const { exportAsImage, isExporting } = useImageExport();
@@ -58,11 +67,39 @@ export default function ReviewTrees() {
     }
   }, [location.state, trees, navigate, location.pathname]);
 
+  // Handle table visualization state
+  useEffect(() => {
+    if (isFromTable && tableTreeId && tableClaimData && trees.length > 0) {
+      const treeExists = trees.some((t) => t.id === tableTreeId);
+      if (treeExists) {
+        setSelectedTreeId(tableTreeId);
+        setClaim(tableClaimData);
+        setInputMode('form');
+        setJsonInput('');
+        setActiveTab(tableTab);
+        setCameFromTable(true);
+
+        // Clear atoms to prevent re-triggering
+        setTableTreeId(null);
+        setTableClaimData(null);
+        setIsFromTable(false);
+      }
+    }
+  }, [isFromTable, tableTreeId, tableClaimData, tableTab, trees, setTableTreeId, setTableClaimData, setIsFromTable]);
+
+  // Auto-evaluate claim when coming from table
+  useEffect(() => {
+    if (selectedTree && claim['Claim number'] && activeTab === 'visualization' && !result && isFromTable === false && tableTreeId === null) {
+      evaluate(claim, selectedTree.structure);
+    }
+  }, [selectedTree, claim, activeTab, result, evaluate, isFromTable, tableTreeId]);
+
   const handleVisualize = (treeId: string) => {
     setSelectedTreeId(treeId);
     setClaim({});
     setJsonInput('');
     setActiveTab('form');
+    setCameFromTable(false);
   };
 
   const handleViewStructure = (treeId: string) => {
@@ -206,14 +243,28 @@ export default function ReviewTrees() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">Evaluation Results</h2>
-                  <Button
-                    variant="outline"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export as PNG
-                  </Button>
+                  <div className="flex gap-2">
+                    {cameFromTable && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigate('/table-visualizer');
+                          setCameFromTable(false);
+                        }}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Table
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={handleExport}
+                      disabled={isExporting}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export as PNG
+                    </Button>
+                  </div>
                 </div>
 
                 <div id="trace-result" className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">

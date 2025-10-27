@@ -31,8 +31,8 @@ export function RiskBadge({ riskLevel, size = 'default' }: RiskBadgeProps) {
   const config = riskConfig[riskLevel];
   const Icon = config.icon;
 
-  const iconSize = size === 'xs' ? 'h-2.5 w-2.5' : size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
-  const textSize = size === 'xs' ? 'text-2xs' : size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
+  const iconSize = size === 'xs' ? 'h-4 w-4' : size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
+  const textSize = size === 'xs' ? 'text-[10px]' : size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
 
   return (
     <Badge variant={config.variant} className={`${config.className} ${textSize} gap-1`}>

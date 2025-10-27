@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { Loader2, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/shared/Layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { useBulkEvaluation } from './hooks/useBulkEvaluation';
 import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
+import { selectedTableTreeIdAtom, selectedTableClaimDataAtom, selectedTableTabAtom, isFromTableVisualizerAtom } from '@/store/atoms/tableVisualization';
 import { getTrees } from '@/lib/db/operations';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
@@ -25,7 +27,13 @@ interface ClaimWithResult {
 }
 
 export default function TableVisualizer() {
+  const navigate = useNavigate();
   const [trees, setTrees] = useAtom(treesAtom);
+  const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
+  const [, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
+  const [, setTableTab] = useAtom(selectedTableTabAtom);
+  const [, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
+
   const [activeTab, setActiveTab] = useState<string>('setup');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
@@ -106,6 +114,19 @@ export default function TableVisualizer() {
     if (evaluatedResults.length > 0) {
       exportToCsv(evaluatedResults);
     }
+  };
+
+  const handleRowClick = (claim: ClaimData) => {
+    if (!selectedTreeId) return;
+
+    // Set atoms for review-trees to consume
+    setTableTreeId(selectedTreeId);
+    setTableClaimData(claim);
+    setTableTab('visualization');
+    setIsFromTable(true);
+
+    // Navigate to review-trees
+    navigate('/review-trees');
   };
 
   const evaluatedResults = claimsWithResults.filter(
@@ -221,6 +242,7 @@ export default function TableVisualizer() {
               claims={claimsWithResults}
               requiredColumns={processor?.getRequiredColumns()}
               isProcessing={isProcessing}
+              onRowClick={handleRowClick}
             />
           </div>
         </TabsContent>
