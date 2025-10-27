@@ -1002,28 +1002,99 @@
 
 ---
 
+## Phase 19: Row-to-Visualization Navigation & Datasets Feature Planning ✅ (In Progress)
+
+### Session: 2025-10-27 - Direct Table Navigation
+
+### Table Row Click Navigation (NEW)
+- [x] Create tableVisualization atoms for cross-page state management
+  - [x] selectedTableTreeIdAtom - Store tree ID from batch evaluation
+  - [x] selectedTableClaimDataAtom - Store claim JSON object
+  - [x] selectedTableTabAtom - Store target tab (visualization)
+  - [x] isFromTableVisualizerAtom - Track navigation source
+
+- [x] Make table rows clickable
+  - [x] Add cursor-pointer styling to indicate interactivity
+  - [x] Add onRowClick callback prop to ClaimsTable
+  - [x] Handle row click with claim data
+
+- [x] Implement navigation flow
+  - [x] table-visualizer: Set atoms and navigate to review-trees
+  - [x] review-trees: Read atoms and populate claim/tree
+  - [x] Auto-evaluate claim to generate trace visualization
+  - [x] Use local state to persist "came from table" flag
+
+- [x] Add "Back to Table" button
+  - [x] Conditional rendering based on cameFromTable state
+  - [x] Navigate back to /table-visualizer
+  - [x] Clean up state on navigation
+
+### Known Limitation & Future Work
+- **Current Behavior:** CSV data is cleared when navigating back to table (no persistence)
+- **Root Cause:** Table data stored in component state, not in database
+- **Solution:** Implement Datasets feature (see below)
+
+### Datasets Feature (PLANNED - Phase 20)
+- [ ] Create datasets table in SQL schema
+  - [ ] Track uploaded CSV files with metadata
+  - [ ] Store data rows in relational format (with foreign key to dataset)
+  - [ ] Add created_at, updated_at timestamps
+  - [ ] Index on dataset_id for quick lookups
+
+- [ ] Database schema expansion
+  - [ ] Add datasets table (id, name, file_name, row_count, created_at)
+  - [ ] Add dataset_rows table (id, dataset_id, claim_number, claim_data_json)
+  - [ ] Foreign key relationship (dataset_rows → datasets)
+
+- [ ] Dataset management page
+  - [ ] List all uploaded datasets with basic info
+  - [ ] View dataset details (# of rows, created date)
+  - [ ] Re-process dataset with different tree
+  - [ ] Delete dataset (cascade delete rows)
+
+- [ ] Enhanced table visualizer
+  - [ ] Load dataset from storage instead of CSV
+  - [ ] Persist results across navigation
+  - [ ] Show dataset selector at top
+
+### Benefits
+- Data persists across page navigation
+- Users can compare results from same dataset with different trees
+- Enables historical tracking of dataset evaluations
+- Foundation for batch processing features
+
+### Git Commits
+- [x] Commit: feat: add direct row-to-visualization navigation from table visualizer
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 451 (+14 from Phase 18)
-**Total Tasks Pending:** 94 (in TODO.md)
-**Current Phase:** Table Visualizer Complete with Analytics - Ready for Error Boundaries & Polish
+**Total Tasks Completed:** 466 (+15 from Phase 19)
+**Total Tasks Pending:** Datasets feature (Phase 20)
+**Current Phase:** Phase 19 Complete - Row Navigation Implemented, Datasets Planned
 
-### Phase 18 Statistics
-- **Commits This Phase:** 3 major commits
-- **Files Modified:** 13 files
-- **Lines Added:** 876 insertions(+), 91 deletions(-)
-- **New Components:** AnalyticsOverview, Enhanced RiskBadge
-- **Dependencies Added:** recharts
+### Phase 19 Statistics
+- **Commits This Phase:** 1 major commit
+- **Files Modified:** 5 files
+- **Lines Added:** 105 insertions(+), 13 deletions(-)
+- **New Atoms:** tableVisualization.ts with 4 atoms
+- **Key Feature:** Direct table row to visualization navigation
 
-### Completed Features Summary
-1. ✅ Probability scaling from sigmoid to min-max (0-100%)
-2. ✅ Analytics tab with score distribution & KPI metrics
-3. ✅ Claim number column selector in validation
-4. ✅ Risk level filter buttons with color coding
-5. ✅ Pagination with filter support
-6. ✅ Sticky table headers with horizontal scroll
-7. ✅ Smaller risk badge sizes
-8. ✅ Enhanced UI/UX for better visibility
+### Phase 19 Completed Features Summary
+1. ✅ Clickable table rows with cursor feedback
+2. ✅ Table row → visualization navigation
+3. ✅ Auto-evaluation on arrival at visualization
+4. ✅ "Back to Table" button (conditional)
+5. ✅ Cross-page state management via atoms
+6. ✅ Known limitation documented (data cleared on back)
+
+### Upcoming (Phase 20)
+- **Datasets Feature** - Persist CSV data in SQL
+- Database schema expansion (datasets + dataset_rows tables)
+- Dataset management page
+- Enhanced table visualizer with dataset selector
+- Enable re-processing and historical tracking
 
 ---
 
@@ -1043,4 +1114,4 @@
 
 ---
 
-_Last Updated: 2025-10-28 14:10_
+_Last Updated: 2025-10-27 11:30_
