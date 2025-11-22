@@ -1082,33 +1082,121 @@
 
 ---
 
+## Phase 20: Supabase Migration for Tree Persistence ✅
+
+### Session: 2025-11-23 - Database Migration
+
+### Database Infrastructure
+- [x] Create trees table in Supabase
+  - [x] Define schema (id, name, tree_type, structure, created_at)
+  - [x] Add CHECK constraint for tree_type enum ('medical' | 'motor')
+  - [x] Use JSONB for structure column (better performance than JSON)
+  - [x] Add indexes on tree_type and created_at for query optimization
+  - [x] Enable Row Level Security (RLS)
+  - [x] Create public access policy for all operations
+
+### Supabase Integration
+- [x] Install @supabase/supabase-js dependency
+- [x] Create environment configuration
+  - [x] Add .env file with Supabase credentials
+  - [x] Create .env.example template
+  - [x] Update .gitignore to exclude .env files
+- [x] Create lib/db/supabase.ts
+  - [x] Initialize Supabase client
+  - [x] Use environment variables for URL and anon key
+  - [x] Add error handling for missing credentials
+- [x] Create lib/db/types.ts
+  - [x] Generate TypeScript types from Supabase schema
+  - [x] Define Database interface for type safety
+  - [x] Export Json type for JSONB columns
+
+### Database Operations Refactor
+- [x] Update lib/db/operations.ts
+  - [x] Replace sql.js/Drizzle with Supabase client
+  - [x] Implement createTree() with Supabase insert
+  - [x] Implement getTrees() with Supabase select + ordering
+  - [x] Implement getTreeById() with Supabase single query
+  - [x] Implement deleteTree() with Supabase delete
+  - [x] Add proper error handling for all operations
+  - [x] Handle "not found" error code (PGRST116)
+  - [x] Maintain same function signatures for compatibility
+  - [x] Type conversions for tree_type and structure fields
+
+### Application Updates
+- [x] Update src/main.tsx
+  - [x] Remove initDB() call (no longer needed)
+  - [x] Simplify initialization (Supabase ready immediately)
+  - [x] Remove database initialization error handling
+
+### Code Cleanup
+- [x] Fix TypeScript errors
+  - [x] Remove unused LogOut import in Sidebar.tsx
+  - [x] Add type assertions for Supabase responses
+  - [x] Fix tree_type to TreeType conversions
+- [x] Update .gitignore
+  - [x] Add .env and .env.local
+  - [x] Add .claude/ directory
+  - [x] Add .mcp.json file
+
+### Testing & Verification
+- [x] TypeScript compilation successful
+- [x] Build passes without errors
+- [x] All database operations type-safe
+- [x] Environment variables properly configured
+
+### Dependencies
+- [x] Added @supabase/supabase-js (^2.x)
+- [x] Maintained compatibility with existing hooks
+- [x] No changes required in page components
+
+### Benefits Achieved
+✅ **Cloud persistence** - Data stored in Supabase PostgreSQL
+✅ **Cross-device access** - Trees accessible from anywhere
+✅ **Better scalability** - PostgreSQL vs browser storage
+✅ **Real-time potential** - Foundation for real-time features
+✅ **Backup & recovery** - Automatic backups via Supabase
+✅ **Collaboration ready** - Multi-user foundation in place
+
+### Migration Notes
+- **Backward compatibility maintained** - All existing hooks work unchanged
+- **API signatures preserved** - createTree, getTrees, getTreeById, deleteTree
+- **Old code deprecated** - sql.js and IndexedDB code no longer used
+- **Future cleanup** - Can remove old db/client.ts, db/schema.ts, db/persistence.ts
+
+### Git Commits
+- [x] Commit: feat: migrate from local database to Supabase for tree persistence
+  - 9 files changed, 356 insertions(+), 57 deletions(-)
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 466 (+15 from Phase 19)
-**Total Tasks Pending:** Datasets feature (Phase 20)
-**Current Phase:** Phase 19 Complete - Row Navigation Implemented, Datasets Planned
+**Total Tasks Completed:** 504 (+38 from Phase 20)
+**Total Tasks Pending:** Datasets feature (Phase 21), Error boundaries, Testing
+**Current Phase:** Phase 20 Complete - Supabase Migration Successful
 
-### Phase 19 Statistics
+### Phase 20 Statistics
 - **Commits This Phase:** 1 major commit
-- **Files Modified:** 5 files
-- **Lines Added:** 105 insertions(+), 13 deletions(-)
-- **New Atoms:** tableVisualization.ts with 4 atoms
-- **Key Feature:** Direct table row to visualization navigation
+- **Files Modified:** 9 files
+- **Lines Added:** 356 insertions(+), 57 deletions(-)
+- **New Files:** supabase.ts, types.ts, Sidebar.tsx, .env.example
+- **Key Achievement:** Complete migration from local to cloud database
 
-### Phase 19 Completed Features Summary
-1. ✅ Clickable table rows with cursor feedback
-2. ✅ Table row → visualization navigation
-3. ✅ Auto-evaluation on arrival at visualization
-4. ✅ "Back to Table" button (conditional)
-5. ✅ Cross-page state management via atoms
-6. ✅ Known limitation documented (data cleared on back)
+### Phase 20 Completed Features Summary
+1. ✅ Supabase PostgreSQL database setup with trees table
+2. ✅ Environment-based configuration with .env
+3. ✅ Database operations refactored to use Supabase client
+4. ✅ TypeScript types generated from schema
+5. ✅ Backward compatibility maintained (no hook changes)
+6. ✅ Build verification and error fixes
 
-### Upcoming (Phase 20)
-- **Datasets Feature** - Persist CSV data in SQL
+### Upcoming (Phase 21)
+- **Datasets Feature** - Persist CSV data in Supabase
 - Database schema expansion (datasets + dataset_rows tables)
 - Dataset management page
 - Enhanced table visualizer with dataset selector
 - Enable re-processing and historical tracking
+- **Database cleanup** - Remove old sql.js files
 
 ---
 
@@ -1128,4 +1216,4 @@
 
 ---
 
-_Last Updated: 2025-10-27 11:30_
+_Last Updated: 2025-11-23 20:15_
