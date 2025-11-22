@@ -1,56 +1,73 @@
-import { eq } from 'drizzle-orm';
-import { getDB, persistDB } from './client';
-import { trees, type NewTreeRecord, type TreeRecord } from './schema';
-import type { Tree } from '../types/tree';
+import { supabase } from './supabase';
+import type { Tree, TreeType } from '../types/tree';
 
 export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
-  const db = getDB();
+  const { data, error } = await supabase
+    .from('trees')
+    .insert({
+      id: tree.id,
+      name: tree.name,
+      tree_type: tree.treeType,
+      structure: tree.structure as any,
+    })
+    .select()
+    .single();
 
-  const newTree: NewTreeRecord = {
-    id: tree.id,
-    name: tree.name,
-    treeType: tree.treeType,
-    structure: JSON.stringify(tree.structure),
-    createdAt: new Date(),
-  };
+  if (error) {
+    throw new Error(`Failed to create tree: ${error.message}`);
+  }
 
-  await db.insert(trees).values(newTree);
-  await persistDB();
-
-  return {
-    ...tree,
-    createdAt: newTree.createdAt,
-  };
+  return rowToTree(data as any);
 }
 
 export async function getTrees(): Promise<Tree[]> {
-  const db = getDB();
-  const results = await db.select().from(trees);
+  const { data, error } = await supabase
+    .from('trees')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  return results.map(recordToTree);
+  if (error) {
+    throw new Error(`Failed to fetch trees: ${error.message}`);
+  }
+
+  return (data as any[]).map(rowToTree);
 }
 
 export async function getTreeById(id: string): Promise<Tree | null> {
-  const db = getDB();
-  const results = await db.select().from(trees).where(eq(trees.id, id));
+  const { data, error } = await supabase
+    .from('trees')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (results.length === 0) return null;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // Not found
+      return null;
+    }
+    throw new Error(`Failed to fetch tree: ${error.message}`);
+  }
 
-  return recordToTree(results[0]);
+  return rowToTree(data as any);
 }
 
 export async function deleteTree(id: string): Promise<void> {
-  const db = getDB();
-  await db.delete(trees).where(eq(trees.id, id));
-  await persistDB();
+  const { error } = await supabase
+    .from('trees')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(`Failed to delete tree: ${error.message}`);
+  }
 }
 
-function recordToTree(record: TreeRecord): Tree {
+function rowToTree(row: any): Tree {
   return {
-    id: record.id,
-    name: record.name,
-    treeType: record.treeType as 'medical' | 'motor',
-    structure: JSON.parse(record.structure as string),
-    createdAt: new Date(record.createdAt),
+    id: row.id,
+    name: row.name,
+    treeType: row.tree_type as TreeType,
+    structure: row.structure as Tree['structure'],
+    createdAt: new Date(row.created_at),
   };
 }
