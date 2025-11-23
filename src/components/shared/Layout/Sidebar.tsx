@@ -1,16 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutGrid,
   PlusCircle,
   Table2,
-  Settings,
   Activity,
-  Heart
+  Heart,
+  LogOut
 } from 'lucide-react';
 import { useAtom } from 'jotai';
 import { appThemeAtom } from '@/store/atoms/ui';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth/context';
 
 const navItems = [
   { path: '/review-trees', label: 'Review Trees', icon: LayoutGrid },
@@ -20,10 +21,17 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [appTheme, setAppTheme] = useAtom(appThemeAtom);
+  const { user, signOut } = useAuth();
 
   const toggleTheme = () => {
     setAppTheme(appTheme === 'motor' ? 'medical' : 'motor');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
   return (
@@ -94,10 +102,19 @@ export function Sidebar() {
           <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/50 p-3">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400" />
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-foreground">Admin User</p>
-              <p className="truncate text-xs text-muted-foreground">admin@cmf.com</p>
+              <p className="truncate text-sm font-medium text-foreground">
+                {user?.email?.split('@')[0] || 'User'}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">{user?.email || ''}</p>
             </div>
-            <Settings className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

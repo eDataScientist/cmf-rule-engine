@@ -2,6 +2,13 @@ import { supabase } from './supabase';
 import type { Tree, TreeType } from '../types/tree';
 
 export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User must be authenticated to create trees');
+  }
+
   const { data, error } = await supabase
     .from('trees')
     .insert({
@@ -9,6 +16,7 @@ export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
       name: tree.name,
       tree_type: tree.treeType,
       structure: tree.structure as any,
+      user_id: user.id,
     })
     .select()
     .single();
