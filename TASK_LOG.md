@@ -1169,34 +1169,137 @@
 
 ---
 
+## Phase 21: Supabase Authentication & User-Specific Trees ✅
+
+### Session: 2025-11-23 - Authentication System
+
+### Database Schema Updates
+- [x] Add user_id column to trees table
+  - [x] Foreign key reference to auth.users(id)
+  - [x] CASCADE delete when user is deleted
+  - [x] Add index on user_id for query performance
+
+### Row Level Security (RLS) Policies
+- [x] Drop public access policy
+- [x] Create authenticated user policies
+  - [x] SELECT: Users can view only their own trees
+  - [x] INSERT: Users can create trees (auto-assigned to their user_id)
+  - [x] UPDATE: Users can update only their own trees
+  - [x] DELETE: Users can delete only their own trees
+- [x] Use auth.uid() for automatic user identification
+
+### Authentication Context & Hooks
+- [x] Create lib/auth/context.tsx
+  - [x] AuthProvider with React Context
+  - [x] Session and user state management
+  - [x] Auth state listener (onAuthStateChange)
+  - [x] signUp function (email/password)
+  - [x] signIn function (email/password)
+  - [x] signOut function
+  - [x] Loading state during initialization
+  - [x] useAuth hook for consuming context
+
+### Authentication UI
+- [x] Create pages/auth/index.tsx
+  - [x] Login/Signup toggle
+  - [x] Email and password inputs
+  - [x] Form validation (required fields, min password length)
+  - [x] Error display with AlertCircle icon
+  - [x] Loading states during auth operations
+  - [x] Card-based layout with gradient background
+  - [x] Navigate to /review-trees after successful auth
+
+### Route Protection
+- [x] Create ProtectedRoute component
+  - [x] Check user authentication status
+  - [x] Show loading spinner during auth check
+  - [x] Redirect to /auth if not authenticated
+  - [x] Render children if authenticated
+
+### Application Integration
+- [x] Update App.tsx
+  - [x] Wrap app with AuthProvider
+  - [x] Add /auth public route
+  - [x] Wrap all existing routes with ProtectedRoute
+  - [x] Move AppLayout inside protected routes
+  - [x] Lazy load auth page
+
+### Database Operations Update
+- [x] Update lib/db/operations.ts
+  - [x] Get current user in createTree()
+  - [x] Throw error if user not authenticated
+  - [x] Include user_id when inserting trees
+  - [x] RLS policies automatically filter by user (no changes needed for read/delete)
+
+### Sidebar Updates
+- [x] Update components/shared/Layout/Sidebar.tsx
+  - [x] Import useAuth hook
+  - [x] Display user email in profile section
+  - [x] Show username (email prefix) as display name
+  - [x] Add logout button with LogOut icon
+  - [x] Navigate to /auth after logout
+  - [x] Replace static "Admin User" with dynamic user data
+
+### Type Safety
+- [x] Fix TypeScript errors
+  - [x] Use type-only imports for User, Session, AuthError
+  - [x] Proper typing for auth context
+  - [x] Build passes without errors
+
+### Testing & Verification
+- [x] TypeScript compilation successful
+- [x] Build passes without errors
+- [x] Auth flow tested and working
+  - [x] Sign up creates user account
+  - [x] Sign in authenticates user
+  - [x] Session persists across page refreshes
+  - [x] Protected routes redirect to /auth
+  - [x] Trees saved with user_id
+  - [x] Users can only see their own trees
+  - [x] Logout clears session
+
+### Security Features
+✅ **User isolation** - RLS policies enforce data separation
+✅ **Automatic user linking** - Trees auto-assigned to authenticated user
+✅ **Session persistence** - Users stay logged in
+✅ **Route protection** - Unauthenticated users redirected
+✅ **Secure passwords** - Handled by Supabase Auth (hashed, salted)
+
+### Git Commits
+- [x] Commit: feat: implement Supabase authentication with user-specific trees
+  - 6 files changed, 286 insertions(+), 14 deletions(-)
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 504 (+38 from Phase 20)
-**Total Tasks Pending:** Datasets feature (Phase 21), Error boundaries, Testing
-**Current Phase:** Phase 20 Complete - Supabase Migration Successful
+**Total Tasks Completed:** 541 (+37 from Phase 21)
+**Total Tasks Pending:** Datasets feature (Phase 22), Database cleanup, Error boundaries
+**Current Phase:** Phase 21 Complete - Authentication & User Isolation Implemented
 
-### Phase 20 Statistics
+### Phase 21 Statistics
 - **Commits This Phase:** 1 major commit
-- **Files Modified:** 9 files
-- **Lines Added:** 356 insertions(+), 57 deletions(-)
-- **New Files:** supabase.ts, types.ts, Sidebar.tsx, .env.example
-- **Key Achievement:** Complete migration from local to cloud database
+- **Files Modified:** 6 files
+- **Lines Added:** 286 insertions(+), 14 deletions(-)
+- **New Files:** context.tsx, ProtectedRoute.tsx, auth/index.tsx
+- **Database Migration:** add_user_id_to_trees
+- **Key Achievement:** Complete authentication system with user isolation
 
-### Phase 20 Completed Features Summary
-1. ✅ Supabase PostgreSQL database setup with trees table
-2. ✅ Environment-based configuration with .env
-3. ✅ Database operations refactored to use Supabase client
-4. ✅ TypeScript types generated from schema
-5. ✅ Backward compatibility maintained (no hook changes)
-6. ✅ Build verification and error fixes
+### Phase 21 Completed Features Summary
+1. ✅ Supabase Auth integration with email/password
+2. ✅ User-specific tree isolation with RLS policies
+3. ✅ Protected routes with auth guards
+4. ✅ Login/signup UI with error handling
+5. ✅ Session persistence across page loads
+6. ✅ User profile display and logout functionality
 
-### Upcoming (Phase 21)
-- **Datasets Feature** - Persist CSV data in Supabase
+### Upcoming (Phase 22)
+- **Database cleanup** - Remove deprecated sql.js files
+- **Datasets Feature** - Persist CSV data in Supabase (Phase 23)
 - Database schema expansion (datasets + dataset_rows tables)
 - Dataset management page
 - Enhanced table visualizer with dataset selector
 - Enable re-processing and historical tracking
-- **Database cleanup** - Remove old sql.js files
 
 ---
 
@@ -1216,4 +1319,4 @@
 
 ---
 
-_Last Updated: 2025-11-23 20:15_
+_Last Updated: 2025-11-23 21:45_
