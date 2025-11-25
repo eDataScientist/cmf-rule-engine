@@ -1271,11 +1271,137 @@
 
 ---
 
+## Phase 22: Dataset Quality Tracking & Edge Functions ✅
+
+### Session: 2025-11-25 - Edge Functions & Data Quality Infrastructure
+
+### File Storage Schema Updates
+- [x] Replace single file_path with separate columns
+  - [x] Add raw_file_path (TEXT) - path to file in raw-datasets bucket
+  - [x] Add aligned_file_path (TEXT) - path to file in aligned-datasets bucket
+  - [x] Drop file_path column (no longer needed)
+  - [x] Migration: add_raw_and_aligned_file_paths
+
+### Dataset Upload Status Tracking
+- [x] Create dataset_upload_status table
+  - [x] id (UUID primary key, auto-generated)
+  - [x] dataset_id (BIGINT, nullable, FK to datasets)
+  - [x] user_id (UUID, required, for RLS)
+  - [x] status (TEXT with CHECK constraint: uploading, processing, uploaded, failed)
+  - [x] error_message (TEXT, nullable)
+  - [x] created_at and updated_at timestamps
+  - [x] Indexes on user_id and dataset_id
+  - [x] RLS policies for user-specific access
+  - [x] Migration: create_dataset_upload_status
+
+### Supabase Edge Functions Setup
+- [x] Create project structure for version control
+  - [x] supabase/config.toml with project_id
+  - [x] supabase/functions/ directory
+  - [x] supabase/functions/README.md with documentation
+  - [x] Update .gitignore to exclude .supabase/ local state
+  - [x] Keep supabase/ config and functions in version control
+
+### Edge Function: calculate-dataset-quality
+- [x] Create function locally in supabase/functions/calculate-dataset-quality/
+- [x] Implement quality metrics calculation
+  - [x] Fetch all dimensions (master schema)
+  - [x] Get present columns for dataset (via dataset_column_presence)
+  - [x] Calculate completeness percentage
+  - [x] Identify missing critical columns
+  - [x] Calculate critical completeness percentage
+  - [x] Compute quality score (70% critical, 30% overall)
+- [x] Input: { dataset_id: number }
+- [x] Output: QualityMetrics interface
+- [x] Error handling and logging
+- [x] Deploy via Supabase MCP tool (Version 1)
+
+### Edge Function: process-dataset-upload
+- [x] Create function locally in supabase/functions/process-dataset-upload/
+- [x] Implement complete upload workflow
+  - [x] Parse multipart form data (file + metadata)
+  - [x] Authenticate user via Authorization header
+  - [x] Create upload status record (status: "uploading")
+  - [x] Update status to "processing"
+  - [x] Forward to n8n webhook with FormData
+  - [x] Parse n8n response (dataset_id + alignment array)
+  - [x] Fetch dimensions from database
+  - [x] Map alignment array to dimension IDs
+  - [x] Create dataset_column_presence records
+  - [x] Update status to "uploaded" with dataset_id
+  - [x] Handle errors → update status to "failed"
+- [x] Required fields validation
+- [x] N8N webhook URL configuration
+- [x] Deploy via Supabase MCP tool (Version 1)
+- [x] Fix n8n webhook URL (webhook-test → webhook)
+- [x] Redeploy with corrected URL (Version 2)
+
+### Type Safety Updates
+- [x] Generate TypeScript types for new tables
+  - [x] dataset_upload_status types (Row, Insert, Update)
+  - [x] Updated datasets types with raw/aligned file paths
+- [x] Update src/lib/db/types.ts
+- [x] Verify TypeScript compilation passes
+- [x] Verify build passes without errors
+
+### Documentation
+- [x] Function deployment documentation
+- [x] Template function with authentication
+- [x] Planned functions list in README
+- [x] Deployment instructions (MCP vs CLI)
+
+### Deployment Infrastructure
+- [x] MCP-based deployment workflow
+  - [x] Read local function files
+  - [x] Deploy via mcp__supabase__deploy_edge_function
+  - [x] Version control maintained locally
+  - [x] No CLI authentication required
+- [x] Redeployment process documented
+
+### Testing & Verification
+- [x] Both functions deployed and ACTIVE
+- [x] TypeScript types updated and synced
+- [x] Build passes without errors
+- [x] Version control structure verified
+- [x] Webhook URL corrected and redeployed
+
+### Key URLs
+- **calculate-dataset-quality**: `https://cayqhjjpqucsoymjvbzr.supabase.co/functions/v1/calculate-dataset-quality`
+- **process-dataset-upload**: `https://cayqhjjpqucsoymjvbzr.supabase.co/functions/v1/process-dataset-upload`
+- **n8n webhook**: `https://aiagentsedata.app.n8n.cloud/webhook/claims/dataset`
+
+### Git Commits (Pending)
+- [ ] Commit: feat: implement dataset quality tracking with Edge Functions
+  - supabase/ directory added with 2 Edge Functions
+  - dataset_upload_status table created
+  - File path schema updated
+  - TypeScript types updated
+  - .gitignore updated for Supabase
+
+---
+
 ## Current Status
 
-**Total Tasks Completed:** 541 (+37 from Phase 21)
-**Total Tasks Pending:** Datasets feature (Phase 22), Database cleanup, Error boundaries
-**Current Phase:** Phase 21 Complete - Authentication & User Isolation Implemented
+**Total Tasks Completed:** 585 (+44 from Phase 22)
+**Total Tasks Pending:** Datasets UI, Error boundaries, Database cleanup
+**Current Phase:** Phase 22 Complete - Dataset Quality Infrastructure & Edge Functions Deployed
+
+### Phase 22 Statistics
+- **Commits This Phase:** 0 (pending commit)
+- **Files Modified:** 6 files (types.ts, .gitignore, config.toml, 2 Edge Functions, README)
+- **Lines Added:** ~400+ insertions
+- **New Files:** supabase/config.toml, 2 Edge Functions, supabase/functions/README.md
+- **Database Migrations:** 2 (add_raw_and_aligned_file_paths, create_dataset_upload_status)
+- **Edge Functions Deployed:** 2 (calculate-dataset-quality, process-dataset-upload)
+- **Key Achievement:** Complete dataset quality infrastructure with n8n integration
+
+### Phase 22 Completed Features Summary
+1. ✅ File storage schema with separate raw/aligned paths
+2. ✅ Upload status tracking table with RLS
+3. ✅ Supabase Edge Functions setup for version control
+4. ✅ Quality metrics calculation Edge Function
+5. ✅ Complete upload workflow Edge Function with n8n integration
+6. ✅ TypeScript types updated and synced
 
 ### Phase 21 Statistics
 - **Commits This Phase:** 1 major commit
@@ -1293,13 +1419,12 @@
 5. ✅ Session persistence across page loads
 6. ✅ User profile display and logout functionality
 
-### Upcoming (Phase 22)
-- **Database cleanup** - Remove deprecated sql.js files
-- **Datasets Feature** - Persist CSV data in Supabase (Phase 23)
-- Database schema expansion (datasets + dataset_rows tables)
-- Dataset management page
+### Upcoming (Phase 23)
+- **Datasets UI** - Frontend for dataset upload and management
+- Dataset management page (list, view, delete)
 - Enhanced table visualizer with dataset selector
 - Enable re-processing and historical tracking
+- Real-time upload status monitoring
 
 ---
 
@@ -1319,4 +1444,4 @@
 
 ---
 
-_Last Updated: 2025-11-23 21:45_
+_Last Updated: 2025-11-25 17:30_
