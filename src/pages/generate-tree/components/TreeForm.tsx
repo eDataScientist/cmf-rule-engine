@@ -41,7 +41,19 @@ value_class_ordinal <= 0.000 (Tree #2 root)
 \tVal: 0.126 (leaf)
 \tVal: -0.007 (leaf)`;
 
-export function TreeForm() {
+interface DatasetContext {
+  id: number;
+  name: string;
+  company: string;
+  country: string;
+}
+
+interface TreeFormProps {
+  datasetContext?: DatasetContext;
+}
+
+export function TreeForm({ datasetContext: _datasetContext }: TreeFormProps) {
+  // Note: datasetContext is passed for future use when creating tree associations during evaluation
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [treeType, setTreeType] = useState<TreeType>('motor');

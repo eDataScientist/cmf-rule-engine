@@ -1,30 +1,37 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const N8N_WEBHOOK_URL = "https://aiagentsedata.app.n8n.cloud/webhook/claims/dataset";
+// Import shared modules
+import { parseCSV, applyAlignment, generateCSV } from "../_shared/csv.ts";
+import {
+  callDataPreviewAPI,
+  callN8nAlignment,
+  callArabicCheckAPI,
+} from "../_shared/external-apis.ts";
+import {
+  uploadToStorage,
+  downloadFromStorage,
+  deleteFromStorage,
+  generateStoragePath,
+} from "../_shared/storage.ts";
+import {
+  createUploadStatus,
+  updateUploadStatus,
+  createDatasetRecord,
+  getDimensions,
+  createColumnPresenceRecords,
+  deleteDataset,
+} from "../_shared/database.ts";
+import type { ProcessState, DatasetMetadata } from "../_shared/types.ts";
 
-interface N8nResponse {
-  dataset_id: number;
-  alignment: Array<{
-    original_column: string;
-    matched_dimension: string | null;
-    confidence?: number;
-  }>;
-}
-
-interface UploadContext {
-  uploadStatusId: string | null;
-  userId: string;
-  supabase: any;
-}
-
-// CORS headers for all responses
+// CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-// Handle CORS preflight requests
+// Handle CORS preflight
 function handleCors(req: Request): Response | null {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -52,12 +59,15 @@ async function validateRequest(req: Request) {
     }
   );
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
   if (userError || !user) {
     throw new Error("User not authenticated");
   }
 
-  return { user, supabase };
+  return { user, authHeader };
 }
 
 // Parse and validate form data
@@ -68,141 +78,195 @@ function validateFormData(formData: FormData) {
   const country = formData.get("Country") as string;
 
   if (!file || !insuranceCompany || !country) {
-    throw new Error("Missing required fields: Claims_Data, Insurance Company Name, or Country");
+    throw new Error(
+      "Missing required fields: Claims_Data, Insurance Company Name, or Country"
+    );
   }
 
   return { file, insuranceCompany, email, country };
 }
 
-// Create initial upload status record
-async function createUploadStatus(supabase: any, userId: string): Promise<string> {
-  const { data, error } = await supabase
-    .from("dataset_upload_status")
-    .insert({
-      user_id: userId,
-      status: "uploading",
-    })
-    .select()
-    .single();
+// Cleanup resources on error
+async function cleanupOnError(state: ProcessState): Promise<void> {
+  console.log("Cleaning up resources after error...");
 
-  if (error) throw error;
-  return data.id;
+  // Delete uploaded files (best effort, don't throw)
+  if (state.rawFilePath) {
+    try {
+      await deleteFromStorage("raw-datasets", state.rawFilePath);
+      console.log(`Deleted raw file: ${state.rawFilePath}`);
+    } catch (error) {
+      console.error("Failed to delete raw file:", error.message);
+    }
+  }
+
+  if (state.alignedFilePath) {
+    try {
+      await deleteFromStorage("aligned-datasets", state.alignedFilePath);
+      console.log(`Deleted aligned file: ${state.alignedFilePath}`);
+    } catch (error) {
+      console.error("Failed to delete aligned file:", error.message);
+    }
+  }
+
+  // Delete dataset record if created (cascade deletes presence records)
+  if (state.datasetId) {
+    try {
+      await deleteDataset(state.datasetId);
+      console.log(`Deleted dataset: ${state.datasetId}`);
+    } catch (error) {
+      console.error("Failed to delete dataset:", error.message);
+    }
+  }
 }
 
-// Update status to processing
-async function updateStatusToProcessing(supabase: any, uploadStatusId: string) {
-  await supabase
-    .from("dataset_upload_status")
-    .update({ status: "processing", updated_at: new Date().toISOString() })
-    .eq("id", uploadStatusId);
-}
-
-// Forward request to n8n webhook
-async function forwardToN8n(
+// Main processing function
+async function processDatasetUpload(
   file: File,
-  insuranceCompany: string,
-  email: string,
-  country: string,
-  userId: string
-): Promise<N8nResponse> {
-  const n8nFormData = new FormData();
-  n8nFormData.append("Claims_Data", file);
-  n8nFormData.append("Insurance Company Name", insuranceCompany);
-  n8nFormData.append("Email", email);
-  n8nFormData.append("Country", country);
-  n8nFormData.append("user_id", userId);
-
-  const response = await fetch(N8N_WEBHOOK_URL, {
-    method: "POST",
-    body: n8nFormData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`n8n webhook failed: ${response.statusText}`);
-  }
-
-  const data: N8nResponse = await response.json();
-
-  if (!data.dataset_id || !data.alignment) {
-    throw new Error("Invalid response from n8n: missing dataset_id or alignment");
-  }
-
-  return data;
-}
-
-// Process alignment data and create column presence records
-async function processAlignment(supabase: any, n8nData: N8nResponse) {
-  // Fetch all dimensions
-  const { data: dimensions, error: dimensionsError } = await supabase
-    .from("dimensions")
-    .select("id, name");
-
-  if (dimensionsError) throw dimensionsError;
-
-  // Create dimension map
-  const dimensionMap = new Map(
-    dimensions.map((d: any) => [d.name.toLowerCase(), d.id])
-  );
-
-  // Map alignment to dimension IDs
-  const matchedDimensions = n8nData.alignment
-    .filter((item) => item.matched_dimension !== null)
-    .map((item) => {
-      const dimensionId = dimensionMap.get(item.matched_dimension!.toLowerCase());
-      if (!dimensionId) {
-        console.warn(`Dimension not found: ${item.matched_dimension}`);
-        return null;
-      }
-      return {
-        dataset_id: n8nData.dataset_id,
-        dimension_id: dimensionId,
-      };
-    })
-    .filter((item) => item !== null);
-
-  // Insert column presence records
-  if (matchedDimensions.length > 0) {
-    const { error: presenceError } = await supabase
-      .from("dataset_column_presence")
-      .insert(matchedDimensions);
-
-    if (presenceError) throw presenceError;
-  }
-
-  return matchedDimensions;
-}
-
-// Update upload status to success
-async function updateUploadSuccess(
-  supabase: any,
-  uploadStatusId: string,
-  datasetId: number
+  metadata: DatasetMetadata,
+  authHeader: string
 ) {
-  await supabase
-    .from("dataset_upload_status")
-    .update({
-      status: "uploaded",
-      dataset_id: datasetId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", uploadStatusId);
-}
+  const state: ProcessState = {
+    uploadStatusId: null,
+    rawFilePath: null,
+    alignedFilePath: null,
+    datasetId: null,
+  };
 
-// Update upload status to failed
-async function updateUploadFailure(uploadStatusId: string, errorMessage: string) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
+  try {
+    console.log("Step 1: Creating upload status...");
+    state.uploadStatusId = await createUploadStatus(
+      metadata.userId,
+      "uploading",
+      authHeader
+    );
+    console.log(`Upload status created: ${state.uploadStatusId}`);
 
-  await supabase
-    .from("dataset_upload_status")
-    .update({
-      status: "failed",
-      error_message: errorMessage,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", uploadStatusId);
+    console.log("Step 2: Uploading raw file to storage...");
+    const rawPath = generateStoragePath(metadata.userId, file.name);
+    state.rawFilePath = await uploadToStorage(
+      "raw-datasets",
+      rawPath,
+      file,
+      file.type
+    );
+    console.log(`Raw file uploaded: ${state.rawFilePath}`);
+
+    console.log("Step 3: Updating status to processing...");
+    await updateUploadStatus(
+      state.uploadStatusId,
+      { status: "processing" },
+      authHeader
+    );
+
+    console.log("Step 4: Calling DataPreview API...");
+    const previewData = await callDataPreviewAPI(file);
+    console.log(
+      `Preview data received: ${previewData.shape.rows} rows, ${previewData.shape.columns} columns`
+    );
+
+    console.log("Step 5: Calling N8N for AI alignment...");
+    const { alignment } = await callN8nAlignment(previewData);
+    const matchedColumns = Object.values(alignment).filter(
+      (v) => v && v.trim() !== ""
+    ).length;
+    console.log(
+      `Alignment received: ${matchedColumns}/${Object.keys(alignment).length} columns matched`
+    );
+
+    console.log("Step 6: Transforming CSV data...");
+    const rawBlob = await downloadFromStorage("raw-datasets", state.rawFilePath);
+    const rawContent = await rawBlob.text();
+    const parsed = await parseCSV(rawContent);
+    const transformed = applyAlignment(parsed, alignment);
+    const alignedCSV = await generateCSV(transformed);
+    console.log(
+      `CSV transformed: ${transformed.rows.length} rows, ${transformed.headers.length} aligned columns`
+    );
+
+    console.log("Step 7: Uploading aligned file to storage...");
+    const alignedPath = generateStoragePath(metadata.userId, file.name, "_aligned");
+    state.alignedFilePath = await uploadToStorage(
+      "aligned-datasets",
+      alignedPath,
+      new Blob([alignedCSV], { type: "text/csv" }),
+      "text/csv"
+    );
+    console.log(`Aligned file uploaded: ${state.alignedFilePath}`);
+
+    console.log("Step 8: Calling ArabicCheck API...");
+    const alignedBlob = await downloadFromStorage(
+      "aligned-datasets",
+      state.alignedFilePath
+    );
+    const alignedFile = new File([alignedBlob], file.name, {
+      type: "text/csv",
+    });
+    const arabicColumns = await callArabicCheckAPI(alignedFile);
+    console.log(`Arabic columns detected: ${arabicColumns}`);
+
+    console.log("Step 9: Creating dataset record...");
+    state.datasetId = await createDatasetRecord({
+      insuranceCompany: metadata.insuranceCompany,
+      country: metadata.country,
+      fileName: file.name,
+      rows: previewData.shape.rows,
+      columns: previewData.shape.columns,
+      arabicColumns,
+      rawFilePath: state.rawFilePath,
+      alignedFilePath: state.alignedFilePath,
+      userId: metadata.userId,
+    });
+    console.log(`Dataset record created: ${state.datasetId}`);
+
+    console.log("Step 10: Creating column presence records...");
+    const dimensions = await getDimensions();
+    await createColumnPresenceRecords(state.datasetId, alignment, dimensions);
+    console.log(`Column presence records created`);
+
+    console.log("Step 11: Updating status to uploaded...");
+    await updateUploadStatus(
+      state.uploadStatusId,
+      {
+        status: "uploaded",
+        dataset_id: state.datasetId,
+      },
+      authHeader
+    );
+
+    console.log("Dataset upload completed successfully!");
+    return {
+      success: true,
+      upload_status_id: state.uploadStatusId,
+      dataset_id: state.datasetId,
+      matched_columns: matchedColumns,
+      total_columns: Object.keys(alignment).length,
+      alignment,
+    };
+  } catch (error) {
+    console.error("Error during dataset upload:", error);
+
+    // Cleanup resources
+    await cleanupOnError(state);
+
+    // Update status to failed
+    if (state.uploadStatusId) {
+      try {
+        await updateUploadStatus(
+          state.uploadStatusId,
+          {
+            status: "failed",
+            error_message: error.message,
+          },
+          authHeader
+        );
+      } catch (updateError) {
+        console.error("Failed to update status to failed:", updateError);
+      }
+    }
+
+    throw error;
+  }
 }
 
 // Main handler
@@ -211,60 +275,46 @@ Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  let uploadStatusId: string | null = null;
-
   try {
     // Validate request and authenticate user
-    const { user, supabase } = await validateRequest(req);
+    const { user, authHeader } = await validateRequest(req);
 
     // Parse and validate form data
     const formData = await req.formData();
     const { file, insuranceCompany, email, country } = validateFormData(formData);
 
-    // Create upload status
-    uploadStatusId = await createUploadStatus(supabase, user.id);
+    console.log(`Processing upload for user ${user.id}: ${file.name}`);
 
-    // Update to processing
-    await updateStatusToProcessing(supabase, uploadStatusId);
-
-    // Forward to n8n
-    const n8nData = await forwardToN8n(file, insuranceCompany, email, country, user.id);
-
-    // Process alignment and create presence records
-    const matchedDimensions = await processAlignment(supabase, n8nData);
-
-    // Update to success
-    await updateUploadSuccess(supabase, uploadStatusId, n8nData.dataset_id);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        upload_status_id: uploadStatusId,
-        dataset_id: n8nData.dataset_id,
-        matched_columns: matchedDimensions.length,
-        total_columns: n8nData.alignment.length,
-      }),
+    // Process dataset upload
+    const result = await processDatasetUpload(
+      file,
       {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-          "Connection": "keep-alive",
-        },
-      }
+        insuranceCompany,
+        country,
+        email,
+        userId: user.id,
+      },
+      authHeader
     );
+
+    return new Response(JSON.stringify(result), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("Error processing dataset upload:", error);
-
-    // Update status to failed
-    if (uploadStatusId) {
-      await updateUploadFailure(uploadStatusId, error.message);
-    }
 
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: error.message.includes("authorization") ? 401 :
-               error.message.includes("Missing required") ? 400 : 500,
+        status: error.message.includes("authorization")
+          ? 401
+          : error.message.includes("Missing required")
+          ? 400
+          : 500,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",

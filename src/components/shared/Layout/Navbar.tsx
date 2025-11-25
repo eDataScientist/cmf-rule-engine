@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
   { path: '/review-trees', label: 'Decision Trees' },
+  { path: '/datasets', label: 'Datasets' },
   { path: '/generate-tree', label: 'Generate Tree' },
   { path: '/table-visualizer', label: 'Table Visualizer' },
 ];
