@@ -14,32 +14,42 @@ import { ClaimsTable } from './components/ClaimsTable';
 import { AnalyticsOverview } from './components/AnalyticsOverview';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
-import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
-import { selectedTableTreeIdAtom, selectedTableClaimDataAtom, selectedTableTabAtom, isFromTableVisualizerAtom } from '@/store/atoms/tableVisualization';
+import {
+  selectedTableTreeIdAtom,
+  selectedTableClaimDataAtom,
+  selectedTableTabAtom,
+  isFromTableVisualizerAtom,
+  tableVisualizerTreeIdAtom,
+  tableVisualizerActiveTabAtom,
+  tableVisualizerFileMetadataAtom,
+  tableVisualizerClaimsWithResultsAtom,
+  tableVisualizerValidationAtom
+} from '@/store/atoms/tableVisualization';
 import { getTrees } from '@/lib/db/operations';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
 
-interface ClaimWithResult {
-  claim: ClaimData;
-  result?: TraceResult;
-}
-
 export default function TableVisualizer() {
   const navigate = useNavigate();
   const [trees, setTrees] = useAtom(treesAtom);
+
+  // Navigation atoms (for passing data to review-trees)
   const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
   const [, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
   const [, setTableTab] = useAtom(selectedTableTabAtom);
   const [, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
 
-  const [activeTab, setActiveTab] = useState<string>('setup');
+  // Persisted state atoms (cached across navigation)
+  const [activeTab, setActiveTab] = useAtom(tableVisualizerActiveTabAtom);
+  const [selectedTreeId, setSelectedTreeId] = useAtom(tableVisualizerTreeIdAtom);
+  const [claimsWithResults, setClaimsWithResults] = useAtom(tableVisualizerClaimsWithResultsAtom);
+  const [validation, setValidation] = useAtom(tableVisualizerValidationAtom);
+  const [fileMetadata, setFileMetadata] = useAtom(tableVisualizerFileMetadataAtom);
+
+  // Local-only state (doesn't need persistence)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
-  const [claimsWithResults, setClaimsWithResults] = useState<ClaimWithResult[]>([]);
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
 
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
@@ -50,13 +60,19 @@ export default function TableVisualizer() {
     getTrees().then(setTrees);
   }, [setTrees]);
 
-  // When tree is selected, create processor
+  // Re-create processor when tree is selected OR when page loads with cached tree
+  useEffect(() => {
+    if (selectedTreeId && trees.length > 0) {
+      const tree = trees.find((t) => t.id === selectedTreeId);
+      if (tree) {
+        createProcessor(tree.structure);
+      }
+    }
+  }, [selectedTreeId, trees, createProcessor]);
+
+  // When tree is selected, update the atom
   const handleTreeSelect = (treeId: string) => {
     setSelectedTreeId(treeId);
-    const tree = trees.find((t) => t.id === treeId);
-    if (tree) {
-      createProcessor(tree.structure);
-    }
   };
 
   // When CSV is parsed, validate columns
@@ -74,16 +90,19 @@ export default function TableVisualizer() {
 
   const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
+    setFileMetadata({ name: file.name, size: file.size });
     await parse(file);
   };
 
   const handleDatasetSelect = async (file: File, _datasetName: string) => {
     setSelectedFile(file);
+    setFileMetadata({ name: file.name, size: file.size });
     await parse(file);
   };
 
   const handleClearFile = () => {
     setSelectedFile(null);
+    setFileMetadata(null);
     setClaimsWithResults([]);
     setValidation(null);
     clearParse();
@@ -199,8 +218,34 @@ export default function TableVisualizer() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Option A: Select Existing Dataset */}
-                  <div>
+                  {/* Show cached data status */}
+                  {fileMetadata && claimsWithResults.length > 0 && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground mb-1">
+                            Data Loaded: {fileMetadata.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {claimsWithResults.length} claims • {(fileMetadata.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleClearFile}
+                        >
+                          Clear & Reload
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show options only if no data loaded */}
+                  {(!fileMetadata || claimsWithResults.length === 0) && (
+                    <>
+                      {/* Option A: Select Existing Dataset */}
+                      <div>
                     <div className="mb-3">
                       <h3 className="text-sm font-semibold text-foreground mb-1">
                         Option A: Use Existing Dataset
@@ -248,6 +293,8 @@ export default function TableVisualizer() {
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
                       <span className="text-sm text-muted-foreground">Parsing CSV...</span>
                     </div>
+                  )}
+                    </>
                   )}
                 </div>
               </CardContent>
