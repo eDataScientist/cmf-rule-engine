@@ -1795,10 +1795,11 @@
 - **Edge Functions Deployed:** 1 (regenerate-aligned-dataset)
 - **Key Achievement:** Complete editable alignment with CSV regeneration + cache-busting
 
-### Phase 25 Statistics (COMMITTED: [pending])
+### Phase 25 Statistics (COMMITTED: 2d875cc)
 - **Commits This Phase:** 1
 - **Files Created:** 1 (LinkTreeDialog.tsx)
-- **Files Modified:** 2 ([id].tsx, TASK_LOG.md)
+- **Files Modified:** 5 ([id].tsx, generate-tree/index.tsx, TreeForm.tsx, useTreeSave.ts, TASK_LOG.md)
+- **Lines Added:** 405 insertions, 26 deletions
 - **Database Migrations:** 1 (make_results_jsonb_nullable)
 - **Key Achievement:** Link existing trees to datasets without requiring evaluation
 
