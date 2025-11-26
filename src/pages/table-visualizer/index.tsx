@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { CsvUploader } from './components/CsvUploader';
+import { DatasetSelector } from './components/DatasetSelector';
 import { ColumnValidation } from './components/ColumnValidation';
 import { ClaimsTable } from './components/ClaimsTable';
 import { AnalyticsOverview } from './components/AnalyticsOverview';
@@ -72,6 +73,11 @@ export default function TableVisualizer() {
   }, [claims, processor, validateColumns]);
 
   const handleFileSelect = async (file: File) => {
+    setSelectedFile(file);
+    await parse(file);
+  };
+
+  const handleDatasetSelect = async (file: File, _datasetName: string) => {
     setSelectedFile(file);
     await parse(file);
   };
@@ -189,21 +195,61 @@ export default function TableVisualizer() {
 
             <Card>
               <CardHeader>
-                <CardTitle>2. Upload CSV File</CardTitle>
+                <CardTitle>2. Load Data</CardTitle>
               </CardHeader>
               <CardContent>
-                <CsvUploader
-                  onFileSelect={handleFileSelect}
-                  selectedFile={selectedFile}
-                  onClear={handleClearFile}
-                  isProcessing={isParsing}
-                />
-                {isParsing && (
-                  <div className="flex items-center justify-center mt-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
-                    <span className="text-sm text-muted-foreground">Parsing CSV...</span>
+                <div className="space-y-6">
+                  {/* Option A: Select Existing Dataset */}
+                  <div>
+                    <div className="mb-3">
+                      <h3 className="text-sm font-semibold text-foreground mb-1">
+                        Option A: Use Existing Dataset
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Select a previously uploaded dataset from storage
+                      </p>
+                    </div>
+                    <DatasetSelector
+                      onDatasetSelect={handleDatasetSelect}
+                      isLoading={isParsing}
+                    />
                   </div>
-                )}
+
+                  {/* Separator */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  {/* Option B: Upload New CSV */}
+                  <div>
+                    <div className="mb-3">
+                      <h3 className="text-sm font-semibold text-foreground mb-1">
+                        Option B: Upload New CSV File
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Upload a new CSV file from your computer
+                      </p>
+                    </div>
+                    <CsvUploader
+                      onFileSelect={handleFileSelect}
+                      selectedFile={selectedFile}
+                      onClear={handleClearFile}
+                      isProcessing={isParsing}
+                    />
+                  </div>
+
+                  {isParsing && (
+                    <div className="flex items-center justify-center pt-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+                      <span className="text-sm text-muted-foreground">Parsing CSV...</span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

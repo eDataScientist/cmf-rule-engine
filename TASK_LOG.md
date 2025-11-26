@@ -1764,6 +1764,54 @@
 
 ---
 
+## Phase 26: Dataset Selector for Table Visualizer ✅
+
+### Session: 2025-11-26 - Table Visualizer Enhancement
+
+### Dataset Selector Component
+- [x] Created DatasetSelector component (src/pages/table-visualizer/components/DatasetSelector.tsx)
+  - [x] Dropdown showing all available datasets
+  - [x] Dataset info card with metadata display
+    - [x] File name
+    - [x] Insurance company
+    - [x] Country
+    - [x] Size (rows × columns)
+  - [x] "Load Dataset" button with loading states
+  - [x] Downloads raw CSV from Supabase storage
+  - [x] Converts blob to File object
+  - [x] Passes to existing CSV parser
+  - [x] Loading states throughout component
+
+### Table Visualizer UI Reorganization
+- [x] Enhanced "2. Load Data" section (src/pages/table-visualizer/index.tsx)
+  - [x] Split into two clear options
+  - [x] Option A: Use Existing Dataset (new)
+  - [x] Option B: Upload New CSV File (existing)
+  - [x] Clean "or" separator between options
+  - [x] Section headers explaining each option
+  - [x] Unified parsing state handling
+  - [x] Added handleDatasetSelect handler
+
+### User Experience Improvements
+- [x] Two flexible data loading methods
+  - [x] Select from previously uploaded datasets
+  - [x] Upload new CSV files
+- [x] Consistent workflow for both methods
+- [x] Loads raw dataset (not aligned) for evaluation
+- [x] Auto-navigates to validation tab after loading
+- [x] All existing functionality preserved
+
+### Files Created
+- src/pages/table-visualizer/components/DatasetSelector.tsx - Dataset selection component
+
+### Files Modified
+- src/pages/table-visualizer/index.tsx - Added dataset selector option
+
+### Git Commits
+- [x] Commit: feat: add dataset selector to Table Visualizer
+
+---
+
 ## Current Status
 
 **Total Tasks Completed:**
@@ -1771,8 +1819,9 @@
 - Phase 24 Part 1: 9/9 (100%) ✅
 - Phase 24 Part 2: 14/14 (100%) ✅
 - Phase 25: 4/4 (100%) ✅
+- Phase 26: 3/3 (100%) ✅
 
-**Current Phase:** Phase 25 - COMPLETE ✅
+**Current Phase:** Phase 26 - COMPLETE ✅
 
 ### Phase 23 Statistics (COMMITTED: 24a69c8)
 - **Commits This Phase:** 1
@@ -1802,6 +1851,12 @@
 - **Lines Added:** 405 insertions, 26 deletions
 - **Database Migrations:** 1 (make_results_jsonb_nullable)
 - **Key Achievement:** Link existing trees to datasets without requiring evaluation
+
+### Phase 26 Statistics (COMMITTED: [pending])
+- **Commits This Phase:** 1
+- **Files Created:** 1 (DatasetSelector.tsx)
+- **Files Modified:** 2 (table-visualizer/index.tsx, TASK_LOG.md)
+- **Key Achievement:** Enable loading existing datasets in Table Visualizer
 
 ### Phase 24 Part 1 Completed Features ✅
 1. ✅ Data Preview moved before Column Alignment
@@ -1966,4 +2021,4 @@
 
 ---
 
-_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅)_
+_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅, Phase 26 ✅)_
