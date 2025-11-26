@@ -348,3 +348,48 @@ export async function createTreeAssociation(params: CreateTreeAssociationParams)
 
   return data.id;
 }
+
+// Dimension Operations
+
+export interface Dimension {
+  id: number;
+  name: string;
+  displayName: string;
+  category: string;
+  dataType: string;
+  isCritical: boolean;
+}
+
+export async function getAllDimensions(): Promise<Dimension[]> {
+  const { data, error } = await supabase
+    .from('dimensions')
+    .select('id, name, display_name, category, data_type, is_critical')
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch dimensions: ${error.message}`);
+  }
+
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    displayName: row.display_name,
+    category: row.category,
+    dataType: row.data_type,
+    isCritical: row.is_critical ?? false,
+  }));
+}
+
+export async function updateDatasetAlignment(
+  datasetId: number,
+  alignmentMapping: Record<string, string>
+): Promise<void> {
+  const { error } = await supabase
+    .from('datasets')
+    .update({ alignment_mapping: alignmentMapping })
+    .eq('id', datasetId);
+
+  if (error) {
+    throw new Error(`Failed to update alignment mapping: ${error.message}`);
+  }
+}

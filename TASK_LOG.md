@@ -1718,9 +1718,9 @@
 **Total Tasks Completed:**
 - Phase 23: 29/29 (100%) ✅
 - Phase 24 Part 1: 9/9 (100%) ✅
-- Phase 24 Part 2: 0/8 (In Progress) ⏳
+- Phase 24 Part 2: 14/14 (100%) ✅
 
-**Current Phase:** Phase 24 Part 2 - Editable Alignment Table
+**Current Phase:** Phase 24 Part 2 - COMPLETE ✅
 
 ### Phase 23 Statistics (COMMITTED: 24a69c8)
 - **Commits This Phase:** 1
@@ -1735,6 +1735,13 @@
 - **Lines Added:** 84 insertions, 67 deletions
 - **Key Achievement:** Quick wins + alignment mapping infrastructure
 
+### Phase 24 Part 2 Statistics (PENDING COMMIT)
+- **Commits This Phase:** 1 (pending)
+- **Files Created:** 2 (select.tsx, regenerate-aligned-dataset/index.ts)
+- **Files Modified:** 3 (operations.ts, [id].tsx, helpers.ts)
+- **Edge Functions Deployed:** 1 (regenerate-aligned-dataset)
+- **Key Achievement:** Complete editable alignment with CSV regeneration + cache-busting
+
 ### Phase 24 Part 1 Completed Features ✅
 1. ✅ Data Preview moved before Column Alignment
 2. ✅ Data Preview reduced to 5 rows
@@ -1746,15 +1753,137 @@
 8. ✅ Edge Function stores alignment mapping
 9. ✅ TypeScript types updated for alignment mapping
 
-### Phase 24 Part 2 In Progress ⏳
-1. ⏳ Fetch all dimensions for dropdown options
-2. ⏳ Create state for edit mode and editable alignment
-3. ⏳ Build alignment table with original columns + dropdowns
-4. ⏳ Add pagination (10 rows per page)
-5. ⏳ Style table with alternating row colors
-6. ⏳ Implement Edit/Save/Cancel mode
-7. ⏳ Add duplicate dimension validation
-8. ⏳ Implement save functionality to update database
+### Phase 24 Part 2 Completed Features ✅
+1. ✅ Fetch all dimensions for dropdown options
+2. ✅ Create state for edit mode and editable alignment
+3. ✅ Build alignment table with original columns + dropdowns
+4. ✅ Add pagination (10 rows per page)
+5. ✅ Style table with alternating row colors
+6. ✅ Implement Edit/Save/Cancel mode
+7. ✅ Add duplicate dimension validation
+8. ✅ Implement save functionality to update database
+9. ✅ Create regenerate-aligned-dataset Edge Function
+10. ✅ Implement aligned CSV regeneration on save
+11. ✅ Add refresh button to Data Preview
+12. ✅ Sort columns alphabetically in both sections
+13. ✅ Add cache-busting for fresh downloads
+14. ✅ Add change tracking to disable Save when no changes
+
+---
+
+## Phase 24 Part 2: Editable Alignment Mapping Table ✅
+
+### Session: 2025-11-26 - Complete Editable Alignment with CSV Regeneration
+
+### Editable Alignment Table Implementation
+- [x] Created Select UI component (src/components/ui/select.tsx)
+  - [x] Supports options array with value/label pairs
+  - [x] Tailwind styling with focus states
+  - [x] Accessible form component
+
+- [x] Added database operations (src/lib/db/operations.ts)
+  - [x] `getAllDimensions()` - Fetch all dimensions for dropdown
+  - [x] `updateDatasetAlignment()` - Update alignment_mapping JSONB field
+  - [x] Added Dimension interface with all fields
+
+- [x] Complete alignment table rewrite (src/pages/datasets/[id].tsx)
+  - [x] Added state: dimensions, editMode, editableAlignment, originalAlignment
+  - [x] Added state: alignmentPage, loadingDimensions, saving, validationError
+  - [x] Implemented Edit/Save/Cancel button handlers
+  - [x] Added dimension change handler with validation
+  - [x] Built rich table with original columns + dimension dropdowns
+  - [x] Alternating row colors (bg-background / bg-muted/20)
+  - [x] Pagination with 10 rows per page
+  - [x] Previous/Next buttons with disabled states
+
+### State Management & Validation
+- [x] Change tracking with originalAlignment state
+  - [x] Stores copy of alignment when entering edit mode
+  - [x] Compares current with original using JSON.stringify
+  - [x] Computed hasChanges value using useMemo
+  - [x] Disables Save button when no changes detected
+
+- [x] Duplicate dimension validation
+  - [x] Filters out empty strings (unmapped columns)
+  - [x] Uses Set to detect duplicate dimension mappings
+  - [x] Shows inline error banner with AlertCircle icon
+  - [x] Prevents save when duplicates found
+  - [x] Clears error when user makes changes
+
+### CSV Regeneration System
+- [x] Created regenerate-aligned-dataset Edge Function
+  - [x] Downloads raw CSV from storage
+  - [x] Applies new alignment mapping
+  - [x] Generates new aligned CSV
+  - [x] Uploads to storage (overwrites existing file)
+  - [x] Extensive debug logging for troubleshooting
+  - [x] Returns success with row/column counts
+
+- [x] Integrated regeneration into save flow
+  - [x] Step 1: Update alignment_mapping in database
+  - [x] Step 2: Call Edge Function to regenerate CSV
+  - [x] Step 3: Update local dataset state
+  - [x] Step 4: Wait 500ms for storage propagation
+  - [x] Step 5: Clear preview data to force refresh
+  - [x] Step 6: Reload preview with new data
+
+### Data Preview Enhancements
+- [x] Added Refresh button
+  - [x] Shows "Load Preview" when no data
+  - [x] Shows "Refresh" with RefreshCw icon when loaded
+  - [x] Always visible (unless loading)
+  - [x] Useful after editing alignment
+
+- [x] Alphabetical column sorting
+  - [x] Sort headers before rendering: `[...headers].sort()`
+  - [x] Applied to both header row and data rows
+  - [x] Consistent with alignment table sorting
+
+- [x] Fixed refresh button interactivity
+  - [x] Added flex-1 to title div for proper spacing
+  - [x] Wrapped button in flex-shrink-0 div
+  - [x] Added gap-4 to parent flex container
+  - [x] Removed previewData check from loadDataPreview
+
+- [x] Cache-busting implementation
+  - [x] Added bustCache parameter to downloadFile()
+  - [x] Appends timestamp query param: `?t=${Date.now()}`
+  - [x] Forces fresh download bypassing browser cache
+  - [x] Always enabled for preview loads
+
+### Alignment Table Sorting
+- [x] Alphabetical sorting by original column name
+  - [x] Applied in useMemo for alignmentEntries
+  - [x] Uses localeCompare for proper string sorting
+  - [x] Maintains sort through pagination
+
+### Files Created
+- src/components/ui/select.tsx - New Select component
+- supabase/functions/regenerate-aligned-dataset/index.ts - New Edge Function
+
+### Files Modified
+- src/lib/db/operations.ts - Added dimension operations
+- src/pages/datasets/[id].tsx - Complete alignment section rewrite + refresh button
+- src/lib/storage/helpers.ts - Added cache-busting to downloadFile()
+- supabase/functions/_shared/csv.ts - Used by regenerate function
+- supabase/functions/_shared/storage.ts - Used by regenerate function
+
+### Key Technical Decisions
+1. **State Management**: Used separate editableAlignment and originalAlignment to track changes without affecting display
+2. **Validation Strategy**: Client-side validation before save, preventing invalid states
+3. **CSV Regeneration**: Server-side via Edge Function for consistency with upload process
+4. **Cache Busting**: Timestamp query params to force fresh downloads
+5. **Alphabetical Sorting**: Improves UX by making columns easy to find in both tables
+
+### Bug Fixes
+1. Fixed Select component import path (utils/cn → utils)
+2. Fixed refresh button not clickable (flex layout issue)
+3. Fixed preview showing old data after save (browser caching)
+4. Fixed validation triggering when no changes made (hasChanges check)
+5. Fixed duplicate error for unmapped columns (filter empty strings)
+
+### Git Commits
+- [ ] Commit: feat: implement Phase 24 Part 2 - Editable Alignment Mapping with CSV Regeneration
 
 ---
 
@@ -1776,4 +1905,4 @@
 
 ---
 
-_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ⏳)_
+_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅)_

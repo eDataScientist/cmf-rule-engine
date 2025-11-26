@@ -45,12 +45,16 @@ export async function getAlignedDatasetUrl(filePath: string): Promise<string> {
  * Download a file from Supabase Storage
  * @param bucket - Storage bucket name
  * @param path - File path in the bucket
+ * @param bustCache - Add timestamp to force fresh download
  * @returns File blob
  */
-export async function downloadFile(bucket: string, path: string): Promise<Blob> {
+export async function downloadFile(bucket: string, path: string, bustCache: boolean = false): Promise<Blob> {
+  // Add cache buster to force fresh download if needed
+  const downloadPath = bustCache ? `${path}?t=${Date.now()}` : path;
+
   const { data, error } = await supabase.storage
     .from(bucket)
-    .download(path);
+    .download(downloadPath);
 
   if (error) {
     throw new Error(`Failed to download file: ${error.message}`);
@@ -66,15 +70,15 @@ export async function downloadFile(bucket: string, path: string): Promise<Blob> 
 /**
  * Download raw dataset file
  */
-export async function downloadRawDataset(filePath: string): Promise<Blob> {
-  return downloadFile('raw-datasets', filePath);
+export async function downloadRawDataset(filePath: string, bustCache: boolean = false): Promise<Blob> {
+  return downloadFile('raw-datasets', filePath, bustCache);
 }
 
 /**
  * Download aligned dataset file
  */
-export async function downloadAlignedDataset(filePath: string): Promise<Blob> {
-  return downloadFile('aligned-datasets', filePath);
+export async function downloadAlignedDataset(filePath: string, bustCache: boolean = false): Promise<Blob> {
+  return downloadFile('aligned-datasets', filePath, bustCache);
 }
 
 /**

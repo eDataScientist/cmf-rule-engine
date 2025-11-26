@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth/context';
 
 const navItems = [
   { path: '/review-trees', label: 'Review Trees', icon: LayoutGrid },
+  { path: '/datasets', label: 'Datasets', icon: Activity },
   { path: '/generate-tree', label: 'Generate Tree', icon: PlusCircle },
   { path: '/table-visualizer', label: 'Table Visualizer', icon: Table2 },
 ];

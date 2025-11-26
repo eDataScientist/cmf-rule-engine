@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Download, Loader2, AlertCircle, CheckCircle2, Trash2, Plus, Activity, Heart } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, AlertCircle, CheckCircle2, Trash2, Plus, Activity, Heart, Edit, Save, X, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDataset, deleteDataset, getDatasetColumnMappings, getDatasetTreeAssociations, type DatasetWithStatus, type DimensionMapping, type TreeAssociation } from '@/lib/db/operations';
+import { Select } from '@/components/ui/select';
+import { getDataset, deleteDataset, getDatasetTreeAssociations, getAllDimensions, updateDatasetAlignment, type DatasetWithStatus, type TreeAssociation, type Dimension } from '@/lib/db/operations';
 import { getRawDatasetUrl, getAlignedDatasetUrl, downloadAlignedDataset } from '@/lib/storage/helpers';
 import { supabase } from '@/lib/db/supabase';
 
@@ -22,25 +23,54 @@ export default function DatasetDetail() {
   const navigate = useNavigate();
   const [dataset, setDataset] = useState<DatasetWithStatus | null>(null);
   const [quality, setQuality] = useState<QualityMetrics | null>(null);
-  const [mappings, setMappings] = useState<DimensionMapping[]>([]);
   const [associations, setAssociations] = useState<TreeAssociation[]>([]);
   const [previewData, setPreviewData] = useState<{ headers: string[]; rows: Record<string, string>[] } | null>(null);
+  const [dimensions, setDimensions] = useState<Dimension[]>([]);
+  const [editMode, setEditMode] = useState(false);
+  const [editableAlignment, setEditableAlignment] = useState<Record<string, string>>({});
+  const [originalAlignment, setOriginalAlignment] = useState<Record<string, string>>({});
+  const [alignmentPage, setAlignmentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingQuality, setLoadingQuality] = useState(true);
-  const [loadingMappings, setLoadingMappings] = useState(true);
+  const [loadingDimensions, setLoadingDimensions] = useState(true);
   const [loadingAssociations, setLoadingAssociations] = useState(true);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
 
     loadDataset();
     loadQualityMetrics();
-    loadColumnMappings();
+    loadDimensions();
     loadTreeAssociations();
   }, [id]);
+
+  // Pagination logic
+  const ITEMS_PER_PAGE = 10;
+  const alignmentEntries = useMemo(() => {
+    if (!dataset?.alignmentMapping) return [];
+    // Sort columns alphabetically by original column name
+    return Object.entries(dataset.alignmentMapping).sort((a, b) =>
+      a[0].localeCompare(b[0])
+    );
+  }, [dataset?.alignmentMapping]);
+
+  const totalPages = Math.ceil(alignmentEntries.length / ITEMS_PER_PAGE);
+  const paginatedEntries = useMemo(() => {
+    const start = alignmentPage * ITEMS_PER_PAGE;
+    return alignmentEntries.slice(start, start + ITEMS_PER_PAGE);
+  }, [alignmentEntries, alignmentPage]);
+
+  // Check if alignment has changed
+  const hasChanges = useMemo(() => {
+    if (!editMode) return false;
+
+    return JSON.stringify(editableAlignment) !== JSON.stringify(originalAlignment);
+  }, [editMode, editableAlignment, originalAlignment]);
 
   async function loadDataset() {
     try {
@@ -89,14 +119,14 @@ export default function DatasetDetail() {
     }
   }
 
-  async function loadColumnMappings() {
+  async function loadDimensions() {
     try {
-      const data = await getDatasetColumnMappings(Number(id));
-      setMappings(data);
+      const data = await getAllDimensions();
+      setDimensions(data);
     } catch (err) {
-      console.error('Failed to load column mappings:', err);
+      console.error('Failed to load dimensions:', err);
     } finally {
-      setLoadingMappings(false);
+      setLoadingDimensions(false);
     }
   }
 
@@ -112,11 +142,12 @@ export default function DatasetDetail() {
   }
 
   async function loadDataPreview() {
-    if (!dataset?.alignedFilePath || loadingPreview || previewData) return;
+    if (!dataset?.alignedFilePath || loadingPreview) return;
 
     setLoadingPreview(true);
     try {
-      const blob = await downloadAlignedDataset(dataset.alignedFilePath);
+      // Force fresh download with cache busting
+      const blob = await downloadAlignedDataset(dataset.alignedFilePath, true);
       const text = await blob.text();
 
       // Parse CSV manually (simple parser for preview)
@@ -157,6 +188,123 @@ export default function DatasetDetail() {
       console.error('Failed to delete dataset:', err);
       alert('Failed to delete dataset');
       setDeleting(false);
+    }
+  }
+
+  function handleEditAlignment() {
+    if (!dataset?.alignmentMapping) return;
+    const alignmentCopy = { ...dataset.alignmentMapping };
+    setEditableAlignment(alignmentCopy);
+    setOriginalAlignment(alignmentCopy);
+    setEditMode(true);
+    setValidationError(null);
+  }
+
+  function handleCancelEdit() {
+    setEditMode(false);
+    setEditableAlignment({});
+    setOriginalAlignment({});
+    setValidationError(null);
+  }
+
+  function handleDimensionChange(originalColumn: string, newDimension: string) {
+    setEditableAlignment(prev => ({
+      ...prev,
+      [originalColumn]: newDimension
+    }));
+    // Clear validation error when user makes changes
+    setValidationError(null);
+  }
+
+  function validateAlignment(): boolean {
+    // Only validate non-empty (mapped) dimensions for duplicates
+    const mappedDimensions = Object.values(editableAlignment).filter(d => d && d.trim() !== '');
+    const uniqueDimensions = new Set(mappedDimensions);
+
+    if (mappedDimensions.length !== uniqueDimensions.size) {
+      setValidationError('Duplicate dimension mappings detected. Each dimension can only be mapped once.');
+      return false;
+    }
+
+    setValidationError(null);
+    return true;
+  }
+
+  async function handleSaveAlignment() {
+    // Don't save if no changes were made
+    if (!hasChanges) {
+      setEditMode(false);
+      setEditableAlignment({});
+      setOriginalAlignment({});
+      return;
+    }
+
+    // Validate only if changes were made
+    if (!validateAlignment()) return;
+
+    setSaving(true);
+    try {
+      // Step 1: Update alignment mapping in database
+      await updateDatasetAlignment(Number(id), editableAlignment);
+
+      // Step 2: Regenerate aligned CSV file with new mapping
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      console.log('=== FRONTEND: Sending alignment mapping ===');
+      console.log('Dataset ID:', id);
+      console.log('Alignment mapping:', JSON.stringify(editableAlignment, null, 2));
+      console.log('Sample keys:', Object.keys(editableAlignment).slice(0, 5));
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/regenerate-aligned-dataset`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dataset_id: Number(id),
+            alignment_mapping: editableAlignment,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to regenerate aligned dataset');
+      }
+
+      console.log('Aligned dataset regenerated successfully');
+
+      // Step 3: Update local state
+      if (dataset) {
+        setDataset({
+          ...dataset,
+          alignmentMapping: editableAlignment
+        });
+      }
+
+      // Step 4: Wait a moment for storage to propagate, then reload preview
+      if (previewData) {
+        // Add a small delay to ensure storage has updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Clear old preview data first to force fresh load
+        setPreviewData(null);
+        await loadDataPreview();
+      }
+
+      setEditMode(false);
+      setEditableAlignment({});
+      setOriginalAlignment({});
+    } catch (err) {
+      console.error('Failed to save alignment:', err);
+      alert(`Failed to save alignment mapping: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -318,17 +466,26 @@ export default function DatasetDetail() {
         {/* Data Preview */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
                 <CardTitle>Data Preview</CardTitle>
                 <CardDescription>
                   First 5 rows of the aligned dataset
                 </CardDescription>
               </div>
-              {!previewData && !loadingPreview && (
-                <Button onClick={loadDataPreview} variant="outline" size="sm">
-                  Load Preview
-                </Button>
+              {!loadingPreview && (
+                <div className="flex-shrink-0">
+                  <Button onClick={loadDataPreview} variant="outline" size="sm">
+                    {previewData ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Refresh
+                      </>
+                    ) : (
+                      'Load Preview'
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -342,7 +499,7 @@ export default function DatasetDetail() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr className="border-b">
-                      {previewData.headers.map((header, index) => (
+                      {[...previewData.headers].sort((a, b) => a.localeCompare(b)).map((header, index) => (
                         <th key={index} className="px-4 py-3 text-left font-semibold text-foreground">
                           {header}
                         </th>
@@ -352,7 +509,7 @@ export default function DatasetDetail() {
                   <tbody className="divide-y">
                     {previewData.rows.map((row, rowIndex) => (
                       <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                        {previewData.headers.map((header, colIndex) => (
+                        {[...previewData.headers].sort((a, b) => a.localeCompare(b)).map((header, colIndex) => (
                           <td key={colIndex} className="px-4 py-3 text-muted-foreground">
                             {row[header] || '-'}
                           </td>
@@ -378,58 +535,143 @@ export default function DatasetDetail() {
         {/* Column Alignment Mapping */}
         <Card>
           <CardHeader>
-            <CardTitle>Column Alignment Mapping</CardTitle>
-            <CardDescription>
-              Columns matched to standard dimensions during processing
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Column Alignment Mapping</CardTitle>
+                <CardDescription>
+                  Map original CSV columns to standard dimensions
+                </CardDescription>
+              </div>
+              {!editMode && dataset?.alignmentMapping && (
+                <Button onClick={handleEditAlignment} variant="outline" size="sm">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Mapping
+                </Button>
+              )}
+              {editMode && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveAlignment}
+                    disabled={saving || !hasChanges}
+                    size="sm"
+                    title={!hasChanges ? 'No changes to save' : ''}
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                  <Button onClick={handleCancelEdit} variant="outline" size="sm">
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            {loadingMappings ? (
+            {validationError && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <span>{validationError}</span>
+              </div>
+            )}
+
+            {loadingDimensions ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : mappings.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="pb-3 text-left text-sm font-medium text-muted-foreground">Dimension</th>
-                      <th className="pb-3 text-left text-sm font-medium text-muted-foreground">Category</th>
-                      <th className="pb-3 text-left text-sm font-medium text-muted-foreground">Data Type</th>
-                      <th className="pb-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mappings.map((mapping) => (
-                      <tr key={mapping.dimensionId} className="border-b last:border-0">
-                        <td className="py-3 text-sm font-medium">
-                          {mapping.displayName}
-                          {mapping.isCritical && (
-                            <span className="ml-2 inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                              Critical
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 text-sm text-muted-foreground">
-                          {mapping.category}
-                        </td>
-                        <td className="py-3 text-sm text-muted-foreground">
-                          {mapping.dataType}
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-1 text-sm text-green-600">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Matched
-                          </div>
-                        </td>
+            ) : alignmentEntries.length > 0 ? (
+              <>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="px-4 py-3 text-left font-semibold text-foreground">Original Column</th>
+                        <th className="px-4 py-3 text-left font-semibold text-foreground">Matched Dimension</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y">
+                      {paginatedEntries.map(([originalColumn, matchedDimension], index) => (
+                        <tr key={originalColumn} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                          <td className="px-4 py-3 font-medium text-foreground">
+                            {originalColumn}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editMode ? (
+                              <Select
+                                value={editableAlignment[originalColumn] || ''}
+                                onChange={(e) => handleDimensionChange(originalColumn, e.target.value)}
+                                options={[
+                                  { value: '', label: '(Unmapped)' },
+                                  ...dimensions.map(d => ({
+                                    value: d.name,
+                                    label: `${d.displayName}${d.isCritical ? ' *' : ''}`
+                                  }))
+                                ]}
+                              />
+                            ) : (
+                              <span className={matchedDimension && matchedDimension.trim() ? 'text-foreground' : 'text-muted-foreground'}>
+                                {matchedDimension && matchedDimension.trim() ? (
+                                  <>
+                                    {dimensions.find(d => d.name === matchedDimension)?.displayName || matchedDimension}
+                                    {dimensions.find(d => d.name === matchedDimension)?.isCritical && (
+                                      <span className="ml-2 inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                                        Critical
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  '(Unmapped)'
+                                )}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {alignmentPage * ITEMS_PER_PAGE + 1} to {Math.min((alignmentPage + 1) * ITEMS_PER_PAGE, alignmentEntries.length)} of {alignmentEntries.length} columns
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAlignmentPage(p => Math.max(0, p - 1))}
+                        disabled={alignmentPage === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAlignmentPage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={alignmentPage >= totalPages - 1}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-center text-sm text-muted-foreground">
-                No column mappings available
+              <div className="text-center py-12 text-muted-foreground">
+                No alignment mapping available
               </div>
             )}
           </CardContent>

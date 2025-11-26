@@ -18,10 +18,15 @@ dist-ssr
 
 # Supabase
 .supabase/
+supabase/.temp/
 
 # Claude Code
 .claude/
 .mcp.json
+
+# Test/Response files
+*_response.json
+preview_response.json
 
 # Editor directories and files
 .vscode/*
@@ -33,3 +38,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Potential sensitive files
+*.csv
+*.xlsx
