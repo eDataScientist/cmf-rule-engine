@@ -1812,6 +1812,69 @@
 
 ---
 
+## Phase 27: Table Visualizer State Caching ✅
+
+### Session: 2025-11-26 - Persistent State Management
+
+### Problem Addressed
+- Users lost all progress when navigating away from Table Visualizer
+- After viewing detailed claim visualization, returning reset everything
+- Had to re-select tree, re-upload CSV, and re-process data every time
+
+### Persisted State Atoms (localStorage)
+- [x] Created 5 new atoms with atomWithStorage
+  - [x] tableVisualizerTreeIdAtom - Selected tree ID
+  - [x] tableVisualizerActiveTabAtom - Active tab state
+  - [x] tableVisualizerFileMetadataAtom - File name and size
+  - [x] tableVisualizerClaimsWithResultsAtom - Processed claims with results
+  - [x] tableVisualizerValidationAtom - Validation state
+- [x] All atoms prefixed with 'tableVisualizer:' in localStorage
+- [x] State persists across navigation, refresh, and browser close
+
+### State Management Overhaul
+- [x] Replaced local useState with persisted atoms
+  - [x] selectedTreeId → tableVisualizerTreeIdAtom
+  - [x] activeTab → tableVisualizerActiveTabAtom
+  - [x] claimsWithResults → tableVisualizerClaimsWithResultsAtom
+  - [x] validation → tableVisualizerValidationAtom
+  - [x] Added fileMetadata atom for file info
+- [x] Smart processor initialization
+  - [x] useEffect recreates processor for cached tree on mount
+  - [x] Handles case when user returns with cached data
+- [x] Separated navigation atoms from cache atoms
+  - [x] Navigation atoms: for passing data to review-trees
+  - [x] Cache atoms: for preserving table visualizer state
+
+### UI Enhancements
+- [x] "Data Loaded" banner when cached data exists
+  - [x] Shows file name, claim count, file size
+  - [x] "Clear & Reload" button to reset state
+  - [x] Primary colored border and background
+- [x] Conditional rendering of load options
+  - [x] Hide options when data already loaded
+  - [x] Show options only when starting fresh
+- [x] File metadata tracking
+  - [x] Stores name and size (File object can't serialize)
+  - [x] Updated on file select and dataset select
+
+### User Experience Improvements
+- [x] Navigate away and return to exact same state
+- [x] Tree selection preserved
+- [x] Processed results preserved
+- [x] Active tab preserved
+- [x] Can freely navigate between pages
+- [x] No need to re-process data after viewing details
+- [x] State survives browser refresh
+
+### Files Modified
+- src/store/atoms/tableVisualization.ts - Added 5 new persisted atoms
+- src/pages/table-visualizer/index.tsx - State management overhaul
+
+### Git Commits
+- [x] Commit: feat: implement state caching for Table Visualizer
+
+---
+
 ## Current Status
 
 **Total Tasks Completed:**
@@ -1820,8 +1883,9 @@
 - Phase 24 Part 2: 14/14 (100%) ✅
 - Phase 25: 4/4 (100%) ✅
 - Phase 26: 3/3 (100%) ✅
+- Phase 27: 7/7 (100%) ✅
 
-**Current Phase:** Phase 26 - COMPLETE ✅
+**Current Phase:** Phase 27 - COMPLETE ✅
 
 ### Phase 23 Statistics (COMMITTED: 24a69c8)
 - **Commits This Phase:** 1
@@ -1858,6 +1922,14 @@
 - **Files Modified:** 2 (table-visualizer/index.tsx, TASK_LOG.md)
 - **Lines Added:** 251 insertions, 14 deletions
 - **Key Achievement:** Enable loading existing datasets in Table Visualizer
+
+### Phase 27 Statistics (COMMITTED: a607b22)
+- **Commits This Phase:** 1
+- **Files Created:** 0
+- **Files Modified:** 2 (tableVisualization.ts, table-visualizer/index.tsx)
+- **Lines Added:** 107 insertions, 18 deletions
+- **New Atoms:** 5 persisted atoms with localStorage
+- **Key Achievement:** Complete state persistence across navigation and refresh
 
 ### Phase 24 Part 1 Completed Features ✅
 1. ✅ Data Preview moved before Column Alignment
@@ -2022,4 +2094,4 @@
 
 ---
 
-_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅, Phase 26 ✅)_
+_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅, Phase 26 ✅, Phase 27 ✅)_
