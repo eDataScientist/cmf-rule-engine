@@ -1852,10 +1852,11 @@
 - **Database Migrations:** 1 (make_results_jsonb_nullable)
 - **Key Achievement:** Link existing trees to datasets without requiring evaluation
 
-### Phase 26 Statistics (COMMITTED: [pending])
+### Phase 26 Statistics (COMMITTED: b55394b)
 - **Commits This Phase:** 1
 - **Files Created:** 1 (DatasetSelector.tsx)
 - **Files Modified:** 2 (table-visualizer/index.tsx, TASK_LOG.md)
+- **Lines Added:** 251 insertions, 14 deletions
 - **Key Achievement:** Enable loading existing datasets in Table Visualizer
 
 ### Phase 24 Part 1 Completed Features ✅
