@@ -118,6 +118,7 @@ export async function createDatasetRecord(
       aligned_web_url: params.alignedFilePath, // Storage key
       user_id: params.userId,
       uploaded_at: new Date().toISOString(),
+      alignment_mapping: params.alignmentMapping,
     })
     .select()
     .single();

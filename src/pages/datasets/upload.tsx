@@ -58,7 +58,7 @@ export default function DatasetUpload() {
       formData.append('Country', country);
       formData.append('Email', user.email || '');
 
-      // Call Edge Function
+      // Call Edge Function and wait for upload status creation
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-dataset-upload`,
         {
@@ -75,15 +75,13 @@ export default function DatasetUpload() {
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const result = await response.json();
-      console.log('Upload result:', result);
-
-      // Show success checkmark for 1 second
+      // Show success checkmark
       setUploadStatus('success');
 
+      // Wait 800ms to show checkmark, then navigate
       setTimeout(() => {
         navigate('/datasets');
-      }, 1000);
+      }, 800);
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');

@@ -55,6 +55,7 @@ export interface CreateDatasetParams {
   rawFilePath: string;
   alignedFilePath: string;
   userId: string;
+  alignmentMapping: Record<string, string>; // Original column name -> Dimension name
 }
 
 // Upload status update parameters

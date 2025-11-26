@@ -97,6 +97,7 @@ export interface Dataset {
   uploadedAt: string | null;
   createdAt: string;
   userId: string | null;
+  alignmentMapping: Record<string, string> | null;
 }
 
 export interface DatasetWithStatus extends Dataset {
@@ -228,6 +229,7 @@ function rowToDatasetWithStatus(row: any): DatasetWithStatus {
     uploadedAt: row.uploaded_at,
     createdAt: row.created_at,
     userId: row.user_id,
+    alignmentMapping: row.alignment_mapping,
     uploadStatus,
   };
 }

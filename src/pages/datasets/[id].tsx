@@ -126,7 +126,7 @@ export default function DatasetDetail() {
       }
 
       const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-      const rows = lines.slice(1, 11).map(line => {
+      const rows = lines.slice(1, 6).map(line => {
         // Simple CSV parsing (handles basic cases)
         const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
         const row: Record<string, string> = {};
@@ -315,6 +315,66 @@ export default function DatasetDetail() {
           </CardContent>
         </Card>
 
+        {/* Data Preview */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Data Preview</CardTitle>
+                <CardDescription>
+                  First 5 rows of the aligned dataset
+                </CardDescription>
+              </div>
+              {!previewData && !loadingPreview && (
+                <Button onClick={loadDataPreview} variant="outline" size="sm">
+                  Load Preview
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingPreview ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : previewData ? (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b">
+                      {previewData.headers.map((header, index) => (
+                        <th key={index} className="px-4 py-3 text-left font-semibold text-foreground">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {previewData.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                        {previewData.headers.map((header, colIndex) => (
+                          <td key={colIndex} className="px-4 py-3 text-muted-foreground">
+                            {row[header] || '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="border-t bg-muted/30 px-4 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {previewData.rows.length} of {dataset.rows} rows
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                Click "Load Preview" to view sample data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Column Alignment Mapping */}
         <Card>
           <CardHeader>
@@ -462,64 +522,6 @@ export default function DatasetDetail() {
           </CardContent>
         </Card>
 
-        {/* Data Preview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Data Preview</CardTitle>
-                <CardDescription>
-                  First 10 rows of the aligned dataset
-                </CardDescription>
-              </div>
-              {!previewData && !loadingPreview && (
-                <Button onClick={loadDataPreview} variant="outline" size="sm">
-                  Load Preview
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loadingPreview ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : previewData ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      {previewData.headers.map((header, index) => (
-                        <th key={index} className="pb-3 pr-4 text-left font-medium text-muted-foreground">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewData.rows.map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-b last:border-0">
-                        {previewData.headers.map((header, colIndex) => (
-                          <td key={colIndex} className="py-2 pr-4 text-muted-foreground">
-                            {row[header] || '-'}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Showing {previewData.rows.length} of {dataset.rows} rows
-                </p>
-              </div>
-            ) : (
-              <div className="text-center text-sm text-muted-foreground">
-                Click "Load Preview" to view sample data
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Download Files */}
         <Card>
           <CardHeader>
@@ -534,7 +536,7 @@ export default function DatasetDetail() {
                 onClick={() => handleDownload('raw')}
                 disabled={!dataset.rawFilePath}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 transition-all hover:scale-[1.02] hover:shadow-md"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Raw Data
@@ -543,7 +545,7 @@ export default function DatasetDetail() {
                 onClick={() => handleDownload('aligned')}
                 disabled={!dataset.alignedFilePath}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 transition-all hover:scale-[1.02] hover:shadow-md"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Aligned Data

@@ -216,6 +216,7 @@ async function processDatasetUpload(
       rawFilePath: state.rawFilePath,
       alignedFilePath: state.alignedFilePath,
       userId: metadata.userId,
+      alignmentMapping: alignment,
     });
     console.log(`Dataset record created: ${state.datasetId}`);
 
