@@ -1735,10 +1735,11 @@
 - **Lines Added:** 84 insertions, 67 deletions
 - **Key Achievement:** Quick wins + alignment mapping infrastructure
 
-### Phase 24 Part 2 Statistics (PENDING COMMIT)
-- **Commits This Phase:** 1 (pending)
-- **Files Created:** 2 (select.tsx, regenerate-aligned-dataset/index.ts)
-- **Files Modified:** 3 (operations.ts, [id].tsx, helpers.ts)
+### Phase 24 Part 2 Statistics (COMMITTED: 423a441)
+- **Commits This Phase:** 1
+- **Files Created:** 3 (select.tsx, regenerate-aligned-dataset/index.ts, useDatasetStatus.ts)
+- **Files Modified:** 5 (operations.ts, [id].tsx, helpers.ts, TASK_LOG.md, .gitignore)
+- **Lines Added:** 821 insertions, 84 deletions
 - **Edge Functions Deployed:** 1 (regenerate-aligned-dataset)
 - **Key Achievement:** Complete editable alignment with CSV regeneration + cache-busting
 
@@ -1883,7 +1884,7 @@
 5. Fixed duplicate error for unmapped columns (filter empty strings)
 
 ### Git Commits
-- [ ] Commit: feat: implement Phase 24 Part 2 - Editable Alignment Mapping with CSV Regeneration
+- [x] Commit: feat: implement Phase 24 Part 2 - Editable Alignment Mapping with CSV Regeneration (423a441)
 
 ---
 
