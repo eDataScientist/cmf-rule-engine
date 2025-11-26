@@ -1713,14 +1713,66 @@
 
 ---
 
+## Phase 25: Link Existing Tree to Dataset ✅
+
+### Session: 2025-11-26 - Tree Association Enhancement
+
+### Link Existing Tree Feature
+- [x] Created LinkTreeDialog component (src/pages/datasets/components/LinkTreeDialog.tsx)
+  - [x] Modal dialog with tree selection interface
+  - [x] Fetches all existing trees from database
+  - [x] Filters out trees already linked to current dataset
+  - [x] Visual tree cards with Motor/Medical icons
+  - [x] Click-to-select interaction with visual feedback
+  - [x] Loading states and empty state handling
+  - [x] Link button with loading spinner
+  - [x] Metadata tracking (linkedFrom, linkedAt)
+
+- [x] Enhanced Dataset Detail Page (src/pages/datasets/[id].tsx)
+  - [x] Added "Link Existing Tree" button next to "Create Tree"
+  - [x] Imported Link2 icon from lucide-react
+  - [x] Added showLinkDialog state management
+  - [x] Created handleLinkSuccess() to refresh associations
+  - [x] Conditional dialog rendering at bottom of page
+  - [x] Passes existing tree IDs to prevent duplicates
+
+### Database Schema Fix
+- [x] Fixed results_jsonb NOT NULL constraint issue
+  - [x] Created migration: make_results_jsonb_nullable
+  - [x] Made results_jsonb column nullable
+  - [x] Added column comment explaining purpose
+  - [x] Allows associations without evaluation results
+
+### User Experience Improvements
+- [x] Two-button layout for tree associations
+  - [x] "Link Existing Tree" - Associate existing tree
+  - [x] "Create Tree" - Navigate to tree generator with dataset context
+- [x] Smart filtering prevents duplicate associations
+- [x] Auto-refresh associations list after successful link
+- [x] Clear visual feedback during link operation
+- [x] Empty state when all trees already linked
+
+### Files Created
+- src/pages/datasets/components/LinkTreeDialog.tsx - Tree selection dialog
+
+### Files Modified
+- src/pages/datasets/[id].tsx - Added link button and dialog
+- Database: dataset_tree_associations table (results_jsonb now nullable)
+
+### Git Commits
+- [x] Commit: feat: add Link Existing Tree feature with database schema fix
+
+---
+
 ## Current Status
 
 **Total Tasks Completed:**
 - Phase 23: 29/29 (100%) ✅
 - Phase 24 Part 1: 9/9 (100%) ✅
 - Phase 24 Part 2: 14/14 (100%) ✅
+- Phase 25: 4/4 (100%) ✅
 
-**Current Phase:** Phase 24 Part 2 - COMPLETE ✅
+**Current Phase:** Phase 25 - COMPLETE ✅
 
 ### Phase 23 Statistics (COMMITTED: 24a69c8)
 - **Commits This Phase:** 1
@@ -1742,6 +1794,13 @@
 - **Lines Added:** 821 insertions, 84 deletions
 - **Edge Functions Deployed:** 1 (regenerate-aligned-dataset)
 - **Key Achievement:** Complete editable alignment with CSV regeneration + cache-busting
+
+### Phase 25 Statistics (COMMITTED: [pending])
+- **Commits This Phase:** 1
+- **Files Created:** 1 (LinkTreeDialog.tsx)
+- **Files Modified:** 2 ([id].tsx, TASK_LOG.md)
+- **Database Migrations:** 1 (make_results_jsonb_nullable)
+- **Key Achievement:** Link existing trees to datasets without requiring evaluation
 
 ### Phase 24 Part 1 Completed Features ✅
 1. ✅ Data Preview moved before Column Alignment
@@ -1906,4 +1965,4 @@
 
 ---
 
-_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅)_
+_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅)_

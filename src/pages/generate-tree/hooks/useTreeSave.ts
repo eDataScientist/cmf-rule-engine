@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useSetAtom } from 'jotai';
-import { createTree } from '@/lib/db/operations';
+import { createTree, createTreeAssociation } from '@/lib/db/operations';
 import { treesAtom } from '@/store';
 import type { Tree, TreeType } from '@/lib/types/tree';
 
@@ -10,7 +10,7 @@ export function useTreeSave() {
   const setTrees = useSetAtom(treesAtom);
 
   const save = useCallback(
-    async (name: string, treeType: TreeType, structure: Tree['structure']) => {
+    async (name: string, treeType: TreeType, structure: Tree['structure'], datasetId?: number) => {
       setIsSaving(true);
       setError(null);
 
@@ -21,6 +21,20 @@ export function useTreeSave() {
           treeType,
           structure,
         });
+
+        // Create dataset association if datasetId is provided
+        if (datasetId) {
+          await createTreeAssociation({
+            datasetId,
+            treeId: newTree.id,
+            resultsJsonb: null, // No results yet, tree just created
+            metadata: {
+              createdWith: 'tree-generator',
+              createdAt: new Date().toISOString(),
+            },
+          });
+          console.log(`Created tree association: tree ${newTree.id} → dataset ${datasetId}`);
+        }
 
         setTrees((prev) => [...prev, newTree]);
         return newTree;

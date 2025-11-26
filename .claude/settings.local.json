@@ -6,7 +6,19 @@
       "Bash(npm run build:*)",
       "Read(//c/Users/Mohammed Ali/Pictures/Screenshots/**)",
       "Bash(npm run dev:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__generate_typescript_types",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__deploy_edge_function",
+      "mcp__supabase__get_edge_function",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_migrations",
+      "Bash(npx supabase:*)",
+      "mcp__supabase__get_logs"
     ],
     "deny": [],
     "ask": []

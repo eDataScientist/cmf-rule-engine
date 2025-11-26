@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Download, Loader2, AlertCircle, CheckCircle2, Trash2, Plus, Activity, Heart, Edit, Save, X, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, AlertCircle, CheckCircle2, Trash2, Plus, Activity, Heart, Edit, Save, X, ChevronLeft, ChevronRight, RefreshCw, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { getDataset, deleteDataset, getDatasetTreeAssociations, getAllDimensions, updateDatasetAlignment, type DatasetWithStatus, type TreeAssociation, type Dimension } from '@/lib/db/operations';
 import { getRawDatasetUrl, getAlignedDatasetUrl, downloadAlignedDataset } from '@/lib/storage/helpers';
 import { supabase } from '@/lib/db/supabase';
+import { LinkTreeDialog } from './components/LinkTreeDialog';
 
 interface QualityMetrics {
   dataset_id: number;
@@ -39,6 +40,7 @@ export default function DatasetDetail() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -327,6 +329,11 @@ export default function DatasetDetail() {
       console.error('Download failed:', err);
       alert('Failed to download file');
     }
+  }
+
+  function handleLinkSuccess() {
+    setShowLinkDialog(false);
+    loadTreeAssociations();
   }
 
   if (loading) {
@@ -687,23 +694,33 @@ export default function DatasetDetail() {
                   Decision trees evaluated with this dataset
                 </CardDescription>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/generate-tree', {
-                  state: {
-                    fromDataset: {
-                      id: dataset.id,
-                      name: dataset.nickname || dataset.fileName || `Dataset #${dataset.id}`,
-                      company: dataset.insuranceCompany,
-                      country: dataset.country
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLinkDialog(true)}
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Link Existing Tree
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/generate-tree', {
+                    state: {
+                      fromDataset: {
+                        id: dataset.id,
+                        name: dataset.nickname || dataset.fileName || `Dataset #${dataset.id}`,
+                        company: dataset.insuranceCompany,
+                        country: dataset.country
+                      }
                     }
-                  }
-                })}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Tree
-              </Button>
+                  })}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Tree
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -796,6 +813,17 @@ export default function DatasetDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Link Tree Dialog */}
+      {showLinkDialog && (
+        <LinkTreeDialog
+          datasetId={dataset.id}
+          datasetName={dataset.nickname || dataset.fileName || `Dataset #${dataset.id}`}
+          existingTreeIds={associations.map(a => a.treeId)}
+          onSuccess={handleLinkSuccess}
+          onCancel={() => setShowLinkDialog(false)}
+        />
+      )}
     </div>
   );
 }
