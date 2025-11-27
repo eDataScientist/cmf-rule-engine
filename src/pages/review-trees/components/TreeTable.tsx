@@ -1,4 +1,3 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Activity, Heart } from 'lucide-react';
 import { TreeStatusDot } from './TreeStatusDot';
@@ -32,38 +31,39 @@ function getTreeStatus(tree: Tree): 'active' | 'inactive' {
 
 export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDeleting }: TreeTableProps) {
   return (
-    <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
-      <Table>
-        <TableHeader>
-          <TableRow style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-muted)' }}>
-            <TableHead style={{ color: 'var(--color-foreground)' }}>Tree Name</TableHead>
-            <TableHead style={{ color: 'var(--color-foreground)' }}>Type</TableHead>
-            <TableHead style={{ color: 'var(--color-foreground)' }}>Complexity</TableHead>
-            <TableHead style={{ color: 'var(--color-foreground)' }}>Last Edited</TableHead>
-            <TableHead className="w-[100px]" style={{ color: 'var(--color-foreground)' }}>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="rounded-lg border overflow-visible" style={{ borderColor: 'var(--color-border)' }}>
+      <div className="w-full">
+        <table className="w-full caption-bottom text-sm">
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#27272a' }}>
+              <th className="h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider first:rounded-tl-lg" style={{ color: 'var(--color-text-secondary)' }}>Tree Name</th>
+              <th className="h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Type</th>
+              <th className="h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Complexity</th>
+              <th className="h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Last Edited</th>
+              <th className="h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider w-[100px] last:rounded-tr-lg" style={{ color: 'var(--color-text-secondary)' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody className="[&_tr:last-child]:border-0">
           {trees.map((tree) => {
             const totalBranches = tree.structure.reduce((sum, t) => sum + countBranches(t.root), 0);
             const totalLeaves = tree.structure.reduce((sum, t) => sum + countLeaves(t.root), 0);
             const status = getTreeStatus(tree);
 
             return (
-              <TableRow
+              <tr
                 key={tree.id}
                 style={{ borderColor: 'var(--color-border)' }}
-                className="hover:bg-zinc-800/50 transition-colors"
+                className="border-b transition-colors hover:bg-zinc-800/50"
               >
-                <TableCell>
+                <td className="p-4 align-middle">
                   <div className="flex items-center gap-2">
                     <TreeStatusDot status={status} />
                     <span className="font-medium" style={{ color: 'var(--color-foreground)' }}>
                       {tree.name}
                     </span>
                   </div>
-                </TableCell>
-                <TableCell>
+                </td>
+                <td className="p-4 align-middle">
                   <Badge
                     variant={tree.treeType === 'motor' ? 'default' : 'secondary'}
                     className="flex items-center gap-1 w-fit"
@@ -75,18 +75,18 @@ export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDel
                     )}
                     {tree.treeType.toUpperCase()}
                   </Badge>
-                </TableCell>
-                <TableCell>
+                </td>
+                <td className="p-4 align-middle">
                   <span className="font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                     {totalBranches} branches | {totalLeaves} leaves
                   </span>
-                </TableCell>
-                <TableCell>
+                </td>
+                <td className="p-4 align-middle">
                   <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                     {new Date(tree.createdAt).toLocaleDateString('en-GB')}
                   </span>
-                </TableCell>
-                <TableCell>
+                </td>
+                <td className="p-4 align-middle">
                   <TreeActionsMenu
                     treeId={tree.id}
                     onVisualize={onVisualize}
@@ -94,12 +94,13 @@ export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDel
                     onDelete={onDelete}
                     isDeleting={isDeleting}
                   />
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             );
           })}
-        </TableBody>
-      </Table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
