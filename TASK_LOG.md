@@ -2238,49 +2238,66 @@
 - [ ] Add pagination atoms: `treeCurrentPageAtom`, `treePageSizeAtom`
 - [ ] All persisted to localStorage
 
-#### Implementation Order (Revised)
-1. **Phase 28.1**: Sidebar Profile Section
-   - Move user profile to sidebar footer
-   - Display user info from useAuth()
-   - Remove profile from Header
+#### Implementation Progress
 
-2. **Phase 28.2**: Header Updates
-   - Remove notification button
-   - Add Light/Dark theme switcher
-   - Create uiThemeAtom and update ThemeProvider
-   - Add light mode color definitions
+**Phase 28.1: Sidebar Profile Section** ✅
+- [x] Moved user profile to sidebar footer
+- [x] Display user avatar with initials
+- [x] Display user name (from email prefix)
+- [x] Display user email
+- [x] Keep Sign Out button functional
+- [x] Removed profile avatar from Header
 
-3. **Phase 28.3**: Remove Tabs & Add View Toggle
-   - Remove tabs from review-trees page
-   - Add ViewModeToggle component
-   - Add state management for view mode
-   - Update page description
+**Phase 28.2: Header Updates** ✅
+- [x] Removed notification bell button
+- [x] Created uiThemeAtom ('light' | 'dark') with localStorage
+- [x] Updated ThemeProvider to apply theme class to documentElement
+- [x] Added light mode CSS variables in index.css
+- [x] Replaced Motor/Medical button with Light/Dark switcher
+- [x] Sun/Moon icons for theme toggle
+- [x] Fixed theme-responsive colors for all layout components
+- [x] Fixed invisible text in both themes
 
-4. **Phase 28.4**: Search Functionality
-   - Create SearchInput component
-   - Add to page header area
-   - Implement search logic
-   - Update tree filtering
+**Phase 28.3: Remove Tabs & Add View Toggle** ✅
+- [x] Removed tabs (All Trees, Claim Form, Visualization)
+- [x] Created ViewModeToggle component
+- [x] Added treeViewModeAtom, treeSearchQueryAtom state atoms
+- [x] Added pagination atoms (treeCurrentPageAtom, treePageSizeAtom)
+- [x] Updated page description to "Manage logic flows and claim evaluations"
+- [x] Simplified page layout - trees display only
 
-5. **Phase 28.5**: List/Table Mode Implementation
-   - Create TreeActionsMenu component
-   - Create TreeStatusDot component
-   - Build table layout with all columns
-   - Add status logic for dots
+**Phase 28.4: Search Functionality** (In Progress)
+- [x] Created SearchInput component with debouncing (300ms)
+- [x] Added search icon and clear button
+- [x] Implemented search logic with useMemo filtering
+- [ ] Add SearchInput to page toolbar
+- [ ] Test search functionality
 
-6. **Phase 28.6**: Pagination
-   - Create Pagination component
-   - Add pagination state management
-   - Implement page navigation
-   - Works for both grid and list modes
+**Phase 28.5: List/Table Mode Implementation** (Pending)
+- [ ] Create TreeActionsMenu component
+- [ ] Create TreeStatusDot component
+- [ ] Build table layout with all columns
+- [ ] Add status logic for dots
 
-7. **Phase 28.7**: Polish & Testing
-   - Fine-tune styling for both modes
-   - Test theme switching (light/dark)
-   - Test view mode switching (grid/list)
-   - Ensure all functionality works
-   - Update .gitignore if needed
+**Phase 28.6: Pagination** (Pending)
+- [ ] Create Pagination component
+- [ ] Add pagination state management
+- [ ] Implement page navigation
+- [ ] Works for both grid and list modes
+
+**Phase 28.7: Polish & Testing** (Pending)
+- [ ] Fine-tune styling for both modes
+- [ ] Test theme switching (light/dark)
+- [ ] Test view mode switching (grid/list)
+- [ ] Ensure all functionality works
+
+### Git Commits
+- [x] Commit (b9693a8): feat: implement Phase 28 redesign v3 - sidebar profile, light/dark theme, view toggle
+  - 20 files changed, 718 insertions(+), 553 deletions(-)
+  - New components: ViewModeToggle, SearchInput, Header
+  - Updated: Sidebar, ThemeProvider, AppLayout, Review Trees page
+  - Theme system: Dual themes (UI: light/dark, App: motor/medical)
 
 ---
 
-_Last Updated: 2025-11-27 (Phase 28 Analysis Complete - Ready for Implementation)_
+_Last Updated: 2025-11-27 (Phase 28.1-28.3 Complete ✅, Phase 28.4 In Progress)_
