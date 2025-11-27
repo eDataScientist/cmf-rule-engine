@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAtom } from 'jotai';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,9 +8,12 @@ import {
   PlusCircle,
   Table,
   LogOut,
-  Activity
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
+import { sidebarCollapsedAtom } from '@/store/atoms/ui';
+import CMFLogo from '@/assets/cmf_dark.svg';
 
 const navItems = [
   { path: '/review-trees', label: 'Decision Trees', icon: LayoutDashboard },
@@ -22,6 +26,7 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useAtom(sidebarCollapsedAtom);
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,15 +45,30 @@ export function Sidebar() {
     .slice(0, 2);
 
   return (
-    <div className="flex h-screen w-[280px] flex-col border-r" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)' }}>
+    <div
+      className={cn(
+        "flex h-screen flex-col border-r transition-all duration-300",
+        isCollapsed ? "w-[80px]" : "w-[280px]"
+      )}
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)' }}
+    >
       {/* Branding */}
-      <div className="flex h-16 items-center border-b px-6" style={{ borderColor: 'var(--color-border)' }}>
-        <div className="flex items-center gap-2 font-semibold tracking-tight">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-            <Activity className="h-5 w-5" />
-          </div>
-          <span className="text-lg" style={{ color: 'var(--color-foreground)' }}>Claims Engine</span>
+      <div className="flex h-16 items-center border-b px-6 justify-between" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="flex items-center gap-3 font-semibold tracking-tight overflow-hidden">
+          <img src={CMFLogo} alt="CMF Logo" className="h-12 w-12 flex-shrink-0" />
+          {!isCollapsed && (
+            <span className="text-lg whitespace-nowrap" style={{ color: 'var(--color-foreground)' }}>CMF</span>
+          )}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="h-8 w-8 flex-shrink-0"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -61,14 +81,16 @@ export function Sidebar() {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start gap-3 px-3",
+                    "w-full gap-3 px-3",
+                    isCollapsed ? "justify-center" : "justify-start",
                     isActive
                       ? "bg-zinc-800 text-white font-medium"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
                   )}
+                  title={isCollapsed ? item.label : undefined}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
                 </Button>
               </Link>
             );
@@ -79,30 +101,42 @@ export function Sidebar() {
       {/* User Profile & Sign Out */}
       <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--color-border)' }}>
         {/* User Info */}
-        <div className="flex items-center gap-3 px-2">
-          {/* Avatar with Initials */}
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border text-sm font-semibold" style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}>
-            {initials}
+        {!isCollapsed ? (
+          <div className="flex items-center gap-3 px-2">
+            {/* Avatar with Initials */}
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border text-sm font-semibold" style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}>
+              {initials}
+            </div>
+            {/* User Details */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>
+                {userName}
+              </p>
+              <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                {user?.email}
+              </p>
+            </div>
           </div>
-          {/* User Details */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>
-              {userName}
-            </p>
-            <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
-              {user?.email}
-            </p>
+        ) : (
+          <div className="flex justify-center px-2">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border text-sm font-semibold" style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}>
+              {initials}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Sign Out Button */}
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 text-zinc-400 hover:text-red-400 hover:bg-red-900/10"
+          className={cn(
+            "w-full gap-3 text-zinc-400 hover:text-red-400 hover:bg-red-900/10",
+            isCollapsed ? "justify-center px-0" : "justify-start"
+          )}
+          title={isCollapsed ? "Sign Out" : undefined}
         >
-          <LogOut className="h-4 w-4" />
-          Sign Out
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span>Sign Out</span>}
         </Button>
       </div>
     </div>

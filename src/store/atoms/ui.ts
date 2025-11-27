@@ -5,3 +5,6 @@ export const uiThemeAtom = atomWithStorage<'light' | 'dark'>('ui-theme', 'dark')
 
 // App Theme (motor/medical - for accent colors)
 export const appThemeAtom = atomWithStorage<'medical' | 'motor'>('app-theme', 'motor');
+
+// Sidebar collapsed state
+export const sidebarCollapsedAtom = atomWithStorage<boolean>('sidebar-collapsed', false);
