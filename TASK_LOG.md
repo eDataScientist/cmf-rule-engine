@@ -2094,4 +2094,193 @@
 
 ---
 
-_Last Updated: 2025-11-26 (Phase 23 ✅, Phase 24 Part 1 ✅, Phase 24 Part 2 ✅, Phase 25 ✅, Phase 26 ✅, Phase 27 ✅)_
+## Phase 28: Decision Trees Page Redesign - V3 UI Implementation (In Progress)
+
+### Session: 2025-11-27 - Modern Table-Based UI Overhaul
+
+### Revised Requirements (User Clarification)
+
+#### Core Layout Changes
+- [ ] **Remove Tabs System**
+  - [ ] Remove "All Trees", "Claim Form", "Visualization" tabs
+  - [ ] Move claim evaluation functionality elsewhere (or separate page)
+  - [ ] Keep only the trees display on this page
+
+- [ ] **Grid/List Toggle** (replaces tabs)
+  - [ ] Toggle switch between Grid and List/Table modes
+  - [ ] Grid mode: Current card layout (TreeCard components)
+  - [ ] List mode: Table view with columns (Tree Name, Type, Complexity, Last Edited, Actions)
+  - [ ] Position toggle near the top (with search)
+  - [ ] Persist user preference (localStorage)
+
+#### Header & Navigation Updates
+- [ ] **Top Right Area**
+  - [ ] Keep "+ New Tree" button in top right
+  - [ ] Add Search bar next to it
+  - [ ] Position: Search | + New Tree
+
+- [ ] **Header Component Changes**
+  - [ ] Remove Bell notification button (no notifications)
+  - [ ] Replace Motor/Medical theme button with Light/Dark theme switcher
+  - [ ] Add new theme atom: `uiThemeAtom` ('light' | 'dark')
+  - [ ] Update ThemeProvider to handle both app theme and UI theme
+  - [ ] Theme switcher icon: Sun (light) / Moon (dark)
+
+#### Sidebar Updates
+- [ ] **Profile Section (Bottom Left)**
+  - [ ] Move from Header to Sidebar footer
+  - [ ] Display user avatar (or initials)
+  - [ ] Display user email from useAuth()
+  - [ ] Display user name (from email prefix or metadata)
+  - [ ] Keep Sign Out button
+  - [ ] Add Settings/Preferences button (optional)
+
+#### Page Content Changes
+- [ ] **Update Page Description**
+  - [ ] Change from "Manage and monitor your decision logic."
+  - [ ] To: "Manage logic flows and claim evaluations."
+
+#### List/Table Mode Features
+- [ ] **Table Layout**
+  - [ ] Use Table component from components/ui/table.tsx
+  - [ ] Columns: Tree Name, Type, Complexity, Last Edited, Actions
+  - [ ] Tree Name: Include colored status dot (green/gray)
+  - [ ] Type: Show MOTOR/MEDICAL badge
+  - [ ] Complexity: "7 branches | 19 leaves" format
+  - [ ] Last Edited: Date format (e.g., "23/11/2025")
+  - [ ] Actions: Three-dot menu with Visualize, View Structure, Delete
+
+- [ ] **Actions Menu Component**
+  - [ ] Dropdown menu triggered by three-dot icon
+  - [ ] Menu items:
+    - [ ] Visualize (Eye icon)
+    - [ ] View Structure (Network icon)
+    - [ ] Delete (Trash icon)
+  - [ ] Handle delete confirmation in menu
+
+- [ ] **Tree Status Indicator**
+  - [ ] Small colored dot component
+  - [ ] Green (#10b981) for active/recently used
+  - [ ] Gray (#6b7280) for inactive
+  - [ ] Logic: Based on last evaluation or custom field
+
+- [ ] **Pagination**
+  - [ ] "Showing X of Y trees" text
+  - [ ] Previous/Next buttons
+  - [ ] Page size: 10 items per page (configurable)
+  - [ ] Disable buttons on first/last page
+
+- [ ] **Search Functionality**
+  - [ ] Search input in top right area
+  - [ ] Filter by tree name (case-insensitive)
+  - [ ] Debounced search (300ms)
+  - [ ] Clear button when search has text
+  - [ ] Update displayed trees based on search
+
+#### Grid Mode Features (Existing)
+- [ ] Keep current TreeCard layout
+- [ ] Preserve all existing functionality
+- [ ] Same search and pagination as List mode
+
+#### New UI Components Needed
+- [ ] **ViewModeToggle component**
+  - [ ] Props: mode ('grid' | 'list'), onChange
+  - [ ] Icons: LayoutGrid (grid), List (list)
+  - [ ] Active state styling
+  - [ ] Compact button group design
+
+- [ ] **TreeActionsMenu component**
+  - [ ] Three-dot button trigger
+  - [ ] Dropdown menu with actions
+  - [ ] Props: treeId, onVisualize, onViewStructure, onDelete
+  - [ ] Delete confirmation dialog
+
+- [ ] **TreeStatusDot component**
+  - [ ] Props: status ('active' | 'inactive')
+  - [ ] Small circular indicator (6-8px diameter)
+  - [ ] Color variants
+
+- [ ] **SearchInput component** (or use existing Input)
+  - [ ] Search icon
+  - [ ] Placeholder text
+  - [ ] Clear button (X icon)
+  - [ ] Debounced onChange
+
+- [ ] **Pagination component**
+  - [ ] Info text: "Showing X-Y of Z trees"
+  - [ ] Previous button (disabled when on first page)
+  - [ ] Next button (disabled when on last page)
+  - [ ] Compact design
+
+#### Theme System Updates
+- [ ] **New Theme Atoms**
+  - [ ] Create `uiThemeAtom` in store/atoms/ui.ts
+  - [ ] Type: 'light' | 'dark'
+  - [ ] Persist to localStorage
+  - [ ] Default: 'dark'
+
+- [ ] **Theme Provider Updates**
+  - [ ] Update ThemeProvider to apply UI theme classes
+  - [ ] Apply 'light' or 'dark' class to document.documentElement
+  - [ ] Update Tailwind config to support light mode variants
+  - [ ] Keep existing appTheme (motor/medical) for accent colors
+
+- [ ] **Light Mode Color Scheme**
+  - [ ] Define light mode colors in index.css
+  - [ ] Background: light gray/white tones
+  - [ ] Text: dark gray/black
+  - [ ] Cards: white with subtle shadows
+  - [ ] Borders: light gray
+
+#### State Management
+- [ ] Add viewMode atom: `treeViewModeAtom` ('grid' | 'list')
+- [ ] Add search atom: `treeSearchQueryAtom` (string)
+- [ ] Add pagination atoms: `treeCurrentPageAtom`, `treePageSizeAtom`
+- [ ] All persisted to localStorage
+
+#### Implementation Order (Revised)
+1. **Phase 28.1**: Sidebar Profile Section
+   - Move user profile to sidebar footer
+   - Display user info from useAuth()
+   - Remove profile from Header
+
+2. **Phase 28.2**: Header Updates
+   - Remove notification button
+   - Add Light/Dark theme switcher
+   - Create uiThemeAtom and update ThemeProvider
+   - Add light mode color definitions
+
+3. **Phase 28.3**: Remove Tabs & Add View Toggle
+   - Remove tabs from review-trees page
+   - Add ViewModeToggle component
+   - Add state management for view mode
+   - Update page description
+
+4. **Phase 28.4**: Search Functionality
+   - Create SearchInput component
+   - Add to page header area
+   - Implement search logic
+   - Update tree filtering
+
+5. **Phase 28.5**: List/Table Mode Implementation
+   - Create TreeActionsMenu component
+   - Create TreeStatusDot component
+   - Build table layout with all columns
+   - Add status logic for dots
+
+6. **Phase 28.6**: Pagination
+   - Create Pagination component
+   - Add pagination state management
+   - Implement page navigation
+   - Works for both grid and list modes
+
+7. **Phase 28.7**: Polish & Testing
+   - Fine-tune styling for both modes
+   - Test theme switching (light/dark)
+   - Test view mode switching (grid/list)
+   - Ensure all functionality works
+   - Update .gitignore if needed
+
+---
+
+_Last Updated: 2025-11-27 (Phase 28 Analysis Complete - Ready for Implementation)_

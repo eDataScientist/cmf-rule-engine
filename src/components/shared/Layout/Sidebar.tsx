@@ -1,124 +1,110 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import {
-  LayoutGrid,
-  PlusCircle,
-  Table2,
-  Activity,
-  Heart,
-  LogOut
-} from 'lucide-react';
-import { useAtom } from 'jotai';
-import { appThemeAtom } from '@/store/atoms/ui';
 import { Button } from '@/components/ui/button';
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+  Table,
+  LogOut,
+  Activity
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 
 const navItems = [
-  { path: '/review-trees', label: 'Review Trees', icon: LayoutGrid },
-  { path: '/datasets', label: 'Datasets', icon: Activity },
+  { path: '/review-trees', label: 'Decision Trees', icon: LayoutDashboard },
+  { path: '/datasets', label: 'Datasets', icon: FileText },
   { path: '/generate-tree', label: 'Generate Tree', icon: PlusCircle },
-  { path: '/table-visualizer', label: 'Table Visualizer', icon: Table2 },
+  { path: '/table-visualizer', label: 'Table Visualizer', icon: Table },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [appTheme, setAppTheme] = useAtom(appThemeAtom);
   const { user, signOut } = useAuth();
-
-  const toggleTheme = () => {
-    setAppTheme(appTheme === 'motor' ? 'medical' : 'motor');
-  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
+  // Get user display name from email (part before @)
+  const userName = user?.email?.split('@')[0] || 'User';
+
+  // Get user initials for avatar
+  const initials = userName
+    .split(/[\s._-]/)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-white/80 backdrop-blur-xl transition-transform">
-      <div className="flex h-full flex-col justify-between px-4 py-6">
-        <div className="space-y-8">
-          {/* Logo */}
-          <div className="flex items-center gap-3 px-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <span className="font-heading text-xl font-bold">C</span>
-            </div>
-            <span className="font-heading text-2xl font-bold tracking-tight text-primary">
-              CMF
-            </span>
+    <div className="flex h-screen w-[280px] flex-col border-r" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)' }}>
+      {/* Branding */}
+      <div className="flex h-16 items-center border-b px-6" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="flex items-center gap-2 font-semibold tracking-tight">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+            <Activity className="h-5 w-5" />
           </div>
-
-          {/* Navigation */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
-              
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive 
-                      ? "bg-primary/5 text-primary" 
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )}
-                >
-                  <Icon className={cn(
-                    "h-5 w-5 transition-colors",
-                    isActive ? "text-accent" : "text-muted-foreground group-hover:text-foreground"
-                  )} />
-                  {item.label}
-                  {isActive && (
-                    <div className="absolute right-4 h-1.5 w-1.5 rounded-full bg-accent" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Footer / Settings */}
-        <div className="space-y-4 border-t border-border pt-4">
-          <div className="px-2">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Preferences
-            </p>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 px-2 text-muted-foreground hover:text-foreground"
-              onClick={toggleTheme}
-            >
-              {appTheme === 'motor' ? (
-                <Activity className="h-4 w-4" />
-              ) : (
-                <Heart className="h-4 w-4" />
-              )}
-              <span>{appTheme === 'motor' ? 'Motor Mode' : 'Medical Mode'}</span>
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/50 p-3">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400" />
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-foreground">
-                {user?.email?.split('@')[0] || 'User'}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{user?.email || ''}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSignOut}
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+          <span className="text-lg" style={{ color: 'var(--color-foreground)' }}>Claims Engine</span>
         </div>
       </div>
-    </aside>
+
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-6">
+        <nav className="space-y-1 px-4">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start gap-3 px-3",
+                    isActive
+                      ? "bg-zinc-800 text-white font-medium"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Button>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* User Profile & Sign Out */}
+      <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--color-border)' }}>
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-2">
+          {/* Avatar with Initials */}
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border text-sm font-semibold" style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}>
+            {initials}
+          </div>
+          {/* User Details */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--color-foreground)' }}>
+              {userName}
+            </p>
+            <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+              {user?.email}
+            </p>
+          </div>
+        </div>
+
+        {/* Sign Out Button */}
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="w-full justify-start gap-3 text-zinc-400 hover:text-red-400 hover:bg-red-900/10"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
   );
 }
