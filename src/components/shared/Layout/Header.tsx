@@ -1,45 +1,68 @@
 import { useAtom } from 'jotai';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { uiThemeAtom } from '@/store/atoms/ui';
+import { headerBreadcrumbsAtom, headerActionsAtom } from '@/store/atoms/header';
 import { Button } from '@/components/ui/button';
 import { Sun, Moon, ChevronRight } from 'lucide-react';
 
-const routeConfig: Record<string, { breadcrumbs: string[] }> = {
-  '/review-trees': { breadcrumbs: ['Home', 'Decision Trees'] },
-  '/datasets': { breadcrumbs: ['Home', 'Datasets'] },
-  '/generate-tree': { breadcrumbs: ['Home', 'Generate Tree'] },
-  '/table-visualizer': { breadcrumbs: ['Home', 'Table Visualizer'] },
+const defaultRouteConfig: Record<string, { breadcrumbs: { label: string; href?: string }[] }> = {
+  '/review-trees': { breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Decision Trees' }] },
+  '/datasets': { breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Datasets' }] },
+  '/generate-tree': { breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Generate Tree' }] },
+  '/table-visualizer': { breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Table Visualizer' }] },
 };
 
 export function Header() {
   const [uiTheme, setUiTheme] = useAtom(uiThemeAtom);
+  const [customBreadcrumbs] = useAtom(headerBreadcrumbsAtom);
+  const [customActions] = useAtom(headerActionsAtom);
   const location = useLocation();
 
   const toggleTheme = () => {
     setUiTheme(uiTheme === 'light' ? 'dark' : 'light');
   };
 
-  const currentRoute = routeConfig[location.pathname] || { 
-    breadcrumbs: ['Home'] 
-  };
+  // Use custom breadcrumbs if set, otherwise use default route config
+  const breadcrumbs = customBreadcrumbs ||
+    defaultRouteConfig[location.pathname]?.breadcrumbs ||
+    [{ label: 'Home' }];
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b px-8 backdrop-blur-sm" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)' }}>
-      {/* Breadcrumbs only */}
-      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-        {currentRoute.breadcrumbs.map((crumb, index) => (
+    <header
+      className="sticky top-0 z-50 flex h-14 items-center justify-between border-b px-6 backdrop-blur-sm"
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-background)' }}
+    >
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+        {breadcrumbs.map((crumb, index) => (
           <div key={index} className="flex items-center gap-2">
-            <span style={{ color: index === currentRoute.breadcrumbs.length - 1 ? 'var(--color-text-secondary)' : 'var(--color-text-muted)' }}>
-              {crumb}
-            </span>
-            {index < currentRoute.breadcrumbs.length - 1 && (
-              <ChevronRight className="h-3 w-3" />
+            {crumb.href ? (
+              <Link
+                to={crumb.href}
+                className="hover:underline"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                {crumb.label}
+              </Link>
+            ) : (
+              <span style={{
+                color: index === breadcrumbs.length - 1
+                  ? 'var(--color-foreground)'
+                  : 'var(--color-text-secondary)'
+              }}>
+                {crumb.label}
+              </span>
+            )}
+            {index < breadcrumbs.length - 1 && (
+              <ChevronRight className="h-3 w-3" style={{ color: 'var(--color-text-muted)' }} />
             )}
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Actions - custom or default theme toggle */}
+      <div className="flex items-center gap-3">
+        {customActions}
         <Button
           variant="outline"
           size="sm"
