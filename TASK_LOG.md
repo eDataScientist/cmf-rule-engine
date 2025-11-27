@@ -2328,4 +2328,128 @@
 
 ---
 
-_Last Updated: 2025-11-27 (Phase 28 Complete ✅ - All 7 sub-phases delivered)_
+## Phase 29: Infinite Canvas Tree Visualizer ✅
+
+### Session: 2025-11-27 - React Flow Integration
+
+### Overview
+Replaced the static tree-visualizer page with an infinite canvas using React Flow (@xyflow/react). This enables pan/zoom navigation similar to tools like Lucidchart and n8n, making it easier to explore complex decision tree ensembles.
+
+### New Dependencies
+- [x] Added @xyflow/react (^12.x) for infinite canvas
+
+### InfiniteCanvas Component Suite
+- [x] Create src/components/shared/InfiniteCanvas/index.tsx
+  - [x] ReactFlow wrapper with ReactFlowProvider
+  - [x] Dot grid background (BackgroundVariant.Dots)
+  - [x] Charcoal grey background color (#1a1a1a)
+  - [x] MiniMap in top-right corner with custom node colors
+  - [x] ZoomToolbar integration
+  - [x] Custom node types registration (root, decision, leaf)
+  - [x] Default edge options (smoothstep, zinc stroke)
+  - [x] Pan on scroll, non-draggable/non-connectable nodes
+  - [x] fitView on mount with padding
+
+- [x] Create src/components/shared/InfiniteCanvas/types.ts
+  - [x] TreeFlowNode type with data variants
+  - [x] TreeEdge type extending React Flow Edge
+  - [x] RootNodeData, DecisionNodeData, LeafNodeData interfaces
+
+- [x] Create src/components/shared/InfiniteCanvas/nodes/RootNode.tsx
+  - [x] "Root Split" label with blue accent
+  - [x] Condition/feature name display
+  - [x] Bottom handle for children (id="bottom")
+  - [x] Dark card styling (#27272a)
+
+- [x] Create src/components/shared/InfiniteCanvas/nodes/DecisionNode.tsx
+  - [x] Feature name display
+  - [x] Top handle for parent connection (id="top")
+  - [x] Bottom handle for children (id="bottom")
+  - [x] Dark card styling matching design
+
+- [x] Create src/components/shared/InfiniteCanvas/nodes/LeafNode.tsx
+  - [x] Color-coded background (red-to-green gradient based on value)
+  - [x] Formatted value display (+/- prefix, 3 decimal places)
+  - [x] Top handle for parent connection (id="top")
+
+- [x] Create src/components/shared/InfiniteCanvas/ZoomToolbar.tsx
+  - [x] Zoom out button (-)
+  - [x] Zoom percentage display
+  - [x] Zoom in button (+)
+  - [x] Fit to screen / Reset button (RotateCcw icon)
+  - [x] Fixed interactivity (z-index, pointerEvents, stopPropagation)
+  - [x] Smooth zoom animations (duration: 200ms)
+
+### Tree-to-ReactFlow Conversion
+- [x] Create src/lib/utils/treeToReactFlow.ts
+  - [x] treeToReactFlow() - Convert single tree to nodes/edges
+  - [x] treesToReactFlow() - Convert ensemble with grid layout
+  - [x] Binary tree layout calculation (space partitioning)
+  - [x] Color coding for leaf values (HSL gradient)
+  - [x] Edge labels with parsed conditions (formatTrueLabel/formatFalseLabel)
+  - [x] Unique node ID prefixes per tree (tree0-node-X, tree1-node-X)
+  - [x] 3-column grid layout for multiple trees
+  - [x] Configurable tree cell dimensions (900x800)
+
+### Header Customization System
+- [x] Create src/store/atoms/header.ts
+  - [x] headerBreadcrumbsAtom - Custom page breadcrumbs
+  - [x] headerActionsAtom - Custom header action buttons
+  - [x] fullCanvasModeAtom - Toggle full canvas mode
+
+- [x] Update src/components/shared/Layout/Header.tsx
+  - [x] Support custom breadcrumbs via atom
+  - [x] Support custom action buttons via atom
+  - [x] Fallback to default breadcrumbs when atom is null
+
+- [x] Update src/components/shared/Layout/AppLayout.tsx
+  - [x] Full canvas mode support (removes padding)
+  - [x] Conditional main element styling based on mode
+
+### Tree Visualizer Page Rewrite
+- [x] Rewrite src/pages/tree-visualizer/index.tsx
+  - [x] Set fullCanvasModeAtom on mount
+  - [x] Set custom breadcrumbs (Review Trees > Tree Name)
+  - [x] Set custom actions (Back button)
+  - [x] Cleanup atoms on unmount
+  - [x] Load tree and convert to React Flow format
+  - [x] Render InfiniteCanvas with nodes/edges
+  - [x] Loading and error states
+
+### Bug Fixes
+- [x] Fixed nodes not rendering (useEffect to update nodes when props change)
+- [x] Fixed duplicate key warnings (unique tree index prefix for node IDs)
+- [x] Fixed edge source handle null errors (explicit handle IDs on all nodes)
+- [x] Fixed minimap stretching (explicit width/height: 150x100)
+- [x] Fixed trees in horizontal line (changed to 3-column grid layout)
+- [x] Fixed zoom toolbar not clickable (z-index, pointerEvents, stopPropagation)
+- [x] Fixed reset zoom to use fitView instead of zoomTo(1)
+
+### Collapsible Sidebar (from previous session)
+- [x] Added sidebarCollapsedAtom with localStorage persistence
+- [x] Toggle button with ChevronLeft/ChevronRight icons
+- [x] Width transition from 280px to 80px
+- [x] CMF logo branding (replaced "Claims Engine")
+
+### Git Commits
+- [x] Commit (d1ac84e): feat: add collapsible sidebar with CMF logo
+- [x] Commit (7c4183b): added infinite canvas
+- [x] Commit: fix: improve zoom toolbar interactivity and reset behavior
+
+### Phase 29 Summary
+
+**Total Components Created:** 7
+- InfiniteCanvas, ZoomToolbar, RootNode, DecisionNode, LeafNode, types.ts, treeToReactFlow.ts
+
+**Key Features Delivered:**
+1. ✅ Infinite canvas with pan/zoom (React Flow)
+2. ✅ Minimap for navigation
+3. ✅ Custom styled nodes (root, decision, leaf)
+4. ✅ Zoom toolbar with fit-to-screen reset
+5. ✅ Grid layout for multiple trees (3 columns)
+6. ✅ Full canvas mode (header integration)
+7. ✅ Collapsible sidebar with CMF branding
+
+---
+
+_Last Updated: 2025-11-27 (Phase 29 Complete ✅ - Infinite Canvas Tree Visualizer)_

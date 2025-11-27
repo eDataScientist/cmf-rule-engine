@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
-import { Minus, Plus, Maximize2 } from 'lucide-react';
+import { Minus, Plus, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const zoomSelector = (state: { transform: [number, number, number] }) => state.transform[2];
@@ -10,19 +10,33 @@ function ZoomToolbarComponent() {
   const zoom = useStore(zoomSelector);
   const zoomPercentage = Math.round(zoom * 100);
 
+  const handleZoomIn = useCallback(() => {
+    zoomIn({ duration: 200 });
+  }, [zoomIn]);
+
+  const handleZoomOut = useCallback(() => {
+    zoomOut({ duration: 200 });
+  }, [zoomOut]);
+
+  const handleResetZoom = useCallback(() => {
+    fitView({ padding: 0.2, duration: 200 });
+  }, [fitView]);
+
   return (
     <div
-      className="absolute bottom-4 right-4 flex items-center gap-1 rounded-lg border px-2 py-1.5 shadow-lg"
+      className="absolute bottom-4 right-4 z-10 flex items-center gap-1 rounded-lg border px-2 py-1.5 shadow-lg"
       style={{
         backgroundColor: '#18181b',
         borderColor: '#3f3f46',
+        pointerEvents: 'auto',
       }}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <Button
         variant="ghost"
         size="icon"
         className="h-7 w-7 hover:bg-zinc-700"
-        onClick={() => zoomOut()}
+        onClick={handleZoomOut}
         title="Zoom out"
       >
         <Minus className="h-4 w-4" style={{ color: '#a1a1aa' }} />
@@ -39,7 +53,7 @@ function ZoomToolbarComponent() {
         variant="ghost"
         size="icon"
         className="h-7 w-7 hover:bg-zinc-700"
-        onClick={() => zoomIn()}
+        onClick={handleZoomIn}
         title="Zoom in"
       >
         <Plus className="h-4 w-4" style={{ color: '#a1a1aa' }} />
@@ -51,10 +65,10 @@ function ZoomToolbarComponent() {
         variant="ghost"
         size="icon"
         className="h-7 w-7 hover:bg-zinc-700"
-        onClick={() => fitView({ padding: 0.2, duration: 300 })}
+        onClick={handleResetZoom}
         title="Fit to screen"
       >
-        <Maximize2 className="h-4 w-4" style={{ color: '#a1a1aa' }} />
+        <RotateCcw className="h-4 w-4" style={{ color: '#a1a1aa' }} />
       </Button>
     </div>
   );
