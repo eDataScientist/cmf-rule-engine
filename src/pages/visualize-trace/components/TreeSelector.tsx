@@ -1,7 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import type { Tree } from '@/lib/types/tree';
-import { Network } from 'lucide-react';
 
 interface TreeSelectorProps {
   trees: Tree[];
@@ -10,47 +7,38 @@ interface TreeSelectorProps {
 }
 
 export function TreeSelector({ trees, selectedTreeId, onSelect }: TreeSelectorProps) {
-  if (trees.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Tree</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No trees found. Please create a tree first.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Network className="h-5 w-5" />
-          Select Tree
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <Label htmlFor="tree-select">Decision Tree Model</Label>
-          <select
-            id="tree-select"
-            className="w-full p-2 border rounded-md bg-background"
-            value={selectedTreeId || ''}
-            onChange={(e) => onSelect(e.target.value)}
-          >
-            <option value="">-- Select a tree --</option>
-            {trees.map((tree) => (
-              <option key={tree.id} value={tree.id}>
-                {tree.name} ({tree.treeType})
-              </option>
-            ))}
-          </select>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="p-4 border-b" style={{ borderColor: '#27272a' }}>
+      <label
+        className="text-[10px] font-semibold uppercase tracking-wider block mb-2"
+        style={{ color: '#71717a' }}
+        htmlFor="tree-select"
+      >
+        Decision Tree
+      </label>
+      <select
+        id="tree-select"
+        className="w-full h-8 px-3 rounded text-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 cursor-pointer"
+        style={{
+          backgroundColor: '#000000',
+          border: '1px solid #3f3f46',
+          color: '#fafafa',
+        }}
+        value={selectedTreeId || ''}
+        onChange={(e) => onSelect(e.target.value)}
+      >
+        <option value="">Select a tree...</option>
+        {trees.map((tree) => (
+          <option key={tree.id} value={tree.id}>
+            {tree.name} ({tree.treeType})
+          </option>
+        ))}
+      </select>
+      {trees.length === 0 && (
+        <p className="text-xs mt-2" style={{ color: '#71717a' }}>
+          No trees found. Create a tree first.
+        </p>
+      )}
+    </div>
   );
 }

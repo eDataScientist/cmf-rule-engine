@@ -46,7 +46,7 @@ export default function ReviewTrees() {
   }, [searchQuery, setCurrentPage]);
 
   const handleVisualize = (treeId: string) => {
-    navigate(`/tree-visualizer/${treeId}`);
+    navigate(`/visualize-trace/${treeId}`);
   };
 
   const handleViewStructure = (treeId: string) => {

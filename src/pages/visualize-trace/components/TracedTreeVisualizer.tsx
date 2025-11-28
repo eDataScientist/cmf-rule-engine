@@ -131,8 +131,16 @@ export function TracedTreeVisualizer({ trees, paths }: TracedTreeVisualizerProps
   const { min, max } = useMemo(() => getMinMaxLeafValues(trees), [trees]);
 
   return (
-    <div className="flex flex-wrap gap-4">
-      {trees.map((tree, index) => {
+    <div
+      className="min-h-full p-6"
+      style={{
+        backgroundColor: '#09090b',
+        backgroundImage: 'radial-gradient(#27272a 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }}
+    >
+      <div className="flex flex-wrap gap-4">
+        {trees.map((tree, index) => {
         const treePath = paths.find((p) => p.treeIndex === index);
         const pathSet = new Set(treePath?.nodeIds || []);
 
@@ -161,6 +169,7 @@ export function TracedTreeVisualizer({ trees, paths }: TracedTreeVisualizerProps
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ const ReviewTrees = lazy(() => import('@/pages/review-trees'));
 const GenerateTree = lazy(() => import('@/pages/generate-tree'));
 const TableVisualizer = lazy(() => import('@/pages/table-visualizer'));
 const TreeVisualizer = lazy(() => import('@/pages/tree-visualizer'));
+const VisualizeTrace = lazy(() => import('@/pages/visualize-trace'));
 const Datasets = lazy(() => import('@/pages/datasets'));
 const DatasetUpload = lazy(() => import('@/pages/datasets/upload'));
 const DatasetDetail = lazy(() => import('@/pages/datasets/[id]'));
@@ -64,6 +65,16 @@ function App() {
                   <ProtectedRoute>
                     <AppLayout>
                       <TreeVisualizer />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/visualize-trace/:treeId?"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <VisualizeTrace />
                     </AppLayout>
                   </ProtectedRoute>
                 }
