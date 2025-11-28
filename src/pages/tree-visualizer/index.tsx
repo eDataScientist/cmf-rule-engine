@@ -61,12 +61,12 @@ export default function TreeVisualizer() {
         </Button>
         <Button
           size="sm"
-          onClick={() => navigate('/table-visualizer', { state: { selectedTreeId: treeId } })}
+          onClick={() => navigate(`/visualize-trace/${treeId}`)}
           className="gap-2"
           style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
         >
           <Eye className="h-4 w-4" />
-          Visualize Data
+          Evaluate Claims
         </Button>
       </div>
     );
