@@ -14,7 +14,7 @@ const TableVisualizer = lazy(() => import('@/pages/table-visualizer'));
 const TreeVisualizer = lazy(() => import('@/pages/tree-visualizer'));
 const VisualizeTrace = lazy(() => import('@/pages/visualize-trace'));
 const Datasets = lazy(() => import('@/pages/datasets'));
-const DatasetDetail = lazy(() => import('@/pages/datasets/[id]'));
+const DatasetDetail = lazy(() => import('@/pages/datasets/[id]/index'));
 
 function App() {
   return (
