@@ -14,7 +14,6 @@ const TableVisualizer = lazy(() => import('@/pages/table-visualizer'));
 const TreeVisualizer = lazy(() => import('@/pages/tree-visualizer'));
 const VisualizeTrace = lazy(() => import('@/pages/visualize-trace'));
 const Datasets = lazy(() => import('@/pages/datasets'));
-const DatasetUpload = lazy(() => import('@/pages/datasets/upload'));
 const DatasetDetail = lazy(() => import('@/pages/datasets/[id]'));
 
 function App() {
@@ -89,16 +88,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/datasets/upload"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <DatasetUpload />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/datasets/upload" element={<Navigate to="/datasets" replace />} />
               <Route
                 path="/datasets/:id"
                 element={

@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Database, Upload, Trash2, Eye, Loader2 } from 'lucide-react';
+import { Database, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { getDatasets, deleteDataset, type DatasetWithStatus } from '@/lib/db/operations';
 import { supabase } from '@/lib/db/supabase';
+import DatasetTable from './components/DatasetTable';
+import UploadModal from './components/UploadModal';
+import { useDatasetSort } from './hooks/useDatasetSort';
 
 export default function Datasets() {
   const [datasets, setDatasets] = useState<DatasetWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  const { sortedDatasets, sortConfig, handleSort } = useDatasetSort(datasets);
 
   useEffect(() => {
     loadDatasets();
@@ -64,24 +69,6 @@ export default function Datasets() {
     }
   }
 
-  function getStatusBadge(status: string) {
-    const styles = {
-      uploading: 'bg-blue-100 text-blue-800',
-      processing: 'bg-yellow-100 text-yellow-800',
-      uploaded: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800',
-    };
-
-    return (
-      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status as keyof typeof styles] || styles.uploaded}`}>
-        {status === 'uploading' || status === 'processing' ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : null}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  }
-
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -98,89 +85,43 @@ export default function Datasets() {
             <Database className="h-8 w-8" />
             Datasets
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-zinc-400 text-sm">
             Manage your uploaded claims datasets
           </p>
         </div>
-        <Link to="/datasets/upload">
-          <Button className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
+        <div className="flex items-center gap-4">
+          {/* Search box (visual only) */}
+          <div className="relative">
+            <Input
+              placeholder="Search files..."
+              className="h-9 bg-black border-zinc-800 pr-16 w-64"
+            />
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-zinc-700 bg-zinc-900 px-1.5 font-mono text-[10px] font-medium text-zinc-400">
+              ⌘K
+            </kbd>
+          </div>
+          {/* Upload button */}
+          <Button onClick={() => setUploadModalOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
             Upload Dataset
           </Button>
-        </Link>
+        </div>
       </div>
 
-      {datasets.length === 0 ? (
-        <Card className="flex min-h-[300px] items-center justify-center">
-          <CardContent className="text-center">
-            <Database className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No datasets yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Upload your first claims dataset to get started
-            </p>
-            <Link to="/datasets/upload">
-              <Button className="mt-4">
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Dataset
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {datasets.map((dataset) => (
-            <Card key={dataset.id}>
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold">
-                      {dataset.nickname || dataset.fileName || `Dataset #${dataset.id}`}
-                    </h3>
-                    {dataset.uploadStatus && getStatusBadge(dataset.uploadStatus.status)}
-                  </div>
-                  <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
-                    <span>{dataset.insuranceCompany}</span>
-                    <span>•</span>
-                    <span>{dataset.country}</span>
-                    <span>•</span>
-                    <span>{dataset.rows} rows</span>
-                    <span>•</span>
-                    <span>{dataset.columns} columns</span>
-                  </div>
-                  {dataset.datePeriod && (
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      Period: {dataset.datePeriod}
-                    </div>
-                  )}
-                </div>
+      <DatasetTable
+        datasets={sortedDatasets}
+        onDelete={handleDelete}
+        deletingId={deletingId}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        onUploadClick={() => setUploadModalOpen(true)}
+      />
 
-                <div className="flex gap-2">
-                  {dataset.uploadStatus?.status === 'uploaded' && (
-                    <Link to={`/datasets/${dataset.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </Button>
-                    </Link>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(dataset.id)}
-                    disabled={deletingId === dataset.id}
-                  >
-                    {deletingId === dataset.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <UploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onSuccess={() => setUploadModalOpen(false)}
+      />
     </div>
   );
 }
