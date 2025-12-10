@@ -1,7 +1,7 @@
 import { ViewModeToggle } from './ViewModeToggle';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { ClaimsTable } from './ClaimsTable';
-import type { TraceResult } from '@/lib/types/trace';
+import type { TraceResult, FinancialMetrics } from '@/lib/types/trace';
 import type { ClaimWithResult } from '@/store/atoms/tableVisualization';
 
 interface TopPaneProps {
@@ -10,6 +10,8 @@ interface TopPaneProps {
 
   // Analytics view
   results: TraceResult[];
+  financialMetrics: FinancialMetrics | null;
+  isLoadingMetrics?: boolean;
 
   // Table view
   claimsWithResults: ClaimWithResult[];
@@ -25,6 +27,8 @@ export function TopPane({
   viewMode,
   onViewModeChange,
   results,
+  financialMetrics,
+  isLoadingMetrics,
   claimsWithResults,
   requiredColumns,
   selectedClaimIndex,
@@ -50,7 +54,11 @@ export function TopPane({
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {viewMode === 'analytics' ? (
-          <AnalyticsOverview results={results} />
+          <AnalyticsOverview
+            results={results}
+            financialMetrics={financialMetrics}
+            isLoadingMetrics={isLoadingMetrics}
+          />
         ) : (
           <ClaimsTable
             claims={claimsWithResults}

@@ -1,4 +1,4 @@
-import type { TraceResult } from '@/lib/types/trace';
+import type { TraceResult, FinancialMetrics } from '@/lib/types/trace';
 import {
   ResponsiveContainer,
   BarChart,
@@ -7,13 +7,30 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from 'recharts';
+import { formatCurrency } from '../utils/formatCurrency';
+import { ValueByRiskChart } from './ValueByRiskChart';
+import { PriceDistributionHistogram } from './PriceDistributionHistogram';
+import { Loader2 } from 'lucide-react';
 
 interface AnalyticsOverviewProps {
   results: TraceResult[];
+  financialMetrics: FinancialMetrics | null;
+  isLoadingMetrics?: boolean;
 }
 
 const BUCKET_COUNT = 10;
+
+// Pie chart colors
+const RISK_COLORS = {
+  low: '#22c55e',      // Green
+  moderate: '#f59e0b', // Orange
+  high: '#ef4444',     // Red
+};
 
 function buildDistribution(results: TraceResult[]) {
   const buckets = Array.from({ length: BUCKET_COUNT }, (_, index) => {
@@ -34,7 +51,7 @@ function buildDistribution(results: TraceResult[]) {
   return buckets;
 }
 
-export function AnalyticsOverview({ results }: AnalyticsOverviewProps) {
+export function AnalyticsOverview({ results, financialMetrics, isLoadingMetrics }: AnalyticsOverviewProps) {
   if (results.length === 0) {
     return (
       <div className="h-full flex items-center justify-center p-8">
@@ -53,29 +70,18 @@ export function AnalyticsOverview({ results }: AnalyticsOverviewProps) {
 
   const distributionData = buildDistribution(results);
 
-  const metrics = [
-    {
-      label: 'STP',
-      range: 'Score < 50%',
-      count: stpCount,
-      percentage: (stpCount / total) * 100,
-    },
-    {
-      label: 'Moderate Non-STP',
-      range: '50% - 75%',
-      count: moderateCount,
-      percentage: (moderateCount / total) * 100,
-    },
-    {
-      label: 'High Risk STP',
-      range: 'Score > 75%',
-      count: highRiskCount,
-      percentage: (highRiskCount / total) * 100,
-    },
+  // Pie chart data
+  const pieData = [
+    { name: 'STP', value: stpCount, color: RISK_COLORS.low },
+    { name: 'Moderate', value: moderateCount, color: RISK_COLORS.moderate },
+    { name: 'High Risk', value: highRiskCount, color: RISK_COLORS.high },
   ];
+
+  const hasFinancialData = financialMetrics && financialMetrics.claimsWithFinancialData > 0;
 
   return (
     <div className="p-6 space-y-6">
+      {/* Row 1: Probability Distribution + Risk Pie Chart */}
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* Probability Distribution Chart */}
         <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
@@ -116,53 +122,125 @@ export function AnalyticsOverview({ results }: AnalyticsOverviewProps) {
           </div>
         </div>
 
-        {/* Summary Panel */}
+        {/* Risk Level Pie Chart */}
         <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
-          <h4 className="text-sm font-semibold text-zinc-100 mb-4">Summary</h4>
-          <div className="space-y-5">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Total evaluated claims
-              </p>
-              <p className="text-3xl font-semibold text-zinc-100 font-mono">{total}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Average score
-              </p>
-              <p className="text-2xl font-semibold text-zinc-100 font-mono">{averageScore.toFixed(3)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Average probability
-              </p>
-              <p className="text-2xl font-semibold text-zinc-100 font-mono">
-                {(averageProbability * 100).toFixed(1)}%
-              </p>
-            </div>
+          <h4 className="text-sm font-semibold text-zinc-100 mb-4">Risk Classification</h4>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#18181b',
+                    border: '1px solid #27272a',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                  }}
+                  labelStyle={{ color: '#fafafa', marginBottom: '4px' }}
+                  itemStyle={{ color: '#fafafa' }}
+                  formatter={(value: number) => [`${value} claims`, 'Count']}
+                />
+                <Legend
+                  wrapperStyle={{
+                    fontSize: '12px',
+                    color: '#a1a1aa',
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Risk Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="border rounded-md p-4"
-            style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}
-          >
-            <h5 className="text-sm font-semibold text-zinc-100 mb-2">{metric.label}</h5>
-            <div className="space-y-2">
-              <p className="text-xs text-zinc-400">{metric.range}</p>
-              <p className="text-3xl font-semibold text-zinc-100 font-mono">{metric.count}</p>
-              <p className="text-xs text-zinc-500">
-                {metric.percentage.toFixed(1)}% of evaluated claims
+      {/* Row 2: Horizontal Metric Cards */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        {/* Total Evaluated Claims */}
+        <div className="border rounded-md p-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+            Total Claims
+          </p>
+          <p className="text-2xl font-semibold text-zinc-100 font-mono">{total}</p>
+        </div>
+
+        {/* Average Score */}
+        <div className="border rounded-md p-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+            Avg Score
+          </p>
+          <p className="text-2xl font-semibold text-zinc-100 font-mono">{averageScore.toFixed(3)}</p>
+        </div>
+
+        {/* Average Probability */}
+        <div className="border rounded-md p-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+            Avg Probability
+          </p>
+          <p className="text-2xl font-semibold text-zinc-100 font-mono">
+            {(averageProbability * 100).toFixed(1)}%
+          </p>
+        </div>
+
+        {/* Total Claimed Value */}
+        {isLoadingMetrics && (
+          <div className="border rounded-md p-3 flex items-center justify-center col-span-2" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+            <Loader2 className="h-5 w-5 animate-spin text-zinc-500 mr-2" />
+            <p className="text-xs text-zinc-500">Loading financial metrics...</p>
+          </div>
+        )}
+        {hasFinancialData && !isLoadingMetrics && (
+          <>
+            <div className="border rounded-md p-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                Total Value
+              </p>
+              <p className="text-2xl font-semibold text-zinc-100 font-mono">
+                {formatCurrency(financialMetrics.totalClaimedValue)}
               </p>
             </div>
-          </div>
-        ))}
+
+            <div className="border rounded-md p-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                Avg Value
+              </p>
+              <p className="text-2xl font-semibold text-zinc-100 font-mono">
+                {formatCurrency(financialMetrics.averageClaimValue)}
+              </p>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Row 3: Financial Analytics Charts */}
+      {hasFinancialData && !isLoadingMetrics && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Value by Risk Level */}
+          <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+            <h4 className="text-sm font-semibold text-zinc-100 mb-4">Value by Risk Level</h4>
+            <ValueByRiskChart valueByRisk={financialMetrics.valueByRisk} />
+          </div>
+
+          {/* Price Distribution: High Risk vs STP */}
+          <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+            <h4 className="text-sm font-semibold text-zinc-100 mb-4">
+              Price Distribution: High Risk vs STP
+            </h4>
+            <PriceDistributionHistogram priceDistribution={financialMetrics.priceDistribution} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

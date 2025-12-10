@@ -6,7 +6,7 @@ import { getDatasets, type DatasetWithStatus } from '@/lib/db/operations';
 import { downloadRawDataset } from '@/lib/storage/helpers';
 
 interface DatasetSelectorProps {
-  onDatasetSelect: (file: File, datasetName: string) => Promise<void>;
+  onDatasetSelect: (file: File, datasetName: string, datasetId: number) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -42,7 +42,7 @@ export function DatasetSelector({ onDatasetSelect, isLoading }: DatasetSelectorP
 
     setDownloading(true);
     try {
-      // Download raw CSV from storage
+      // Download raw CSV from storage (for tree evaluation)
       const blob = await downloadRawDataset(dataset.rawFilePath);
 
       // Convert blob to File
@@ -52,8 +52,8 @@ export function DatasetSelector({ onDatasetSelect, isLoading }: DatasetSelectorP
         { type: 'text/csv' }
       );
 
-      // Pass to parent component
-      await onDatasetSelect(file, dataset.fileName || `Dataset ${dataset.id}`);
+      // Pass to parent component with dataset_id for financial metrics
+      await onDatasetSelect(file, dataset.fileName || `Dataset ${dataset.id}`, dataset.id);
     } catch (err) {
       console.error('Failed to load dataset:', err);
       alert('Failed to load dataset from storage');

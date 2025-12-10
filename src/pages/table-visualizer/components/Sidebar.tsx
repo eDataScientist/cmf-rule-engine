@@ -16,7 +16,7 @@ interface SidebarProps {
   onTreeSelect: (id: string) => void;
 
   // Data source
-  onDatasetSelect: (file: File, name: string) => Promise<void>;
+  onDatasetSelect: (file: File, name: string, datasetId: number) => Promise<void>;
   onCsvUpload: (file: File) => void;
   isParsing: boolean;
 

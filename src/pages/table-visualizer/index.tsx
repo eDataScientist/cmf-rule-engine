@@ -8,6 +8,7 @@ import { TraceInspector } from './components/TraceInspector';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
 import { useCsvExport } from './hooks/useCsvExport';
+import { useFinancialMetrics } from './hooks/useFinancialMetrics';
 import { treesAtom } from '@/store/atoms/trees';
 import { fullCanvasModeAtom } from '@/store/atoms/header';
 import {
@@ -56,6 +57,7 @@ export default function TableVisualizer() {
 
   // Local-only state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentDatasetId, setCurrentDatasetId] = useState<number | null>(null);
 
   // Search functionality
   const debouncedSearch = useDebouncedSearch(searchQuery);
@@ -68,6 +70,7 @@ export default function TableVisualizer() {
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
   const { exportToCsv, isExporting } = useCsvExport();
+  const { financialMetrics, fetchFinancialMetrics, clearMetrics, isLoading: isLoadingMetrics } = useFinancialMetrics();
 
   // Enable full canvas mode
   useEffect(() => {
@@ -120,18 +123,22 @@ export default function TableVisualizer() {
     await parse(file);
   };
 
-  const handleDatasetSelect = async (file: File, _datasetName: string) => {
+  const handleDatasetSelect = async (file: File, _datasetName: string, datasetId: number) => {
     setSelectedFile(file);
+    setCurrentDatasetId(datasetId);
     setFileMetadata({ name: file.name, size: file.size });
+    clearMetrics(); // Clear old metrics when loading new dataset
     await parse(file);
   };
 
   const handleClearFile = () => {
     setSelectedFile(null);
+    setCurrentDatasetId(null);
     setFileMetadata(null);
     setClaimsWithResults([]);
     setValidation(null);
     clearParse();
+    clearMetrics();
   };
 
   const handleClaimNumberChange = (columnName: string) => {
@@ -155,6 +162,21 @@ export default function TableVisualizer() {
       result: evalResults[idx],
     }));
     setClaimsWithResults(merged);
+
+    // If this is a dataset (has datasetId), fetch financial metrics from edge function
+    if (currentDatasetId && validation?.claimNumberColumn) {
+      // Build predictions map: claimNumber -> riskLevel
+      const predictions: Record<string, 'low' | 'moderate' | 'high'> = {};
+      for (let i = 0; i < evalResults.length; i++) {
+        const result = evalResults[i];
+        if (result) {
+          predictions[result.claimNumber] = result.riskLevel;
+        }
+      }
+
+      // Fetch financial metrics in background (non-blocking)
+      fetchFinancialMetrics(currentDatasetId, predictions);
+    }
   };
 
   const handleExport = () => {
@@ -265,6 +287,8 @@ export default function TableVisualizer() {
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               results={processedResults}
+              financialMetrics={financialMetrics}
+              isLoadingMetrics={isLoadingMetrics}
               claimsWithResults={filteredClaims}
               requiredColumns={processor?.getRequiredColumns() || []}
               selectedClaimIndex={selectedClaimIndex}
