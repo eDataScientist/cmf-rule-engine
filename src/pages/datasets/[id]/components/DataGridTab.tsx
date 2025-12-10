@@ -16,7 +16,7 @@ interface DataGridTabProps {
 }
 
 export default function DataGridTab({
-  dataset,
+  dataset: _dataset,
   previewData,
   loadingPreview,
   onLoadPreview,

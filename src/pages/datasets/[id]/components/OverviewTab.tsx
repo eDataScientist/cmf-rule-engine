@@ -1,4 +1,4 @@
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import type { TreeAssociation } from '@/lib/db/operations';
 import type { QualityMetrics } from '../hooks/useQualityMetrics';
 import QualityMetricsGrid from './QualityMetricsGrid';

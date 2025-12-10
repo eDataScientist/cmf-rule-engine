@@ -4,7 +4,7 @@ import { supabase } from '@/lib/db/supabase';
 
 export function useAlignmentSave(
   datasetId: string | undefined,
-  dataset: DatasetWithStatus | null,
+  _dataset: DatasetWithStatus | null,
   previewData: any,
   onSaveSuccess: (newAlignment: Record<string, string>) => void,
   onReloadPreview: () => void

@@ -90,9 +90,9 @@ export default function LinkedTreesList({
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" asChild>
-                  <Link to={`/tree-visualizer/${assoc.treeId}`}>View</Link>
-                </Button>
+                <Link to={`/tree-visualizer/${assoc.treeId}`}>
+                  <Button size="sm" variant="ghost">View</Button>
+                </Link>
               </div>
             ))}
           </div>

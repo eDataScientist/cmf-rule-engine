@@ -1,4 +1,4 @@
-import { Table2, ChevronDown, X } from 'lucide-react';
+import { Table2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TracedTreeVisualizer } from '@/pages/visualize-trace/components/TracedTreeVisualizer';
 import { ResultsHUD } from '@/pages/visualize-trace/components/ResultsHUD';
