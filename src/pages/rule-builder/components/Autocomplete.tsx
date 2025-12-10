@@ -78,10 +78,10 @@ export function Autocomplete({ suggestions, selectedIndex, onSelect, context }: 
                   className="text-zinc-100 truncate"
                   style={{ fontFamily: suggestion.type === 'operator' ? 'JetBrains Mono, monospace' : 'inherit' }}
                 >
-                  {suggestion.displayValue}
+                  {suggestion.type === 'operator' ? suggestion.description : suggestion.displayValue}
                 </span>
 
-                {suggestion.description && (
+                {suggestion.type === 'field' && suggestion.description && (
                   <span className="text-xs text-zinc-500 truncate">{suggestion.description}</span>
                 )}
               </div>
