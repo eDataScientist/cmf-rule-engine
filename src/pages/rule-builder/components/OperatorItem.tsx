@@ -57,8 +57,7 @@ export function OperatorItem({ operator, disabled }: OperatorItemProps) {
           disabled ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
         }`}
       />
-      <span className="text-xs font-mono text-blue-400 w-12">{operator.symbol}</span>
-      <span className="text-xs text-zinc-500 truncate flex-1">{operator.name}</span>
+      <span className="text-xs text-zinc-300 flex-1">{operator.name}</span>
     </div>
   );
 }

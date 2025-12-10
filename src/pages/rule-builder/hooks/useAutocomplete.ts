@@ -85,8 +85,8 @@ export function useAutocomplete(
           .map((op) => ({
             type: 'operator',
             value: op.symbol,
-            displayValue: op.symbol,
-            description: op.name,
+            displayValue: op.name,
+            description: undefined,
           }));
 
       case 'value':
@@ -119,13 +119,13 @@ export function useAutocomplete(
             type: 'connector' as const,
             value: 'AND',
             displayValue: 'AND',
-            description: 'All conditions must match',
+            description: undefined,
           },
           {
             type: 'connector' as const,
             value: 'OR',
             displayValue: 'OR',
-            description: 'Any condition can match',
+            description: undefined,
           },
         ] as AutocompleteSuggestion[]).filter((s) => s.value.toLowerCase().includes(prefix));
 

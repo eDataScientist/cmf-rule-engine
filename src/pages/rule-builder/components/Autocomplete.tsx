@@ -73,16 +73,16 @@ export function Autocomplete({ suggestions, selectedIndex, onSelect, context }: 
             >
               <Icon className={`h-4 w-4 flex-shrink-0 ${iconColor}`} />
 
-              <div className="flex-1 min-w-0 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
                 <span
-                  className="text-zinc-100 truncate"
+                  className="text-zinc-100"
                   style={{ fontFamily: suggestion.type === 'operator' ? 'JetBrains Mono, monospace' : 'inherit' }}
                 >
-                  {suggestion.type === 'operator' ? suggestion.description : suggestion.displayValue}
+                  {suggestion.displayValue}
                 </span>
 
-                {suggestion.type === 'field' && suggestion.description && (
-                  <span className="text-xs text-zinc-500 truncate">{suggestion.description}</span>
+                {suggestion.description && (
+                  <span className="text-xs text-zinc-500 ml-2">{suggestion.description}</span>
                 )}
               </div>
 
