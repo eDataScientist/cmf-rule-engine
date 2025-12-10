@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RiskBadgeProps {
   riskLevel: 'low' | 'moderate' | 'high';
@@ -8,22 +8,19 @@ interface RiskBadgeProps {
 
 const riskConfig = {
   low: {
-    variant: 'secondary' as const,
     icon: CheckCircle2,
-    label: 'Low Risk',
-    className: 'bg-green-100 text-green-800 hover:bg-green-100',
+    label: 'STP',
+    className: 'bg-green-500/20 text-green-400 border-green-500/50',
   },
   moderate: {
-    variant: 'secondary' as const,
     icon: AlertCircle,
-    label: 'Moderate Risk',
-    className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
+    label: 'Moderate',
+    className: 'bg-orange-500/20 text-orange-400 border-orange-500/50',
   },
   high: {
-    variant: 'destructive' as const,
     icon: AlertTriangle,
-    label: 'High Risk',
-    className: 'bg-red-100 text-red-800 hover:bg-red-100',
+    label: 'High',
+    className: 'bg-red-500/20 text-red-400 border-red-500/50',
   },
 };
 
@@ -31,13 +28,30 @@ export function RiskBadge({ riskLevel, size = 'default' }: RiskBadgeProps) {
   const config = riskConfig[riskLevel];
   const Icon = config.icon;
 
-  const iconSize = size === 'xs' ? 'h-4 w-4' : size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
-  const textSize = size === 'xs' ? 'text-[10px]' : size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
+  const sizeClasses = {
+    xs: 'px-2 py-0.5 text-[10px] gap-1',
+    sm: 'px-2.5 py-1 text-xs gap-1',
+    default: 'px-3 py-1 text-xs gap-1.5',
+    lg: 'px-3.5 py-1.5 text-sm gap-1.5',
+  };
+
+  const iconSizes = {
+    xs: 'h-3 w-3',
+    sm: 'h-3.5 w-3.5',
+    default: 'h-4 w-4',
+    lg: 'h-4 w-4',
+  };
 
   return (
-    <Badge variant={config.variant} className={`${config.className} ${textSize} gap-1`}>
-      <Icon className={iconSize} />
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border font-medium',
+        sizeClasses[size],
+        config.className
+      )}
+    >
+      <Icon className={iconSizes[size]} />
       {config.label}
-    </Badge>
+    </span>
   );
 }

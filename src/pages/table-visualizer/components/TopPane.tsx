@@ -38,7 +38,7 @@ export function TopPane({
       {/* Header with toggle */}
       <div
         className="border-b px-6 py-3 flex items-center justify-between"
-        style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}
+        style={{ borderBottomWidth: '1px', borderColor: '#27272a', backgroundColor: '#18181b' }}
       >
         <h3 className="text-sm font-semibold text-zinc-100">
           {viewMode === 'analytics' ? 'Analytics Overview' : 'Claims Data'}

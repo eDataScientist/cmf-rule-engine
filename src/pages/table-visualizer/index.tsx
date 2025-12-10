@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 // import { useNavigate } from 'react-router-dom'; // TODO: Phase 4
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels';
 import { Sidebar } from './components/Sidebar';
 import { TopPane } from './components/TopPane';
 import { TraceInspector } from './components/TraceInspector';
@@ -36,6 +36,7 @@ export default function TableVisualizer() {
   // const navigate = useNavigate(); // TODO: Phase 4 - For row click navigation
   const [trees, setTrees] = useAtom(treesAtom);
   const setFullCanvas = useSetAtom(fullCanvasModeAtom);
+  const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
 
   // Navigation atoms (for passing data to review-trees) - TODO: Phase 4
   // const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
@@ -80,6 +81,13 @@ export default function TableVisualizer() {
   useEffect(() => {
     getTrees().then(setTrees);
   }, [setTrees]);
+
+  // Initialize collapsed state if no claim selected
+  useEffect(() => {
+    if (selectedClaimIndex === null && panelGroupRef.current) {
+      panelGroupRef.current.setLayout([95, 5]);
+    }
+  }, [selectedClaimIndex]);
 
   // Re-create processor when tree is selected OR when page loads with cached tree
   useEffect(() => {
@@ -173,6 +181,16 @@ export default function TableVisualizer() {
     // Find the index of this claim in the filteredClaims array
     const index = filteredClaims.findIndex(c => c === claim);
     setSelectedClaimIndex(index);
+
+    // Expand bottom pane when a claim is selected
+    if (index !== -1 && panelSizes[1] < 40) {
+      panelGroupRef.current?.setLayout([50, 50]);
+    }
+  };
+
+  const handleCollapseTrace = () => {
+    // Just collapse the pane, don't clear selection
+    panelGroupRef.current?.setLayout([95, 5]);
   };
 
   // Reset selected claim when search changes
@@ -232,6 +250,7 @@ export default function TableVisualizer() {
 
         {/* Resizable Panels */}
         <PanelGroup
+          ref={panelGroupRef}
           direction="vertical"
           onLayout={handlePanelResize}
           className="flex-1"
@@ -257,17 +276,19 @@ export default function TableVisualizer() {
           </Panel>
 
           {/* Resize Handle */}
-          <PanelResizeHandle className="h-1 bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-row-resize" />
+          <PanelResizeHandle className="h-[2px] bg-zinc-800 hover:bg-zinc-600 transition-colors cursor-row-resize" />
 
           {/* Bottom Pane */}
           <Panel
             defaultSize={panelSizes[1]}
-            minSize={20}
+            minSize={5}
             maxSize={70}
           >
             <TraceInspector
               selectedClaim={selectedClaim}
               treeStructure={selectedTree?.structure || null}
+              onCollapse={handleCollapseTrace}
+              isCollapsed={panelSizes[1] < 10}
             />
           </Panel>
         </PanelGroup>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { RiskBadge } from '@/components/shared/ScoreCard/RiskBadge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,10 @@ interface ClaimsTableProps {
   claimNumberColumn?: string | null;
 }
 
-const ROWS_PER_PAGE = 10;
+const ROW_HEIGHT = 28; // Approximate height of each row in pixels
+const HEADER_HEIGHT = 36; // Height of table header
+const MIN_ROWS = 5;
+const DEFAULT_ROWS = 10;
 const RISK_FILTERS: { label: string; value: RiskLevel | 'all' }[] = [
   { label: 'All', value: 'all' },
   { label: 'STP', value: 'low' },
@@ -50,6 +53,33 @@ export function ClaimsTable({
 
   const [page, setPage] = useState(1);
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<RiskLevel | 'all'>('all');
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate rows per page based on container height
+  const calculateRowsPerPage = useCallback(() => {
+    if (tableContainerRef.current) {
+      const containerHeight = tableContainerRef.current.clientHeight;
+      const availableHeight = containerHeight - HEADER_HEIGHT;
+      const calculatedRows = Math.floor(availableHeight / ROW_HEIGHT);
+      setRowsPerPage(Math.max(MIN_ROWS, calculatedRows));
+    }
+  }, []);
+
+  // Observe container resize
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateRowsPerPage();
+    });
+
+    resizeObserver.observe(container);
+    calculateRowsPerPage(); // Initial calculation
+
+    return () => resizeObserver.disconnect();
+  }, [calculateRowsPerPage]);
 
   // Filter claims based on selected risk level
   const filteredClaims = useMemo(() => {
@@ -65,14 +95,14 @@ export function ClaimsTable({
 
   useEffect(() => {
     setPage((prev) => {
-      const totalPages = Math.max(1, Math.ceil(filteredClaims.length / ROWS_PER_PAGE));
+      const totalPages = Math.max(1, Math.ceil(filteredClaims.length / rowsPerPage));
       return Math.min(prev, totalPages);
     });
-  }, [filteredClaims.length]);
+  }, [filteredClaims.length, rowsPerPage]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredClaims.length / ROWS_PER_PAGE));
-  const startIndex = (page - 1) * ROWS_PER_PAGE;
-  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, filteredClaims.length);
+  const totalPages = Math.max(1, Math.ceil(filteredClaims.length / rowsPerPage));
+  const startIndex = (page - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredClaims.length);
 
   const paginatedClaims = useMemo(
     () => filteredClaims.slice(startIndex, endIndex),
@@ -82,8 +112,8 @@ export function ClaimsTable({
   return (
     <div className="flex flex-col h-full">
       {/* Risk Filter Pills */}
-      <div className="border-b px-4 py-3" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
-        <div className="flex flex-wrap gap-2">
+      <div className="border-b px-3 py-2" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+        <div className="flex items-center gap-1.5">
           {RISK_FILTERS.map((filter) => {
             const count = filter.value === 'all'
               ? claims.length
@@ -108,13 +138,13 @@ export function ClaimsTable({
               } else {
                 switch (filter.value) {
                   case 'all':
-                    return 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300';
+                    return 'border-zinc-700/50 text-zinc-500 hover:border-zinc-600 hover:text-zinc-400';
                   case 'low':
-                    return 'border-green-500/30 text-green-500/70 hover:border-green-500/50 hover:text-green-400';
+                    return 'border-green-500/20 text-green-500/50 hover:border-green-500/40 hover:text-green-400';
                   case 'moderate':
-                    return 'border-orange-500/30 text-orange-500/70 hover:border-orange-500/50 hover:text-orange-400';
+                    return 'border-orange-500/20 text-orange-500/50 hover:border-orange-500/40 hover:text-orange-400';
                   case 'high':
-                    return 'border-red-500/30 text-red-500/70 hover:border-red-500/50 hover:text-red-400';
+                    return 'border-red-500/20 text-red-500/50 hover:border-red-500/40 hover:text-red-400';
                   default:
                     return '';
                 }
@@ -126,12 +156,12 @@ export function ClaimsTable({
                 key={filter.value}
                 onClick={() => setSelectedRiskFilter(filter.value)}
                 className={cn(
-                  'px-3 py-1 rounded-full border text-xs font-medium transition-colors',
+                  'px-2.5 py-1 rounded-full border text-[10px] font-medium transition-colors',
                   getButtonStyle()
                 )}
               >
                 {filter.label}
-                <span className="ml-1.5 opacity-70">({count})</span>
+                <span className="ml-1 opacity-60">{count}</span>
               </button>
             );
           })}
@@ -139,31 +169,31 @@ export function ClaimsTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div ref={tableContainerRef} className="flex-1 overflow-auto">
         <table className="w-full border-collapse">
           <thead
             className="sticky top-0 z-10 border-b"
             style={{ backgroundColor: '#18181b', borderColor: '#27272a' }}
           >
             <tr>
-              <th className="h-12 w-[120px] px-4 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <th className="h-9 px-3 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">
                 Claim #
               </th>
               {displayColumns.map((key) => (
                 <th
                   key={key}
-                  className="h-12 px-4 text-left text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500"
+                  className="h-9 px-3 text-left text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap"
                 >
                   {key}
                 </th>
               ))}
-              <th className="h-12 w-[100px] px-4 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <th className="h-9 px-3 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">
                 Score
               </th>
-              <th className="h-12 w-[120px] px-4 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Probability
+              <th className="h-9 px-3 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">
+                Prob
               </th>
-              <th className="h-12 w-[100px] px-4 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <th className="h-9 px-3 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap">
                 Risk
               </th>
             </tr>
@@ -173,37 +203,39 @@ export function ClaimsTable({
               const absoluteIndex = startIndex + idx;
               // Check if this claim is selected by comparing the claim object
               const isSelected = selectedClaimIndex !== null && claims[selectedClaimIndex] === item;
+              const isEven = idx % 2 === 0;
               return (
                 <tr
                   key={absoluteIndex}
                   onClick={() => onClaimSelect(item)}
                   className={cn(
-                    'border-b cursor-pointer transition-colors',
+                    'cursor-pointer transition-colors',
                     isSelected
-                      ? 'bg-zinc-800 border-l-4 border-l-blue-500'
-                      : 'hover:bg-zinc-900 border-l-4 border-l-transparent'
+                      ? 'bg-blue-500/10 border-l-2 border-l-blue-500'
+                      : isEven
+                        ? 'bg-zinc-900/50 hover:bg-zinc-800/70 border-l-2 border-l-transparent'
+                        : 'bg-transparent hover:bg-zinc-800/70 border-l-2 border-l-transparent'
                   )}
-                  style={{ borderBottomColor: '#27272a' }}
                 >
-                  <td className="px-4 py-3 font-mono text-sm text-zinc-100">
+                  <td className="px-3 py-1.5 font-mono text-xs text-zinc-100 whitespace-nowrap">
                     {claimNumberColumn ? item.claim[claimNumberColumn] || '-' : `#${absoluteIndex + 1}`}
                   </td>
                   {displayColumns.map((key) => (
-                    <td key={key} className="px-4 py-3 text-sm text-zinc-300">
+                    <td key={key} className="px-3 py-1.5 text-xs text-zinc-400 whitespace-nowrap">
                       {String(item.claim[key] ?? '-')}
                     </td>
                   ))}
-                  <td className="px-4 py-3 text-right font-mono text-sm text-zinc-100">
+                  <td className="px-3 py-1.5 text-right font-mono text-xs text-zinc-100 whitespace-nowrap">
                     {item.result ? item.result.totalScore.toFixed(3) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-sm text-zinc-100">
+                  <td className="px-3 py-1.5 text-right font-mono text-xs text-zinc-100 whitespace-nowrap">
                     {item.result ? `${(item.result.probability * 100).toFixed(1)}%` : '-'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-1.5">
                     {item.result ? (
                       <RiskBadge riskLevel={item.result.riskLevel} size="xs" />
                     ) : isProcessing ? (
-                      <span className="text-xs text-zinc-500">Processing...</span>
+                      <span className="text-[10px] text-zinc-500">...</span>
                     ) : (
                       '-'
                     )}
@@ -217,47 +249,39 @@ export function ClaimsTable({
 
       {/* Footer with pagination */}
       <div
-        className="flex flex-col gap-2 border-t p-4 sm:flex-row sm:items-center sm:justify-between"
+        className="flex items-center justify-between border-t px-3 py-2"
         style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}
       >
-        <div className="text-sm text-zinc-400">
-          Showing <span className="font-medium text-zinc-100">{startIndex + 1}</span>-
-          <span className="font-medium text-zinc-100">{endIndex}</span> of{' '}
-          <span className="font-medium text-zinc-100">{filteredClaims.length}</span>
+        <div className="text-xs text-zinc-500">
+          <span className="text-zinc-300">{startIndex + 1}-{endIndex}</span>
+          <span className="mx-1">of</span>
+          <span className="text-zinc-300">{filteredClaims.length}</span>
           {selectedRiskFilter !== 'all' && (
-            <span className="text-xs text-zinc-500">
-              {' '}
-              ({selectedRiskFilter} risk)
-            </span>
+            <span className="ml-1 text-zinc-600">({selectedRiskFilter})</span>
           )}
           {totalUnfilteredCount && filteredClaims.length < totalUnfilteredCount && (
-            <span className="text-xs text-zinc-500">
-              {' '}
-              (filtered from {totalUnfilteredCount})
-            </span>
-          )}{' '}
-          claims
+            <span className="ml-1 text-zinc-600">/ {totalUnfilteredCount}</span>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
-            className="h-8 border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
           >
-            Previous
+            Prev
           </Button>
-          <span className="text-sm text-zinc-400">
-            Page <span className="font-medium text-zinc-100">{page}</span> of{' '}
-            <span className="font-medium text-zinc-100">{totalPages}</span>
+          <span className="text-xs text-zinc-500 px-2">
+            {page}/{totalPages}
           </span>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={page === totalPages}
-            className="h-8 border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
           >
             Next
           </Button>

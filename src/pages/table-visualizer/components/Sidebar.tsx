@@ -67,11 +67,11 @@ export function Sidebar(props: SidebarProps) {
 
   return (
     <aside
-      className="w-[20%] min-w-[280px] max-w-[400px] flex-shrink-0 border-r flex flex-col overflow-hidden"
+      className="w-[10%] min-w-[280px] max-w-[400px] flex-shrink-0 border-r flex flex-col overflow-hidden"
       style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}
     >
       {/* Section 1: Tree Selection */}
-      <div className="border-b p-4" style={{ borderColor: '#27272a' }}>
+      <div className="border-b p-4" style={{ borderBottomWidth: '1px', borderColor: '#27272a' }}>
         <Label className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2 block">
           Decision Tree Model
         </Label>
@@ -90,7 +90,7 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       {/* Section 2: Data Source */}
-      <div className="border-b p-4" style={{ borderColor: '#27272a' }}>
+      <div className="border-b p-4" style={{ borderBottomWidth: '1px', borderColor: '#27272a' }}>
         <Label className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2 block">
           Data Source
         </Label>
@@ -143,7 +143,7 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       {/* Section 3: Search & Filter */}
-      <div className="border-b p-4" style={{ borderColor: '#27272a' }}>
+      <div className="border-b p-4" style={{ borderBottomWidth: '1px', borderColor: '#27272a' }}>
         <SearchBar
           value={searchQuery}
           onChange={onSearchChange}
@@ -153,7 +153,7 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       {/* Section 4: Validation Status */}
-      <div className="border-b p-4 flex-1 overflow-y-auto" style={{ borderColor: '#27272a' }}>
+      <div className="border-b p-4 flex-1 overflow-y-auto" style={{ borderBottomWidth: '1px', borderColor: '#27272a' }}>
         <Label className="text-[10px] uppercase tracking-wider text-zinc-500 mb-3 block">
           Validation Status
         </Label>
@@ -206,7 +206,7 @@ export function Sidebar(props: SidebarProps) {
       </div>
 
       {/* Section 5: Actions (Sticky Bottom) */}
-      <div className="mt-auto p-4 border-t" style={{ borderColor: '#27272a' }}>
+      <div className="mt-auto p-4 border-t" style={{ borderTopWidth: '1px', borderColor: '#27272a' }}>
         <Button
           onClick={onProcess}
           disabled={!validation?.isValid || isProcessing}

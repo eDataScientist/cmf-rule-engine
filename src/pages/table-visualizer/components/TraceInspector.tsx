@@ -1,4 +1,5 @@
-import { Table2 } from 'lucide-react';
+import { Table2, ChevronDown, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { TracedTreeVisualizer } from '@/pages/visualize-trace/components/TracedTreeVisualizer';
 import { ResultsHUD } from '@/pages/visualize-trace/components/ResultsHUD';
 import type { TreeNode } from '@/lib/types/tree';
@@ -7,9 +8,11 @@ import type { ClaimWithResult } from '@/store/atoms/tableVisualization';
 interface TraceInspectorProps {
   selectedClaim: ClaimWithResult | null;
   treeStructure: { title: string; root: TreeNode }[] | null;
+  onCollapse: () => void;
+  isCollapsed: boolean;
 }
 
-export function TraceInspector({ selectedClaim, treeStructure }: TraceInspectorProps) {
+export function TraceInspector({ selectedClaim, treeStructure, onCollapse, isCollapsed }: TraceInspectorProps) {
   // Empty state: No tree selected
   if (!treeStructure) {
     return (
@@ -44,14 +47,44 @@ export function TraceInspector({ selectedClaim, treeStructure }: TraceInspectorP
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ borderTop: '1px solid #27272a' }}>
+    <div className="flex flex-col h-full">
+      {/* Collapse Button - Always visible */}
+      {!isCollapsed && selectedClaim && (
+        <div className="flex items-center justify-between border-b px-4 py-2" style={{ borderBottomWidth: '1px', borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Trace Inspector
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCollapse}
+            className="h-7 px-2 gap-1 text-zinc-400 hover:text-zinc-100"
+          >
+            <ChevronDown className="h-4 w-4" />
+            <span className="text-xs">Collapse</span>
+          </Button>
+        </div>
+      )}
+
       {/* ResultsHUD - Collapsible summary */}
-      <ResultsHUD result={selectedClaim.result} isEvaluating={false} />
+      {!isCollapsed && <ResultsHUD result={selectedClaim.result} isEvaluating={false} />}
 
       {/* Trace Visualization */}
-      <div className="flex-1 overflow-auto" style={{ paddingBottom: '80px' }}>
-        <TracedTreeVisualizer trees={treeStructure} paths={selectedClaim.result.paths} />
-      </div>
+      {!isCollapsed && (
+        <div className="flex-1 overflow-auto" style={{ paddingBottom: '80px' }}>
+          <TracedTreeVisualizer trees={treeStructure} paths={selectedClaim.result.paths} />
+        </div>
+      )}
+
+      {/* Collapsed State Indicator */}
+      {isCollapsed && selectedClaim && (
+        <div className="flex items-center justify-center h-full" style={{ backgroundColor: '#09090b' }}>
+          <div className="text-center">
+            <ChevronDown className="h-8 w-8 text-zinc-700 mx-auto mb-2 animate-bounce" />
+            <p className="text-xs text-zinc-500">Drag up to view trace</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
