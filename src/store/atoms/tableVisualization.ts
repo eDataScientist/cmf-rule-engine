@@ -20,7 +20,7 @@ export const isFromTableVisualizerAtom = atom(false);
 // ===== Table Visualizer State Cache =====
 // Persisted state so users don't lose progress when navigating away
 
-interface ClaimWithResult {
+export interface ClaimWithResult {
   claim: ClaimData;
   result?: TraceResult;
 }
@@ -31,10 +31,28 @@ export const tableVisualizerTreeIdAtom = atomWithStorage<string | null>(
   null
 );
 
-// Active tab state
-export const tableVisualizerActiveTabAtom = atomWithStorage<string>(
-  'tableVisualizer:activeTab',
-  'setup'
+// View mode (replaces activeTab) - analytics or table view
+export const tableVisualizerViewModeAtom = atomWithStorage<'analytics' | 'table'>(
+  'tableVisualizer:viewMode',
+  'analytics'
+);
+
+// Selected claim index for trace inspector
+export const tableVisualizerSelectedClaimIndexAtom = atomWithStorage<number | null>(
+  'tableVisualizer:selectedClaimIndex',
+  null
+);
+
+// Search query for filtering claims
+export const tableVisualizerSearchQueryAtom = atomWithStorage<string>(
+  'tableVisualizer:searchQuery',
+  ''
+);
+
+// Panel sizes [top%, bottom%]
+export const tableVisualizerPanelSizesAtom = atomWithStorage<[number, number]>(
+  'tableVisualizer:panelSizes',
+  [60, 40]
 );
 
 // File metadata (can't store File object, just metadata)

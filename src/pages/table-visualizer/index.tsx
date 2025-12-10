@@ -1,59 +1,80 @@
 import { useState, useEffect } from 'react';
-import { useAtom } from 'jotai';
-import { Loader2, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@/components/shared/Layout/PageHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { CsvUploader } from './components/CsvUploader';
-import { DatasetSelector } from './components/DatasetSelector';
-import { ColumnValidation } from './components/ColumnValidation';
-import { ClaimsTable } from './components/ClaimsTable';
-import { AnalyticsOverview } from './components/AnalyticsOverview';
+import { useAtom, useSetAtom } from 'jotai';
+// import { useNavigate } from 'react-router-dom'; // TODO: Phase 4
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Sidebar } from './components/Sidebar';
+import { TopPane } from './components/TopPane';
+import { TraceInspector } from './components/TraceInspector';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
 import { useCsvExport } from './hooks/useCsvExport';
 import { treesAtom } from '@/store/atoms/trees';
+import { fullCanvasModeAtom } from '@/store/atoms/header';
 import {
-  selectedTableTreeIdAtom,
-  selectedTableClaimDataAtom,
-  selectedTableTabAtom,
-  isFromTableVisualizerAtom,
+  // Navigation atoms - TODO: Phase 4
+  // selectedTableTreeIdAtom,
+  // selectedTableClaimDataAtom,
+  // selectedTableTabAtom,
+  // isFromTableVisualizerAtom,
   tableVisualizerTreeIdAtom,
-  tableVisualizerActiveTabAtom,
+  tableVisualizerPanelSizesAtom,
+  tableVisualizerViewModeAtom,
+  tableVisualizerSelectedClaimIndexAtom,
+  tableVisualizerSearchQueryAtom,
   tableVisualizerFileMetadataAtom,
   tableVisualizerClaimsWithResultsAtom,
   tableVisualizerValidationAtom
 } from '@/store/atoms/tableVisualization';
+import { useClaimSearch } from './hooks/useClaimSearch';
+import { useDebouncedSearch } from './hooks/useDebouncedSearch';
 import { getTrees } from '@/lib/db/operations';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
+import type { ClaimWithResult } from '@/store/atoms/tableVisualization';
 
 export default function TableVisualizer() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // TODO: Phase 4 - For row click navigation
   const [trees, setTrees] = useAtom(treesAtom);
+  const setFullCanvas = useSetAtom(fullCanvasModeAtom);
 
-  // Navigation atoms (for passing data to review-trees)
-  const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
-  const [, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
-  const [, setTableTab] = useAtom(selectedTableTabAtom);
-  const [, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
+  // Navigation atoms (for passing data to review-trees) - TODO: Phase 4
+  // const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
+  // const [, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
+  // const [, setTableTab] = useAtom(selectedTableTabAtom);
+  // const [, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
 
-  // Persisted state atoms (cached across navigation)
-  const [activeTab, setActiveTab] = useAtom(tableVisualizerActiveTabAtom);
+  // Persisted state atoms
+  const [panelSizes, setPanelSizes] = useAtom(tableVisualizerPanelSizesAtom);
   const [selectedTreeId, setSelectedTreeId] = useAtom(tableVisualizerTreeIdAtom);
   const [claimsWithResults, setClaimsWithResults] = useAtom(tableVisualizerClaimsWithResultsAtom);
   const [validation, setValidation] = useAtom(tableVisualizerValidationAtom);
   const [fileMetadata, setFileMetadata] = useAtom(tableVisualizerFileMetadataAtom);
+  const [viewMode, setViewMode] = useAtom(tableVisualizerViewModeAtom);
+  const [selectedClaimIndex, setSelectedClaimIndex] = useAtom(tableVisualizerSelectedClaimIndexAtom);
+  const [searchQuery, setSearchQuery] = useAtom(tableVisualizerSearchQueryAtom);
 
-  // Local-only state (doesn't need persistence)
+  // Local-only state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Search functionality
+  const debouncedSearch = useDebouncedSearch(searchQuery);
+  const filteredClaims = useClaimSearch(
+    claimsWithResults,
+    debouncedSearch,
+    validation?.claimNumberColumn || null
+  );
 
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
   const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
   const { exportToCsv, isExporting } = useCsvExport();
+
+  // Enable full canvas mode
+  useEffect(() => {
+    setFullCanvas(true);
+    return () => {
+      setFullCanvas(false);
+    };
+  }, [setFullCanvas]);
 
   // Load trees on mount
   useEffect(() => {
@@ -70,11 +91,6 @@ export default function TableVisualizer() {
     }
   }, [selectedTreeId, trees, createProcessor]);
 
-  // When tree is selected, update the atom
-  const handleTreeSelect = (treeId: string) => {
-    setSelectedTreeId(treeId);
-  };
-
   // When CSV is parsed, validate columns
   useEffect(() => {
     if (claims.length > 0 && processor) {
@@ -82,11 +98,13 @@ export default function TableVisualizer() {
       const validationResult = validateColumns(csvColumns);
       setValidation(validationResult);
       setClaimsWithResults(claims.map((claim) => ({ claim })));
-
-      // Auto-navigate to validation tab
-      setActiveTab('validation');
     }
-  }, [claims, processor, validateColumns]);
+  }, [claims, processor, validateColumns, setValidation, setClaimsWithResults]);
+
+  // Handlers
+  const handleTreeSelect = (treeId: string) => {
+    setSelectedTreeId(treeId);
+  };
 
   const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
@@ -106,7 +124,6 @@ export default function TableVisualizer() {
     setClaimsWithResults([]);
     setValidation(null);
     clearParse();
-    setActiveTab('setup');
   };
 
   const handleClaimNumberChange = (columnName: string) => {
@@ -130,9 +147,6 @@ export default function TableVisualizer() {
       result: evalResults[idx],
     }));
     setClaimsWithResults(merged);
-
-    // Auto-navigate to analytics tab to review insights first
-    setActiveTab('analytics');
   };
 
   const handleExport = () => {
@@ -141,205 +155,123 @@ export default function TableVisualizer() {
     }
   };
 
-  const handleRowClick = (claim: ClaimData) => {
-    if (!selectedTreeId) return;
+  // TODO: Phase 4 - Uncomment and wire up to table row clicks
+  // const handleRowClick = (claim: ClaimData) => {
+  //   if (!selectedTreeId) return;
+  //   setTableTreeId(selectedTreeId);
+  //   setTableClaimData(claim);
+  //   setTableTab('visualization');
+  //   setIsFromTable(true);
+  //   navigate('/review-trees');
+  // };
 
-    // Set atoms for review-trees to consume
-    setTableTreeId(selectedTreeId);
-    setTableClaimData(claim);
-    setTableTab('visualization');
-    setIsFromTable(true);
-
-    // Navigate to review-trees
-    navigate('/review-trees');
+  const handlePanelResize = (sizes: number[]) => {
+    setPanelSizes([sizes[0], sizes[1]]);
   };
 
-  const evaluatedResults = claimsWithResults.filter(
+  const handleClaimSelect = (claim: ClaimWithResult) => {
+    // Find the index of this claim in the filteredClaims array
+    const index = filteredClaims.findIndex(c => c === claim);
+    setSelectedClaimIndex(index);
+  };
+
+  // Reset selected claim when search changes
+  useEffect(() => {
+    setSelectedClaimIndex(null);
+  }, [debouncedSearch, setSelectedClaimIndex]);
+
+  // Derived state
+  const evaluatedResults = filteredClaims.filter(
     (item): item is { claim: ClaimData; result: TraceResult } => item.result !== undefined
   );
   const processedResults = evaluatedResults.map((item) => item.result);
   const hasResults = evaluatedResults.length > 0;
   const error = parseError || evalError;
-  const canValidate = selectedTreeId && claims.length > 0;
-  const canShowAnalytics = hasResults;
-  const canShowResults = hasResults;
+
+  const selectedTree = trees.find((t) => t.id === selectedTreeId);
+  const selectedClaim =
+    selectedClaimIndex !== null && filteredClaims[selectedClaimIndex]
+      ? filteredClaims[selectedClaimIndex]
+      : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Table Visualizer"
-        description="Upload CSV data and batch process multiple claims"
-      />
-
+    <div className="flex h-screen" style={{ backgroundColor: '#09090b' }}>
+      {/* Error Display - Fixed Position */}
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error}</p>
+        <div
+          className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 p-4 bg-red-950 border border-red-900 rounded-md shadow-lg max-w-2xl"
+          style={{ minWidth: '400px' }}
+        >
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="setup">Setup</TabsTrigger>
-          <TabsTrigger value="validation" disabled={!canValidate}>Validation</TabsTrigger>
-          <TabsTrigger value="analytics" disabled={!canShowAnalytics}>Analytics</TabsTrigger>
-          <TabsTrigger value="results" disabled={!canShowResults}>Results</TabsTrigger>
-        </TabsList>
+      {/* Main Content: Sidebar + Split Panes */}
+      <div className="flex flex-1 overflow-hidden w-full">
+        {/* Sidebar */}
+        <Sidebar
+          trees={trees}
+          selectedTreeId={selectedTreeId}
+          onTreeSelect={handleTreeSelect}
+          onDatasetSelect={handleDatasetSelect}
+          onCsvUpload={handleFileSelect}
+          isParsing={isParsing}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          validation={validation}
+          onClaimNumberChange={handleClaimNumberChange}
+          onProcess={handleProcess}
+          onExport={handleExport}
+          isProcessing={isProcessing}
+          hasResults={hasResults}
+          isExporting={isExporting}
+          fileMetadata={fileMetadata}
+          onClearFile={handleClearFile}
+          selectedFile={selectedFile}
+        />
 
-        {/* Tab 1: Setup - Tree Selection + CSV Upload */}
-        <TabsContent value="setup">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>1. Select Decision Tree</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label htmlFor="tree-select">Choose a tree model for evaluation</Label>
-                  <select
-                    id="tree-select"
-                    className="w-full p-2 border rounded-md bg-background"
-                    value={selectedTreeId || ''}
-                    onChange={(e) => handleTreeSelect(e.target.value)}
-                  >
-                    <option value="">-- Select a tree --</option>
-                    {trees.map((tree) => (
-                      <option key={tree.id} value={tree.id}>
-                        {tree.name} ({tree.treeType})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>2. Load Data</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Show cached data status */}
-                  {fileMetadata && claimsWithResults.length > 0 && (
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground mb-1">
-                            Data Loaded: {fileMetadata.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {claimsWithResults.length} claims • {(fileMetadata.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleClearFile}
-                        >
-                          Clear & Reload
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Show options only if no data loaded */}
-                  {(!fileMetadata || claimsWithResults.length === 0) && (
-                    <>
-                      {/* Option A: Select Existing Dataset */}
-                      <div>
-                    <div className="mb-3">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Option A: Use Existing Dataset
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Select a previously uploaded dataset from storage
-                      </p>
-                    </div>
-                    <DatasetSelector
-                      onDatasetSelect={handleDatasetSelect}
-                      isLoading={isParsing}
-                    />
-                  </div>
-
-                  {/* Separator */}
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">or</span>
-                    </div>
-                  </div>
-
-                  {/* Option B: Upload New CSV */}
-                  <div>
-                    <div className="mb-3">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Option B: Upload New CSV File
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Upload a new CSV file from your computer
-                      </p>
-                    </div>
-                    <CsvUploader
-                      onFileSelect={handleFileSelect}
-                      selectedFile={selectedFile}
-                      onClear={handleClearFile}
-                      isProcessing={isParsing}
-                    />
-                  </div>
-
-                  {isParsing && (
-                    <div className="flex items-center justify-center pt-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
-                      <span className="text-sm text-muted-foreground">Parsing CSV...</span>
-                    </div>
-                  )}
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Tab 2: Column Validation */}
-        <TabsContent value="validation">
-          {validation && (
-            <ColumnValidation
-              validation={validation}
-              onProceed={handleProcess}
-              onClaimNumberChange={handleClaimNumberChange}
+        {/* Resizable Panels */}
+        <PanelGroup
+          direction="vertical"
+          onLayout={handlePanelResize}
+          className="flex-1"
+        >
+          {/* Top Pane */}
+          <Panel
+            defaultSize={panelSizes[0]}
+            minSize={30}
+            maxSize={80}
+          >
+            <TopPane
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              results={processedResults}
+              claimsWithResults={filteredClaims}
+              requiredColumns={processor?.getRequiredColumns() || []}
+              selectedClaimIndex={selectedClaimIndex}
+              onClaimSelect={handleClaimSelect}
               isProcessing={isProcessing}
+              totalUnfilteredCount={claimsWithResults.length}
+              claimNumberColumn={validation?.claimNumberColumn || null}
             />
-          )}
-        </TabsContent>
+          </Panel>
 
-        <TabsContent value="analytics">
-          <AnalyticsOverview results={processedResults} />
-        </TabsContent>
+          {/* Resize Handle */}
+          <PanelResizeHandle className="h-1 bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-row-resize" />
 
-        {/* Tab 4: Results Table */}
-        <TabsContent value="results">
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button
-                onClick={handleExport}
-                disabled={!hasResults || isExporting}
-                variant="outline"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export Results
-              </Button>
-            </div>
-            <ClaimsTable
-              claims={claimsWithResults}
-              requiredColumns={processor?.getRequiredColumns()}
-              isProcessing={isProcessing}
-              onRowClick={handleRowClick}
+          {/* Bottom Pane */}
+          <Panel
+            defaultSize={panelSizes[1]}
+            minSize={20}
+            maxSize={70}
+          >
+            <TraceInspector
+              selectedClaim={selectedClaim}
+              treeStructure={selectedTree?.structure || null}
             />
-          </div>
-        </TabsContent>
-      </Tabs>
+          </Panel>
+        </PanelGroup>
+      </div>
     </div>
   );
 }

@@ -65,51 +65,50 @@ export function DatasetSelector({ onDatasetSelect, isLoading }: DatasetSelectorP
   const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 space-y-2">
-          <Select
-            value={selectedDatasetId?.toString() ?? ''}
-            onChange={(e) => setSelectedDatasetId(e.target.value ? Number(e.target.value) : null)}
-            options={[
-              { value: '', label: '-- Select a dataset --' },
-              ...datasets.map(d => ({
-                value: d.id.toString(),
-                label: `${d.fileName || `Dataset ${d.id}`} - ${d.insuranceCompany} - ${d.country} (${d.rows} rows)`
-              }))
-            ]}
-            disabled={loadingDatasets || isLoading || downloading}
-          />
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Select
+          value={selectedDatasetId?.toString() ?? ''}
+          onChange={(e) => setSelectedDatasetId(e.target.value ? Number(e.target.value) : null)}
+          options={[
+            { value: '', label: '-- Select a dataset --' },
+            ...datasets.map(d => ({
+              value: d.id.toString(),
+              label: `${d.fileName || `Dataset ${d.id}`} - ${d.insuranceCompany} - ${d.country} (${d.rows} rows)`
+            }))
+          ]}
+          disabled={loadingDatasets || isLoading || downloading}
+        />
 
-          {selectedDataset && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <div className="flex items-start gap-3">
-                <Database className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedDataset.fileName || `Dataset #${selectedDataset.id}`}
+        {selectedDataset && (
+          <div className="rounded border p-2" style={{ borderColor: '#3f3f46', backgroundColor: '#27272a' }}>
+            <div className="flex items-start gap-2">
+              <Database className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-zinc-100">
+                  {selectedDataset.fileName || `Dataset #${selectedDataset.id}`}
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  <p className="text-[10px] text-zinc-400">
+                    <span className="font-medium">Company:</span> {selectedDataset.insuranceCompany}
                   </p>
-                  <div className="mt-1 space-y-0.5">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Company:</span> {selectedDataset.insuranceCompany}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Country:</span> {selectedDataset.country}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Size:</span> {selectedDataset.rows} rows × {selectedDataset.columns} columns
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-zinc-400">
+                    <span className="font-medium">Country:</span> {selectedDataset.country}
+                  </p>
+                  <p className="text-[10px] text-zinc-400">
+                    <span className="font-medium">Size:</span> {selectedDataset.rows} rows × {selectedDataset.columns} columns
+                  </p>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <Button
           onClick={handleLoadDataset}
           disabled={!selectedDatasetId || isLoading || downloading}
-          className="flex-shrink-0"
+          className="w-full h-8"
+          size="sm"
         >
           {downloading ? (
             <>

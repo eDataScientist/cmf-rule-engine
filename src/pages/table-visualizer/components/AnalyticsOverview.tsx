@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { TraceResult } from '@/lib/types/trace';
 import {
   ResponsiveContainer,
@@ -38,9 +37,9 @@ function buildDistribution(results: TraceResult[]) {
 export function AnalyticsOverview({ results }: AnalyticsOverviewProps) {
   if (results.length === 0) {
     return (
-      <Card className="p-8 text-center">
-        <p className="text-sm text-muted-foreground">Process claims to view analytics.</p>
-      </Card>
+      <div className="h-full flex items-center justify-center p-8">
+        <p className="text-sm text-zinc-500">Process claims to view analytics.</p>
+      </div>
     );
   }
 
@@ -76,91 +75,92 @@ export function AnalyticsOverview({ results }: AnalyticsOverviewProps) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Probability Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[320px] pt-6">
+        {/* Probability Distribution Chart */}
+        <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <h4 className="text-sm font-semibold text-zinc-100 mb-4">Probability Distribution</h4>
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={distributionData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                 <XAxis
                   dataKey="bucket"
                   tickLine={false}
                   axisLine={false}
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="#a1a1aa"
                   fontSize={12}
                 />
                 <YAxis
                   allowDecimals={false}
                   tickLine={false}
                   axisLine={false}
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="#a1a1aa"
                   fontSize={12}
                 />
                 <Tooltip
-                  cursor={{ fill: 'hsl(var(--muted))' }}
+                  cursor={{ fill: '#27272a' }}
                   wrapperStyle={{ outline: 'none' }}
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.75rem',
-                    color: 'hsl(var(--foreground))',
+                    backgroundColor: '#18181b',
+                    border: '1px solid #27272a',
+                    borderRadius: '6px',
+                    color: '#fafafa',
                     fontSize: '0.75rem',
                   }}
                   formatter={(value: number) => [`${value} claim${value === 1 ? '' : 's'}`, 'Count']}
                 />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-6">
+        {/* Summary Panel */}
+        <div className="border rounded-md p-4" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
+          <h4 className="text-sm font-semibold text-zinc-100 mb-4">Summary</h4>
+          <div className="space-y-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                 Total evaluated claims
               </p>
-              <p className="text-3xl font-semibold text-foreground">{total}</p>
+              <p className="text-3xl font-semibold text-zinc-100 font-mono">{total}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                 Average score
               </p>
-              <p className="text-2xl font-semibold text-foreground">{averageScore.toFixed(3)}</p>
+              <p className="text-2xl font-semibold text-zinc-100 font-mono">{averageScore.toFixed(3)}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                 Average probability
               </p>
-              <p className="text-2xl font-semibold text-foreground">
+              <p className="text-2xl font-semibold text-zinc-100 font-mono">
                 {(averageProbability * 100).toFixed(1)}%
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
+      {/* Risk Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-3">
         {metrics.map((metric) => (
-          <Card key={metric.label}>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">{metric.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-2 pb-6">
-              <p className="text-sm text-muted-foreground">{metric.range}</p>
-              <p className="text-3xl font-semibold text-foreground">{metric.count}</p>
-              <p className="text-xs text-muted-foreground">
+          <div
+            key={metric.label}
+            className="border rounded-md p-4"
+            style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}
+          >
+            <h5 className="text-sm font-semibold text-zinc-100 mb-2">{metric.label}</h5>
+            <div className="space-y-2">
+              <p className="text-xs text-zinc-400">{metric.range}</p>
+              <p className="text-3xl font-semibold text-zinc-100 font-mono">{metric.count}</p>
+              <p className="text-xs text-zinc-500">
                 {metric.percentage.toFixed(1)}% of evaluated claims
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     </div>
