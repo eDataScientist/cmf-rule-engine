@@ -61,14 +61,8 @@ export const tableVisualizerFileMetadataAtom = atomWithStorage<{
   size: number;
 } | null>('tableVisualizer:fileMetadata', null);
 
-// Processed claims with results
-export const tableVisualizerClaimsWithResultsAtom = atomWithStorage<ClaimWithResult[]>(
-  'tableVisualizer:claimsWithResults',
-  []
-);
+// Processed claims with results (NOT persisted - too large for localStorage)
+export const tableVisualizerClaimsWithResultsAtom = atom<ClaimWithResult[]>([]);
 
-// Validation result
-export const tableVisualizerValidationAtom = atomWithStorage<ValidationResult | null>(
-  'tableVisualizer:validation',
-  null
-);
+// Validation result (NOT persisted - can be large and is tied to uploaded file)
+export const tableVisualizerValidationAtom = atom<ValidationResult | null>(null);
