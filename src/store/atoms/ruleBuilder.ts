@@ -1,8 +1,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import type {
-  Rule,
-  RuleGroup,
+  RuleItem,
   RuleBuilderDimension,
   RuleEffect,
   RuleConnector,
@@ -21,7 +20,7 @@ export const ruleBuilderDatasetIdAtom = atomWithStorage<number | null>(
 );
 
 // Committed rules in the logic stack
-export const ruleBuilderRulesAtom = atomWithStorage<(Rule | RuleGroup)[]>(
+export const ruleBuilderRulesAtom = atomWithStorage<RuleItem[]>(
   'ruleBuilder:rules',
   []
 );
@@ -148,7 +147,7 @@ export const clearRulesAtom = atom(null, (_get, set) => {
 });
 
 // Add a new rule
-export const addRuleAtom = atom(null, (get, set, rule: Rule) => {
+export const addRuleAtom = atom(null, (get, set, rule: RuleItem) => {
   const currentRules = get(ruleBuilderRulesAtom);
   set(ruleBuilderRulesAtom, [...currentRules, rule]);
 });
@@ -165,13 +164,13 @@ export const removeRuleAtom = atom(null, (get, set, ruleId: string) => {
 // Update a rule by ID
 export const updateRuleAtom = atom(
   null,
-  (get, set, { id, updates }: { id: string; updates: Partial<Rule> }) => {
+  (get, set, { id, updates }: { id: string; updates: Partial<RuleItem> }) => {
     const currentRules = get(ruleBuilderRulesAtom);
     set(
       ruleBuilderRulesAtom,
       currentRules.map((r) =>
         r.id === id ? { ...r, ...updates } : r
-      ) as (Rule | RuleGroup)[]
+      ) as RuleItem[]
     );
   }
 );

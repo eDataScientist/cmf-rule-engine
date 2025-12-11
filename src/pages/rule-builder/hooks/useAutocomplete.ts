@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { ruleBuilderDimensionsAtom } from '@/store/atoms/ruleBuilder';
 import { useDistinctValues } from './useDistinctValues';
@@ -29,7 +29,9 @@ export function useAutocomplete(
   const [valueSuggestions, setValueSuggestions] = useState<string[]>([]);
 
   // Get the partial text being typed (for filtering)
-  const prefix = currentToken?.value.toLowerCase() || '';
+  // Strip quotes from prefix for value filtering
+  const rawPrefix = currentToken?.value || '';
+  const prefix = rawPrefix.toLowerCase().replace(/^["']|["']$/g, '');
 
   // Find the dimension for the current field
   const currentDimension = useMemo((): RuleBuilderDimension | null => {
@@ -39,22 +41,33 @@ export function useAutocomplete(
     );
   }, [fieldToken, dimensions]);
 
+  // Track the field we're fetching values for to avoid clearing during typing
+  const lastFieldRef = useRef<string | null>(null);
+
   // Fetch distinct values when context is 'value' and field is string type
   useEffect(() => {
-    if (context !== 'value' || !currentDimension) {
+    // Only fetch for string fields in value context
+    if (context !== 'value' || !currentDimension || currentDimension.dataType !== 'String') {
+      // Don't clear suggestions if we're still on the same field
+      // This prevents flicker during typing
+      if (currentDimension && lastFieldRef.current === currentDimension.name) {
+        return;
+      }
       setValueSuggestions([]);
+      lastFieldRef.current = null;
       return;
     }
 
-    if (currentDimension.dataType !== 'String') {
-      setValueSuggestions([]);
+    // Skip if we already have values for this field
+    if (lastFieldRef.current === currentDimension.name && valueSuggestions.length > 0) {
       return;
     }
 
+    lastFieldRef.current = currentDimension.name;
     fetchDistinctValues(currentDimension.name).then((values) => {
       setValueSuggestions(values || []);
     });
-  }, [context, currentDimension, fetchDistinctValues]);
+  }, [context, currentDimension, fetchDistinctValues, valueSuggestions.length]);
 
   // Generate suggestions based on context
   const suggestions = useMemo((): AutocompleteSuggestion[] => {

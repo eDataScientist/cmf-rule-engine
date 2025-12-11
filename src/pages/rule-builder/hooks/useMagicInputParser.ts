@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { ruleBuilderDimensionsAtom } from '@/store/atoms/ruleBuilder';
-import { tokenize, getTokenAtCursor, getAutocompleteContext } from '../utils/tokenizer';
+import { tokenize, getTokenAtCursor } from '../utils/tokenizer';
+import { validateSyntax, getExpectedTokenType } from '../utils/validation';
 import type { Token, AutocompleteContext } from '@/lib/types/ruleBuilder';
 
 interface ParseResult {
@@ -9,6 +10,8 @@ interface ParseResult {
   currentToken: Token | null;
   context: AutocompleteContext;
   fieldToken: Token | null;
+  isValidSyntax: boolean;
+  syntaxError?: string;
 }
 
 /**
@@ -24,40 +27,75 @@ export function useMagicInputParser(text: string, cursorPos: number): ParseResul
   );
 
   // Tokenize the input
-  const tokens = useMemo(() => {
+  const rawTokens = useMemo(() => {
     return tokenize(text, dimensionNames);
   }, [text, dimensionNames]);
+
+  // Validate syntax and get tokens with error markers
+  const { isValid: isValidSyntax, tokens, errorMessage: syntaxError } = useMemo(() => {
+    return validateSyntax(rawTokens, dimensionNames);
+  }, [rawTokens, dimensionNames]);
 
   // Find token at cursor
   const currentToken = useMemo(() => {
     return getTokenAtCursor(tokens, cursorPos);
   }, [tokens, cursorPos]);
 
-  // Determine autocomplete context
+  // Determine autocomplete context based on grammar
   const context = useMemo((): AutocompleteContext => {
-    // If we're in the middle of typing a token, use its type as context
+    // If cursor is inside a token, use that token's type as context
+    // This ensures we show suggestions for the token being typed
     if (currentToken) {
-      if (currentToken.type === 'unknown') {
-        // Could be typing a field name
-        return 'field';
+      switch (currentToken.type) {
+        case 'field':
+          return 'field';
+        case 'operator':
+          return 'operator';
+        case 'value':
+          return 'value';
+        case 'connector':
+          return 'connector';
+        case 'unknown':
+          // For unknown tokens, determine what we expect at this position
+          // by looking at tokens strictly before this one
+          const tokensBefore = tokens.filter(t => t.end < currentToken.start);
+          const expected = getExpectedTokenType(tokensBefore);
+          if (expected === 'connector_or_end') return 'connector';
+          return expected;
       }
-      return currentToken.type === 'field'
-        ? 'field'
-        : currentToken.type === 'operator'
-        ? 'operator'
-        : currentToken.type === 'value'
-        ? 'value'
-        : 'field';
     }
 
-    // Otherwise, determine what comes next based on completed tokens
-    return getAutocompleteContext(tokens);
-  }, [currentToken, tokens]);
+    // If cursor is not inside a token (in whitespace), determine next expected
+    const tokensBeforeCursor = tokens.filter(t => t.end <= cursorPos);
+    const expected = getExpectedTokenType(tokensBeforeCursor);
 
-  // Find the field token (for getting operators/values)
+    // Map expected type to autocomplete context
+    switch (expected) {
+      case 'field':
+        return 'field';
+      case 'operator':
+        return 'operator';
+      case 'value':
+        return 'value';
+      case 'connector_or_end':
+        return 'connector';
+      default:
+        return 'field';
+    }
+  }, [tokens, cursorPos, currentToken]);
+
+  // Find the most recent field token (for getting operators/values)
   const fieldToken = useMemo(() => {
-    return tokens.find((t) => t.type === 'field') || null;
-  }, [tokens]);
+    // Get tokens before cursor
+    const tokensBeforeCursor = tokens.filter(t => t.end <= cursorPos);
+    // Find last field token before cursor
+    for (let i = tokensBeforeCursor.length - 1; i >= 0; i--) {
+      if (tokensBeforeCursor[i].type === 'field') {
+        return tokensBeforeCursor[i];
+      }
+    }
+    return null;
+  }, [tokens, cursorPos]);
 
-  return { tokens, currentToken, context, fieldToken };
+  return { tokens, currentToken, context, fieldToken, isValidSyntax, syntaxError };
 }

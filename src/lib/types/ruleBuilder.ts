@@ -23,7 +23,7 @@ export type RuleConnector = 'AND' | 'OR';
 // Data types for dimensions
 export type DimensionDataType = 'Number' | 'String' | 'Date' | 'Boolean';
 
-// Individual rule definition
+// Individual rule/condition definition
 export interface Rule {
   id: string;
   field: string;
@@ -32,7 +32,19 @@ export interface Rule {
   effect: RuleEffect;
 }
 
-// Group of rules with a connector
+// Composite rule with multiple conditions (displayed as one card)
+export interface CompositeRule {
+  id: string;
+  conditions: {
+    field: string;
+    operator: RuleOperator;
+    value: string | number | boolean | null;
+    connector?: RuleConnector; // AND/OR to next condition
+  }[];
+  effect: RuleEffect;
+}
+
+// Group of rules with a connector (legacy, kept for compatibility)
 export interface RuleGroup {
   id: string;
   connector: RuleConnector;
@@ -77,6 +89,15 @@ export interface Token {
   value: string;
   start: number;
   end: number;
+  hasError?: boolean;
+  errorMessage?: string;
+}
+
+// Syntax validation result
+export interface SyntaxValidation {
+  isValid: boolean;
+  tokens: Token[];
+  errorMessage?: string;
 }
 
 // Autocomplete suggestion
@@ -114,11 +135,18 @@ export interface DistinctValuesResponse {
   uniqueCount: number;
 }
 
+// Type for items that can be stored in rules array
+export type RuleItem = Rule | CompositeRule | RuleGroup;
+
 // Type guards
-export function isRule(item: Rule | RuleGroup): item is Rule {
-  return 'field' in item && 'operator' in item;
+export function isRule(item: RuleItem): item is Rule {
+  return 'field' in item && 'operator' in item && !('conditions' in item);
 }
 
-export function isRuleGroup(item: Rule | RuleGroup): item is RuleGroup {
+export function isCompositeRule(item: RuleItem): item is CompositeRule {
+  return 'conditions' in item && Array.isArray((item as CompositeRule).conditions);
+}
+
+export function isRuleGroup(item: RuleItem): item is RuleGroup {
   return 'connector' in item && 'rules' in item;
 }

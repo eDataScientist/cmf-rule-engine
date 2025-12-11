@@ -50,51 +50,57 @@ export function Autocomplete({ suggestions, selectedIndex, onSelect, context }: 
 
       {/* Suggestions */}
       <div className="py-1">
-        {suggestions.map((suggestion, index) => {
-          const isSelected = index === selectedIndex;
+        {suggestions.length === 0 ? (
+          <div className="px-3 py-2 text-sm text-zinc-500 italic">
+            No matches found
+          </div>
+        ) : (
+          suggestions.map((suggestion, index) => {
+            const isSelected = index === selectedIndex;
 
-          // Get appropriate icon
-          let Icon = TYPE_ICONS[suggestion.type];
-          let iconColor = 'text-zinc-500';
+            // Get appropriate icon
+            let Icon = TYPE_ICONS[suggestion.type];
+            let iconColor = 'text-zinc-500';
 
-          if (suggestion.type === 'field' && suggestion.dataType) {
-            Icon = DATA_TYPE_ICONS[suggestion.dataType];
-            iconColor = DATA_TYPE_COLORS[suggestion.dataType];
-          }
+            if (suggestion.type === 'field' && suggestion.dataType) {
+              Icon = DATA_TYPE_ICONS[suggestion.dataType];
+              iconColor = DATA_TYPE_COLORS[suggestion.dataType];
+            }
 
-          return (
-            <button
-              key={`${suggestion.type}-${suggestion.value}-${index}`}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
-                isSelected ? 'bg-zinc-800' : 'hover:bg-zinc-800/50'
-              }`}
-              onClick={() => onSelect(suggestion.value)}
-              onMouseEnter={() => {}}
-            >
-              <Icon className={`h-4 w-4 flex-shrink-0 ${iconColor}`} />
+            return (
+              <button
+                key={`${suggestion.type}-${suggestion.value}-${index}`}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
+                  isSelected ? 'bg-zinc-800' : 'hover:bg-zinc-800/50'
+                }`}
+                onClick={() => onSelect(suggestion.value)}
+                onMouseEnter={() => {}}
+              >
+                <Icon className={`h-4 w-4 flex-shrink-0 ${iconColor}`} />
 
-              <div className="flex-1 min-w-0">
-                <span
-                  className="text-zinc-100"
-                  style={{ fontFamily: suggestion.type === 'operator' ? 'JetBrains Mono, monospace' : 'inherit' }}
-                >
-                  {suggestion.displayValue}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <span
+                    className="text-zinc-100"
+                    style={{ fontFamily: suggestion.type === 'operator' ? 'JetBrains Mono, monospace' : 'inherit' }}
+                  >
+                    {suggestion.displayValue}
+                  </span>
 
-                {suggestion.description && (
-                  <span className="text-xs text-zinc-500 ml-2">{suggestion.description}</span>
+                  {suggestion.description && (
+                    <span className="text-xs text-zinc-500 ml-2">{suggestion.description}</span>
+                  )}
+                </div>
+
+                {/* Data type badge for fields */}
+                {suggestion.type === 'field' && suggestion.dataType && (
+                  <span className={`text-[10px] font-mono ${DATA_TYPE_COLORS[suggestion.dataType]}`}>
+                    {suggestion.dataType}
+                  </span>
                 )}
-              </div>
-
-              {/* Data type badge for fields */}
-              {suggestion.type === 'field' && suggestion.dataType && (
-                <span className={`text-[10px] font-mono ${DATA_TYPE_COLORS[suggestion.dataType]}`}>
-                  {suggestion.dataType}
-                </span>
-              )}
-            </button>
-          );
-        })}
+              </button>
+            );
+          })
+        )}
       </div>
 
       {/* Keyboard hints */}
