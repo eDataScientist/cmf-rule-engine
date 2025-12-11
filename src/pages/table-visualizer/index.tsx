@@ -1,22 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-// import { useNavigate } from 'react-router-dom'; // TODO: Phase 4
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels';
 import { Sidebar } from './components/Sidebar';
 import { TopPane } from './components/TopPane';
 import { TraceInspector } from './components/TraceInspector';
 import { useCsvParser } from './hooks/useCsvParser';
 import { useBulkEvaluation } from './hooks/useBulkEvaluation';
+import { useRuleBulkEvaluation } from './hooks/useRuleBulkEvaluation';
 import { useCsvExport } from './hooks/useCsvExport';
 import { useFinancialMetrics } from './hooks/useFinancialMetrics';
 import { treesAtom } from '@/store/atoms/trees';
 import { fullCanvasModeAtom } from '@/store/atoms/header';
 import {
-  // Navigation atoms - TODO: Phase 4
-  // selectedTableTreeIdAtom,
-  // selectedTableClaimDataAtom,
-  // selectedTableTabAtom,
-  // isFromTableVisualizerAtom,
   tableVisualizerTreeIdAtom,
   tableVisualizerPanelSizesAtom,
   tableVisualizerViewModeAtom,
@@ -24,26 +19,23 @@ import {
   tableVisualizerSearchQueryAtom,
   tableVisualizerFileMetadataAtom,
   tableVisualizerClaimsWithResultsAtom,
-  tableVisualizerValidationAtom
+  tableVisualizerValidationAtom,
+  tableVisualizerAnalysisModeAtom,
+  tableVisualizerDatasetIdAtom,
+  type ClaimWithResult,
+  type AnalysisMode,
 } from '@/store/atoms/tableVisualization';
 import { useClaimSearch } from './hooks/useClaimSearch';
 import { useDebouncedSearch } from './hooks/useDebouncedSearch';
 import { getTrees } from '@/lib/db/operations';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
-import type { ClaimWithResult } from '@/store/atoms/tableVisualization';
+import type { RuleItem } from '@/lib/types/ruleBuilder';
 
 export default function TableVisualizer() {
-  // const navigate = useNavigate(); // TODO: Phase 4 - For row click navigation
   const [trees, setTrees] = useAtom(treesAtom);
   const setFullCanvas = useSetAtom(fullCanvasModeAtom);
   const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-
-  // Navigation atoms (for passing data to review-trees) - TODO: Phase 4
-  // const [, setTableTreeId] = useAtom(selectedTableTreeIdAtom);
-  // const [, setTableClaimData] = useAtom(selectedTableClaimDataAtom);
-  // const [, setTableTab] = useAtom(selectedTableTabAtom);
-  // const [, setIsFromTable] = useAtom(isFromTableVisualizerAtom);
 
   // Persisted state atoms
   const [panelSizes, setPanelSizes] = useAtom(tableVisualizerPanelSizesAtom);
@@ -54,10 +46,12 @@ export default function TableVisualizer() {
   const [viewMode, setViewMode] = useAtom(tableVisualizerViewModeAtom);
   const [selectedClaimIndex, setSelectedClaimIndex] = useAtom(tableVisualizerSelectedClaimIndexAtom);
   const [searchQuery, setSearchQuery] = useAtom(tableVisualizerSearchQueryAtom);
+  const [analysisMode, setAnalysisMode] = useAtom(tableVisualizerAnalysisModeAtom);
+  const [currentDatasetId, setCurrentDatasetId] = useAtom(tableVisualizerDatasetIdAtom);
 
   // Local-only state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [currentDatasetId, setCurrentDatasetId] = useState<number | null>(null);
+  const [loadedRules, setLoadedRules] = useState<RuleItem[]>([]);
 
   // Search functionality
   const debouncedSearch = useDebouncedSearch(searchQuery);
@@ -67,10 +61,18 @@ export default function TableVisualizer() {
     validation?.claimNumberColumn || null
   );
 
+  // Hooks for tree evaluation
   const { parse, claims, isLoading: isParsing, error: parseError, clear: clearParse } = useCsvParser();
-  const { processor, createProcessor, validateColumns, evaluate, isProcessing, error: evalError } = useBulkEvaluation();
+  const { processor, createProcessor, validateColumns, evaluate: evaluateTrees, isProcessing: isTreeProcessing, error: treeEvalError } = useBulkEvaluation();
+
+  // Hooks for rule evaluation
+  const { createExecutor, evaluate: evaluateRules, isProcessing: isRuleProcessing, error: ruleEvalError } = useRuleBulkEvaluation();
+
   const { exportToCsv, isExporting } = useCsvExport();
   const { financialMetrics, fetchFinancialMetrics, clearMetrics, isLoading: isLoadingMetrics } = useFinancialMetrics();
+
+  const isProcessing = analysisMode === 'trees' ? isTreeProcessing : isRuleProcessing;
+  const evalError = analysisMode === 'trees' ? treeEvalError : ruleEvalError;
 
   // Enable full canvas mode
   useEffect(() => {
@@ -92,27 +94,61 @@ export default function TableVisualizer() {
     }
   }, [selectedClaimIndex]);
 
-  // Re-create processor when tree is selected OR when page loads with cached tree
+  // Re-create processor when tree is selected (tree mode only)
   useEffect(() => {
-    if (selectedTreeId && trees.length > 0) {
+    if (analysisMode === 'trees' && selectedTreeId && trees.length > 0) {
       const tree = trees.find((t) => t.id === selectedTreeId);
       if (tree) {
         createProcessor(tree.structure);
       }
     }
-  }, [selectedTreeId, trees, createProcessor]);
+  }, [analysisMode, selectedTreeId, trees, createProcessor]);
 
-  // When CSV is parsed, validate columns
+  // When CSV is parsed, validate columns (tree mode)
   useEffect(() => {
-    if (claims.length > 0 && processor) {
+    if (analysisMode === 'trees' && claims.length > 0 && processor) {
       const csvColumns = Object.keys(claims[0]);
       const validationResult = validateColumns(csvColumns);
       setValidation(validationResult);
       setClaimsWithResults(claims.map((claim) => ({ claim })));
     }
-  }, [claims, processor, validateColumns, setValidation, setClaimsWithResults]);
+  }, [analysisMode, claims, processor, validateColumns, setValidation, setClaimsWithResults]);
 
-  // Handlers
+  // When CSV is parsed in rules mode, set up basic validation
+  useEffect(() => {
+    if (analysisMode === 'rules' && claims.length > 0) {
+      const csvColumns = Object.keys(claims[0]);
+      // For rules mode, we just need to track available columns
+      setValidation({
+        isValid: loadedRules.length > 0,
+        missingColumns: [],
+        requiredColumns: [],
+        availableColumns: csvColumns,
+        claimNumberColumn: validation?.claimNumberColumn || null,
+      });
+      setClaimsWithResults(claims.map((claim) => ({ claim })));
+    }
+  }, [analysisMode, claims, loadedRules.length, setValidation, setClaimsWithResults, validation?.claimNumberColumn]);
+
+  // Clear ALL data when switching modes
+  const handleAnalysisModeChange = useCallback((mode: AnalysisMode) => {
+    if (mode !== analysisMode) {
+      // Clear everything - file, results, validation, rules
+      setSelectedFile(null);
+      setCurrentDatasetId(null);
+      setFileMetadata(null);
+      setClaimsWithResults([]);
+      setValidation(null);
+      setLoadedRules([]);
+      setSelectedClaimIndex(null);
+      setSelectedTreeId(null);
+      clearParse();
+      clearMetrics();
+    }
+    setAnalysisMode(mode);
+  }, [analysisMode, setAnalysisMode, setClaimsWithResults, setSelectedClaimIndex, setFileMetadata, setValidation, setCurrentDatasetId, setSelectedTreeId, clearParse, clearMetrics]);
+
+  // Tree mode handlers
   const handleTreeSelect = (treeId: string) => {
     setSelectedTreeId(treeId);
   };
@@ -127,7 +163,18 @@ export default function TableVisualizer() {
     setSelectedFile(file);
     setCurrentDatasetId(datasetId);
     setFileMetadata({ name: file.name, size: file.size });
-    clearMetrics(); // Clear old metrics when loading new dataset
+    clearMetrics();
+    await parse(file);
+  };
+
+  // Rules mode handler - receives rules along with dataset
+  const handleRulesDatasetSelect = async (file: File, _datasetName: string, datasetId: number, rules: RuleItem[]) => {
+    setSelectedFile(file);
+    setCurrentDatasetId(datasetId);
+    setFileMetadata({ name: file.name, size: file.size });
+    setLoadedRules(rules);
+    createExecutor(rules);
+    clearMetrics();
     await parse(file);
   };
 
@@ -137,45 +184,54 @@ export default function TableVisualizer() {
     setFileMetadata(null);
     setClaimsWithResults([]);
     setValidation(null);
+    setLoadedRules([]);
     clearParse();
     clearMetrics();
   };
 
   const handleClaimNumberChange = (columnName: string) => {
-    if (processor) {
+    if (analysisMode === 'trees' && processor) {
       processor.setClaimNumberColumn(columnName);
-      // Re-validate with the new claim number column
       const csvColumns = Object.keys(claims[0] || {});
       const validationResult = validateColumns(csvColumns);
       setValidation(validationResult);
+    } else {
+      // Rules mode - just update the column name in validation
+      setValidation(prev => prev ? { ...prev, claimNumberColumn: columnName } : null);
     }
   };
 
   const handleProcess = async () => {
     if (claims.length === 0) return;
 
-    const evalResults = await evaluate(claims);
+    if (analysisMode === 'trees') {
+      // Tree evaluation
+      const evalResults = await evaluateTrees(claims);
+      const merged = claims.map((claim, idx) => ({
+        claim,
+        result: evalResults[idx],
+      }));
+      setClaimsWithResults(merged);
 
-    // Merge results with claims
-    const merged = claims.map((claim, idx) => ({
-      claim,
-      result: evalResults[idx],
-    }));
-    setClaimsWithResults(merged);
-
-    // If this is a dataset (has datasetId), fetch financial metrics from edge function
-    if (currentDatasetId && validation?.claimNumberColumn) {
-      // Build predictions map: claimNumber -> riskLevel
-      const predictions: Record<string, 'low' | 'moderate' | 'high'> = {};
-      for (let i = 0; i < evalResults.length; i++) {
-        const result = evalResults[i];
-        if (result) {
-          predictions[result.claimNumber] = result.riskLevel;
+      // Fetch financial metrics if dataset
+      if (currentDatasetId && validation?.claimNumberColumn) {
+        const predictions: Record<string, 'low' | 'moderate' | 'high'> = {};
+        for (let i = 0; i < evalResults.length; i++) {
+          const result = evalResults[i];
+          if (result) {
+            predictions[result.claimNumber] = result.riskLevel;
+          }
         }
+        fetchFinancialMetrics(currentDatasetId, predictions);
       }
-
-      // Fetch financial metrics in background (non-blocking)
-      fetchFinancialMetrics(currentDatasetId, predictions);
+    } else {
+      // Rule evaluation
+      const ruleResults = await evaluateRules(claims);
+      const merged = claims.map((claim, idx) => ({
+        claim,
+        ruleResult: ruleResults[idx],
+      }));
+      setClaimsWithResults(merged);
     }
   };
 
@@ -185,33 +241,20 @@ export default function TableVisualizer() {
     }
   };
 
-  // TODO: Phase 4 - Uncomment and wire up to table row clicks
-  // const handleRowClick = (claim: ClaimData) => {
-  //   if (!selectedTreeId) return;
-  //   setTableTreeId(selectedTreeId);
-  //   setTableClaimData(claim);
-  //   setTableTab('visualization');
-  //   setIsFromTable(true);
-  //   navigate('/review-trees');
-  // };
-
   const handlePanelResize = (sizes: number[]) => {
     setPanelSizes([sizes[0], sizes[1]]);
   };
 
   const handleClaimSelect = (claim: ClaimWithResult) => {
-    // Find the index of this claim in the filteredClaims array
     const index = filteredClaims.findIndex(c => c === claim);
     setSelectedClaimIndex(index);
 
-    // Expand bottom pane when a claim is selected
     if (index !== -1 && panelSizes[1] < 40) {
       panelGroupRef.current?.setLayout([50, 50]);
     }
   };
 
   const handleCollapseTrace = () => {
-    // Just collapse the pane, don't clear selection
     panelGroupRef.current?.setLayout([95, 5]);
   };
 
@@ -225,7 +268,31 @@ export default function TableVisualizer() {
     (item): item is { claim: ClaimData; result: TraceResult } => item.result !== undefined
   );
   const processedResults = evaluatedResults.map((item) => item.result);
-  const hasResults = evaluatedResults.length > 0;
+
+  // Check for results based on mode
+  const hasResults = analysisMode === 'trees'
+    ? evaluatedResults.length > 0
+    : filteredClaims.some(c => c.ruleResult !== undefined);
+
+  // Extract columns used in rules (for rules mode display)
+  const ruleColumns = useMemo(() => {
+    if (loadedRules.length === 0) return [];
+    const columns = new Set<string>();
+    for (const rule of loadedRules) {
+      if ('field' in rule && rule.field) {
+        columns.add(rule.field);
+      }
+      if ('conditions' in rule && Array.isArray(rule.conditions)) {
+        for (const cond of rule.conditions) {
+          if (cond.field) {
+            columns.add(cond.field);
+          }
+        }
+      }
+    }
+    return Array.from(columns);
+  }, [loadedRules]);
+
   const error = parseError || evalError;
 
   const selectedTree = trees.find((t) => t.id === selectedTreeId);
@@ -236,7 +303,7 @@ export default function TableVisualizer() {
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: '#09090b' }}>
-      {/* Error Display - Fixed Position */}
+      {/* Error Display */}
       {error && (
         <div
           className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 p-4 bg-red-950 border border-red-900 rounded-md shadow-lg max-w-2xl"
@@ -246,16 +313,18 @@ export default function TableVisualizer() {
         </div>
       )}
 
-      {/* Main Content: Sidebar + Split Panes */}
+      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden w-full">
-        {/* Sidebar */}
         <Sidebar
+          analysisMode={analysisMode}
+          onAnalysisModeChange={handleAnalysisModeChange}
           trees={trees}
           selectedTreeId={selectedTreeId}
           onTreeSelect={handleTreeSelect}
           onDatasetSelect={handleDatasetSelect}
           onCsvUpload={handleFileSelect}
           isParsing={isParsing}
+          onRulesDatasetSelect={handleRulesDatasetSelect}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           validation={validation}
@@ -268,21 +337,16 @@ export default function TableVisualizer() {
           fileMetadata={fileMetadata}
           onClearFile={handleClearFile}
           selectedFile={selectedFile}
+          ruleCount={loadedRules.length}
         />
 
-        {/* Resizable Panels */}
         <PanelGroup
           ref={panelGroupRef}
           direction="vertical"
           onLayout={handlePanelResize}
           className="flex-1"
         >
-          {/* Top Pane */}
-          <Panel
-            defaultSize={panelSizes[0]}
-            minSize={30}
-            maxSize={80}
-          >
+          <Panel defaultSize={panelSizes[0]} minSize={30} maxSize={80}>
             <TopPane
               viewMode={viewMode}
               onViewModeChange={setViewMode}
@@ -291,28 +355,25 @@ export default function TableVisualizer() {
               isLoadingMetrics={isLoadingMetrics}
               claimsWithResults={filteredClaims}
               requiredColumns={processor?.getRequiredColumns() || []}
+              ruleColumns={ruleColumns}
               selectedClaimIndex={selectedClaimIndex}
               onClaimSelect={handleClaimSelect}
               isProcessing={isProcessing}
               totalUnfilteredCount={claimsWithResults.length}
               claimNumberColumn={validation?.claimNumberColumn || null}
+              analysisMode={analysisMode}
             />
           </Panel>
 
-          {/* Resize Handle */}
           <PanelResizeHandle className="h-[2px] bg-zinc-800 hover:bg-zinc-600 transition-colors cursor-row-resize" />
 
-          {/* Bottom Pane */}
-          <Panel
-            defaultSize={panelSizes[1]}
-            minSize={5}
-            maxSize={70}
-          >
+          <Panel defaultSize={panelSizes[1]} minSize={5} maxSize={70}>
             <TraceInspector
               selectedClaim={selectedClaim}
               treeStructure={selectedTree?.structure || null}
               onCollapse={handleCollapseTrace}
               isCollapsed={panelSizes[1] < 10}
+              analysisMode={analysisMode}
             />
           </Panel>
         </PanelGroup>

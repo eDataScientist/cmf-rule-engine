@@ -37,13 +37,13 @@ export const ruleBuilderCurrentEffectAtom = atomWithStorage<RuleEffect>(
   'moderate'
 );
 
-// Rule set name (for saving)
-export const ruleBuilderRuleSetNameAtom = atomWithStorage<string>(
-  'ruleBuilder:ruleSetName',
-  ''
-);
-
 // ===== Session State (not persisted) =====
+
+// Save status (for auto-save feedback)
+export const ruleBuilderSaveStatusAtom = atom<'saved' | 'saving' | 'error'>('saved');
+
+// Last saved timestamp
+export const ruleBuilderLastSavedAtAtom = atom<Date | null>(null);
 
 // Cached dimensions for datasets (keyed by dataset_id)
 export const ruleBuilderDimensionsCacheAtom = atom<Map<number, RuleBuilderDimension[]>>(
@@ -181,5 +181,6 @@ export const resetRuleBuilderAtom = atom(null, (_get, set) => {
   set(magicInputTextAtom, '');
   set(editingRuleIdAtom, null);
   set(ruleBuilderErrorAtom, null);
-  set(ruleBuilderRuleSetNameAtom, '');
+  set(ruleBuilderSaveStatusAtom, 'saved');
+  set(ruleBuilderLastSavedAtAtom, null);
 });

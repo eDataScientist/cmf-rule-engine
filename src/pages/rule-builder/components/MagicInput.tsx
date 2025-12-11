@@ -9,6 +9,7 @@ import {
   dropTargetActiveAtom,
   draggedItemAtom,
   ruleBuilderCurrentEffectAtom,
+  ruleBuilderDatasetIdAtom,
 } from '@/store/atoms/ruleBuilder';
 import { useMagicInputParser } from '../hooks/useMagicInputParser';
 import { useAutocomplete } from '../hooks/useAutocomplete';
@@ -44,7 +45,13 @@ export function MagicInput() {
   const dropTargetActive = useAtomValue(dropTargetActiveAtom);
   const draggedItem = useAtomValue(draggedItemAtom);
   const setDropTargetActive = useSetAtom(dropTargetActiveAtom);
-  const currentEffect = useAtomValue(ruleBuilderCurrentEffectAtom);
+  const [currentEffect, setCurrentEffect] = useAtom(ruleBuilderCurrentEffectAtom);
+  const datasetId = useAtomValue(ruleBuilderDatasetIdAtom);
+
+  // Toggle effect between high and moderate
+  const toggleEffect = useCallback(() => {
+    setCurrentEffect(currentEffect === 'high' ? 'moderate' : 'high');
+  }, [currentEffect, setCurrentEffect]);
 
   const { tokens, currentToken, context, fieldToken, isValidSyntax, syntaxError } = useMagicInputParser(text, cursorPos);
   const { suggestions, isLoading } = useAutocomplete(context, currentToken, fieldToken, tokens);
@@ -244,16 +251,20 @@ export function MagicInput() {
 
         {isLoading && <Loader2 className="h-4 w-4 text-zinc-500 animate-spin mr-2" />}
 
-        {/* Effect indicator */}
-        <div
-          className={`px-2 py-0.5 rounded text-[10px] font-medium mr-2 ${
+        {/* Effect indicator - clickable to toggle */}
+        <button
+          type="button"
+          onClick={toggleEffect}
+          disabled={!datasetId}
+          className={`px-2 py-0.5 rounded text-[10px] font-medium mr-2 transition-colors cursor-pointer hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${
             currentEffect === 'high'
-              ? 'bg-red-500/20 text-red-400'
-              : 'bg-amber-500/20 text-amber-400'
+              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+              : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
           }`}
+          title="Click to toggle between High and Moderate risk"
         >
           {currentEffect === 'high' ? 'High Risk' : 'Moderate'}
-        </div>
+        </button>
 
         {/* Submit button */}
         {canCommit && isValidSyntax ? (

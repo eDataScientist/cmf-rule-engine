@@ -10,7 +10,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Wand2
+  ListChecks,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 import { sidebarCollapsedAtom } from '@/store/atoms/ui';
@@ -21,7 +21,7 @@ const navItems = [
   { path: '/datasets', label: 'Datasets', icon: FileText },
   { path: '/generate-tree', label: 'Generate Tree', icon: PlusCircle },
   { path: '/table-visualizer', label: 'Table Visualizer', icon: Table },
-  { path: '/rule-builder', label: 'Rule Builder', icon: Wand2 },
+  { path: '/rules', label: 'Rules', icon: ListChecks },
 ];
 
 export function Sidebar() {
