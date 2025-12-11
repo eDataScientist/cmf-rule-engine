@@ -2,7 +2,13 @@ import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import type { ClaimData } from '@/lib/types/claim';
 import type { TraceResult } from '@/lib/types/trace';
+import type { RuleExecutionResult } from '@/lib/types/ruleExecution';
 import type { ValidationResult } from '@/lib/processing/TabularClaimsProcessor';
+
+// ===== Analysis Mode =====
+// Trees mode: use decision trees for evaluation (raw datasets + CSV uploads)
+// Rules mode: use business rules for evaluation (aligned datasets only)
+export type AnalysisMode = 'trees' | 'rules';
 
 // ===== Navigation Atoms (for review-trees) =====
 // Tree ID from table visualizer batch evaluation
@@ -20,9 +26,23 @@ export const isFromTableVisualizerAtom = atom(false);
 // ===== Table Visualizer State Cache =====
 // Persisted state so users don't lose progress when navigating away
 
+// Tree mode result
+export interface ClaimWithTreeResult {
+  claim: ClaimData;
+  result?: TraceResult;
+}
+
+// Rule mode result
+export interface ClaimWithRuleResult {
+  claim: ClaimData;
+  result?: RuleExecutionResult;
+}
+
+// Combined type for backwards compatibility
 export interface ClaimWithResult {
   claim: ClaimData;
   result?: TraceResult;
+  ruleResult?: RuleExecutionResult;
 }
 
 // Selected tree ID for evaluation
@@ -66,3 +86,19 @@ export const tableVisualizerClaimsWithResultsAtom = atom<ClaimWithResult[]>([]);
 
 // Validation result (NOT persisted - can be large and is tied to uploaded file)
 export const tableVisualizerValidationAtom = atom<ValidationResult | null>(null);
+
+// ===== Analysis Mode State =====
+// Analysis mode - trees or rules (persisted separately)
+export const tableVisualizerAnalysisModeAtom = atomWithStorage<AnalysisMode>(
+  'tableVisualizer:analysisMode',
+  'trees'
+);
+
+// Selected dataset ID (for rules mode - needed to load aligned dataset)
+export const tableVisualizerDatasetIdAtom = atomWithStorage<number | null>(
+  'tableVisualizer:datasetId',
+  null
+);
+
+// Rules mode: processed claims with rule results (NOT persisted - too large for localStorage)
+export const tableVisualizerRuleResultsAtom = atom<ClaimWithRuleResult[]>([]);

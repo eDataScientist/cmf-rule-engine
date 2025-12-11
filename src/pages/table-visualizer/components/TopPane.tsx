@@ -2,7 +2,7 @@ import { ViewModeToggle } from './ViewModeToggle';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { ClaimsTable } from './ClaimsTable';
 import type { TraceResult, FinancialMetrics } from '@/lib/types/trace';
-import type { ClaimWithResult } from '@/store/atoms/tableVisualization';
+import type { ClaimWithResult, AnalysisMode } from '@/store/atoms/tableVisualization';
 
 interface TopPaneProps {
   viewMode: 'analytics' | 'table';
@@ -16,11 +16,15 @@ interface TopPaneProps {
   // Table view
   claimsWithResults: ClaimWithResult[];
   requiredColumns: string[];
+  ruleColumns?: string[]; // Columns used in rules (for rules mode)
   selectedClaimIndex: number | null;
   onClaimSelect: (claim: ClaimWithResult) => void;
   isProcessing: boolean;
   totalUnfilteredCount?: number;
   claimNumberColumn?: string | null;
+
+  // Analysis mode
+  analysisMode: AnalysisMode;
 }
 
 export function TopPane({
@@ -31,11 +35,13 @@ export function TopPane({
   isLoadingMetrics,
   claimsWithResults,
   requiredColumns,
+  ruleColumns,
   selectedClaimIndex,
   onClaimSelect,
   isProcessing,
   totalUnfilteredCount,
   claimNumberColumn,
+  analysisMode,
 }: TopPaneProps) {
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: '#09090b' }}>
@@ -63,11 +69,13 @@ export function TopPane({
           <ClaimsTable
             claims={claimsWithResults}
             requiredColumns={requiredColumns}
+            ruleColumns={ruleColumns}
             selectedClaimIndex={selectedClaimIndex}
             onClaimSelect={onClaimSelect}
             isProcessing={isProcessing}
             totalUnfilteredCount={totalUnfilteredCount}
             claimNumberColumn={claimNumberColumn}
+            analysisMode={analysisMode}
           />
         )}
       </div>

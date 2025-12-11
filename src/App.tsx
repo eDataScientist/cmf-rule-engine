@@ -15,6 +15,8 @@ const TreeVisualizer = lazy(() => import('@/pages/tree-visualizer'));
 const VisualizeTrace = lazy(() => import('@/pages/visualize-trace'));
 const Datasets = lazy(() => import('@/pages/datasets'));
 const DatasetDetail = lazy(() => import('@/pages/datasets/[id]/index'));
+const RuleBuilder = lazy(() => import('@/pages/rule-builder'));
+const RuleManager = lazy(() => import('@/pages/rule-manager'));
 
 function App() {
   return (
@@ -95,6 +97,26 @@ function App() {
                   <ProtectedRoute>
                     <AppLayout>
                       <DatasetDetail />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rules"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RuleManager />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rule-builder/:datasetId?"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RuleBuilder />
                     </AppLayout>
                   </ProtectedRoute>
                 }

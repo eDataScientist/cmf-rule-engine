@@ -393,3 +393,160 @@ export async function updateDatasetAlignment(
     throw new Error(`Failed to update alignment mapping: ${error.message}`);
   }
 }
+
+// Alias for getDataset with clearer naming for rule operations
+export const getDatasetById = getDataset;
+
+// Rule Set Operations
+
+export interface RuleSet {
+  id: string;
+  name: string | null;
+  datasetId: number;
+  rules: any[];
+  ruleCount: number;
+  lastEditedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
+
+export interface DatasetWithRuleset extends Dataset {
+  ruleset: {
+    id: string;
+    ruleCount: number;
+    lastEditedAt: string;
+  } | null;
+}
+
+/**
+ * Upsert a ruleset for a dataset (one ruleset per dataset)
+ * Uses INSERT ON CONFLICT UPDATE to maintain uniqueness
+ */
+export async function upsertRuleset(
+  datasetId: number,
+  rules: any[]
+): Promise<RuleSet> {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('rule_sets')
+    .upsert({
+      dataset_id: datasetId,
+      user_id: user.id,
+      rules: rules,
+      name: `Ruleset for Dataset ${datasetId}`, // Auto-generated name
+    }, {
+      onConflict: 'dataset_id,user_id'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to upsert ruleset: ${error.message}`);
+  }
+
+  return rowToRuleSet(data as any);
+}
+
+/**
+ * Get the ruleset for a specific dataset
+ * Returns null if no ruleset exists
+ */
+export async function getRulesetForDataset(datasetId: number): Promise<RuleSet | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('rule_sets')
+    .select('*')
+    .eq('dataset_id', datasetId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch ruleset: ${error.message}`);
+  }
+
+  return data ? rowToRuleSet(data as any) : null;
+}
+
+/**
+ * Get all datasets with their associated ruleset info
+ * Used by Rule Manager page to show dataset cards
+ */
+export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('datasets')
+    .select(`
+      *,
+      rule_sets (
+        id,
+        rule_count,
+        last_edited_at
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch datasets with rulesets: ${error.message}`);
+  }
+
+  return (data as any[]).map((row) => {
+    const ruleSetArray = row.rule_sets;
+    const ruleset = Array.isArray(ruleSetArray) && ruleSetArray.length > 0
+      ? {
+          id: ruleSetArray[0].id,
+          ruleCount: ruleSetArray[0].rule_count || 0,
+          lastEditedAt: ruleSetArray[0].last_edited_at,
+        }
+      : null;
+
+    return {
+      id: row.id,
+      insuranceCompany: row.insurance_company,
+      country: row.country,
+      fileName: row.file_name,
+      nickname: row.nickname,
+      datePeriod: row.date_period,
+      rows: row.rows,
+      columns: row.columns,
+      arabicColumns: row.arabic_columns,
+      rawFilePath: row.raw_file_path,
+      alignedFilePath: row.aligned_file_path,
+      uploadedAt: row.uploaded_at,
+      createdAt: row.created_at,
+      userId: row.user_id,
+      alignmentMapping: row.alignment_mapping,
+      ruleset,
+    };
+  });
+}
+
+function rowToRuleSet(row: any): RuleSet {
+  return {
+    id: row.id,
+    name: row.name,
+    datasetId: row.dataset_id,
+    rules: row.rules || [],
+    ruleCount: row.rule_count || 0,
+    lastEditedAt: row.last_edited_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    userId: row.user_id,
+  };
+}
