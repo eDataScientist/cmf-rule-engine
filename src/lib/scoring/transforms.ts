@@ -1,4 +1,4 @@
-export function calculateProbability(totalScore: number, minScore: number, maxScore: number): number {
+export function calculateProbability(totalScore: number, _minScore: number, _maxScore: number): number {
   if (Number.isNaN(totalScore)) {
     return 0;
   }
