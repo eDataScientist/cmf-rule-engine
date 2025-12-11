@@ -3,7 +3,6 @@ export function calculateProbability(totalScore: number, _minScore: number, _max
     return 0;
   }
 
-  // Simple calculation: score * 100, clamped between 0 and 1
-  const probability = totalScore * 100;
-  return Math.min(1, Math.max(0, probability));
+  // Return score directly as probability (0.253 = 25.3%)
+  return Math.min(1, Math.max(0, totalScore));
 }
