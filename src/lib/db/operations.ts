@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Tree, TreeType } from '../types/tree';
-import type { ClaimCategory } from './types';
+import type { ClaimCategory, DatasetGranularity } from './types';
 
 export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
   // Get current user
@@ -100,6 +100,7 @@ export interface Dataset {
   userId: string | null;
   alignmentMapping: Record<string, string> | null;
   claimCategory: ClaimCategory;
+  granularity: DatasetGranularity;
 }
 
 export interface DatasetWithStatus extends Dataset {
@@ -233,6 +234,7 @@ function rowToDatasetWithStatus(row: any): DatasetWithStatus {
     userId: row.user_id,
     alignmentMapping: row.alignment_mapping,
     claimCategory: row.claim_category as ClaimCategory,
+    granularity: row.granularity as DatasetGranularity,
     uploadStatus,
   };
 }
@@ -547,6 +549,7 @@ export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
       userId: row.user_id,
       alignmentMapping: row.alignment_mapping,
       claimCategory: row.claim_category as ClaimCategory,
+      granularity: row.granularity as DatasetGranularity,
       ruleset,
     };
   });

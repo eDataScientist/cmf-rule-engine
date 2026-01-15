@@ -99,6 +99,7 @@ export type Database = {
           created_at: string
           date_period: string | null
           file_name: string | null
+          granularity: string
           id: number
           insurance_company: string
           nickname: string | null
@@ -119,6 +120,7 @@ export type Database = {
           created_at?: string
           date_period?: string | null
           file_name?: string | null
+          granularity?: string
           id?: number
           insurance_company: string
           nickname?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           created_at?: string
           date_period?: string | null
           file_name?: string | null
+          granularity?: string
           id?: number
           insurance_company?: string
           nickname?: string | null
@@ -263,3 +266,6 @@ export type Database = {
 
 // Claim category type used across the application
 export type ClaimCategory = 'medical' | 'motor';
+
+// Dataset granularity type used across the application
+export type DatasetGranularity = 'claim' | 'invoice' | 'item';

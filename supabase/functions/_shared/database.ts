@@ -120,6 +120,7 @@ export async function createDatasetRecord(
       uploaded_at: new Date().toISOString(),
       alignment_mapping: params.alignmentMapping,
       claim_category: params.claimCategory,
+      granularity: params.granularity,
     })
     .select()
     .single();

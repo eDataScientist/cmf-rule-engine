@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { DatasetWithStatus } from '@/lib/db/operations';
 import StatusBadge from '@/pages/datasets/components/StatusBadge';
 import SourceBadge from '@/pages/datasets/components/SourceBadge';
+import GranularityBadge from '@/pages/datasets/components/GranularityBadge';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 
 interface DatasetHeaderProps {
@@ -49,9 +50,10 @@ export default function DatasetHeader({
       </div>
 
       {/* Metadata row */}
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-4 text-sm flex-wrap">
         <SourceBadge text={dataset.insuranceCompany} />
         <SourceBadge text={dataset.country} />
+        <GranularityBadge granularity={dataset.granularity} />
         <span className="font-mono text-zinc-400">{dataset.rows} Rows</span>
         <span className="text-zinc-600">•</span>
         <span className="font-mono text-zinc-400">{dataset.columns} Cols</span>

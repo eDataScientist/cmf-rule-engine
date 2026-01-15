@@ -22,7 +22,7 @@ import {
   createColumnPresenceRecords,
   deleteDataset,
 } from "../_shared/database.ts";
-import type { ProcessState, DatasetMetadata, ClaimCategory } from "../_shared/types.ts";
+import type { ProcessState, DatasetMetadata, ClaimCategory, DatasetGranularity } from "../_shared/types.ts";
 
 // CORS headers
 const corsHeaders = {
@@ -77,10 +77,16 @@ function validateFormData(formData: FormData) {
   const email = formData.get("Email") as string;
   const country = formData.get("Country") as string;
   const claimCategoryRaw = formData.get("Claim Category") as string;
+  const granularityRaw = formData.get("Granularity") as string;
 
   // Validate claim category (default to 'motor' if not provided for backwards compatibility)
   const claimCategory: ClaimCategory =
     claimCategoryRaw === 'medical' ? 'medical' : 'motor';
+
+  // Validate granularity (default to 'claim' if not provided)
+  const granularity: DatasetGranularity =
+    granularityRaw === 'invoice' ? 'invoice' :
+    granularityRaw === 'item' ? 'item' : 'claim';
 
   if (!file || !insuranceCompany || !country) {
     throw new Error(
@@ -88,7 +94,7 @@ function validateFormData(formData: FormData) {
     );
   }
 
-  return { file, insuranceCompany, email, country, claimCategory };
+  return { file, insuranceCompany, email, country, claimCategory, granularity };
 }
 
 // Cleanup resources on error

@@ -58,6 +58,7 @@ export interface CreateDatasetParams {
   userId: string;
   alignmentMapping: Record<string, string>; // Original column name -> Dimension name
   claimCategory: ClaimCategory;
+  granularity: DatasetGranularity;
 }
 
 // Upload status update parameters
@@ -69,6 +70,9 @@ export interface UploadStatusUpdate {
 
 // Claim category type
 export type ClaimCategory = 'medical' | 'motor';
+
+// Dataset granularity type
+export type DatasetGranularity = 'claim' | 'invoice' | 'item';
 
 // Dimension structure
 export interface Dimension {

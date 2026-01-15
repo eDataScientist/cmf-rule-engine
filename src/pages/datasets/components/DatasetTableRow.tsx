@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { type DatasetWithStatus } from '@/lib/db/operations';
 import StatusBadge from './StatusBadge';
 import SourceBadge from './SourceBadge';
+import GranularityBadge from './GranularityBadge';
 
 interface DatasetTableRowProps {
   dataset: DatasetWithStatus;
@@ -45,6 +46,11 @@ export default function DatasetTableRow({ dataset, onDelete, isDeleting }: Datas
           <SourceBadge text={dataset.insuranceCompany} />
           <SourceBadge text={dataset.country} />
         </div>
+      </td>
+
+      {/* GRANULARITY */}
+      <td className="py-3 px-4">
+        <GranularityBadge granularity={dataset.granularity} />
       </td>
 
       {/* STATUS */}

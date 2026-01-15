@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope } from 'lucide-react';
+import { Upload, FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope, FileText, Receipt, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth/context';
 import { supabase } from '@/lib/db/supabase';
-import type { ClaimCategory } from '@/lib/db/types';
+import type { ClaimCategory, DatasetGranularity } from '@/lib/db/types';
 
 type UploadStatus = 'idle' | 'uploading' | 'success';
 
@@ -19,6 +19,7 @@ export default function DatasetUpload() {
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [country, setCountry] = useState('');
   const [claimCategory, setClaimCategory] = useState<ClaimCategory>('motor');
+  const [granularity, setGranularity] = useState<DatasetGranularity>('claim');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ export default function DatasetUpload() {
       formData.append('Country', country);
       formData.append('Email', user.email || '');
       formData.append('Claim Category', claimCategory);
+      formData.append('Granularity', granularity);
 
       // Call Edge Function and wait for upload status creation
       const response = await fetch(
@@ -162,6 +164,49 @@ export default function DatasetUpload() {
               >
                 <Stethoscope className="h-5 w-5" />
                 <span className="font-medium">Medical</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Granularity */}
+          <div>
+            <Label>Data Granularity *</Label>
+            <div className="mt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setGranularity('claim')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  granularity === 'claim'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/25 hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                <FileText className="h-5 w-5" />
+                <span className="font-medium">Claim</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGranularity('invoice')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  granularity === 'invoice'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/25 hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                <Receipt className="h-5 w-5" />
+                <span className="font-medium">Invoice</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGranularity('item')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  granularity === 'item'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/25 hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                <Package className="h-5 w-5" />
+                <span className="font-medium">Item</span>
               </button>
             </div>
           </div>

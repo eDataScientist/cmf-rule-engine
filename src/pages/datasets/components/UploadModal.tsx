@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope } from 'lucide-react';
+import { FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope, FileText, Receipt, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/lib/auth/context';
 import { supabase } from '@/lib/db/supabase';
-import type { ClaimCategory } from '@/lib/db/types';
+import type { ClaimCategory, DatasetGranularity } from '@/lib/db/types';
 
 type UploadStatus = 'idle' | 'uploading' | 'success';
 
@@ -32,6 +32,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [country, setCountry] = useState('');
   const [claimCategory, setClaimCategory] = useState<ClaimCategory>('motor');
+  const [granularity, setGranularity] = useState<DatasetGranularity>('claim');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +76,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
       formData.append('Country', country);
       formData.append('Email', user.email || '');
       formData.append('Claim Category', claimCategory);
+      formData.append('Granularity', granularity);
       if (nickname) {
         formData.append('Dataset Nickname', nickname);
       }
@@ -108,6 +110,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
         setInsuranceCompany('');
         setCountry('');
         setClaimCategory('motor');
+        setGranularity('claim');
         setUploadStatus('idle');
       }, 800);
     } catch (err) {
@@ -202,6 +205,51 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
               >
                 <Stethoscope className="h-5 w-5" />
                 <span className="font-medium">Medical</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Granularity Selector */}
+          <div>
+            <Label className="text-xs text-zinc-400 mb-2 block">
+              Data Granularity *
+            </Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setGranularity('claim')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all ${
+                  granularity === 'claim'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="text-sm font-medium">Claim</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGranularity('invoice')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all ${
+                  granularity === 'invoice'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                }`}
+              >
+                <Receipt className="h-4 w-4" />
+                <span className="text-sm font-medium">Invoice</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGranularity('item')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all ${
+                  granularity === 'item'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                }`}
+              >
+                <Package className="h-4 w-4" />
+                <span className="text-sm font-medium">Item</span>
               </button>
             </div>
           </div>

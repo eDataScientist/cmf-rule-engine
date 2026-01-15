@@ -75,6 +75,9 @@ export default function DatasetTable({
                 Source
               </th>
               <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase w-[100px]">
+                Granularity
+              </th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase w-[100px]">
                 Status
               </th>
               <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase w-[120px]">
