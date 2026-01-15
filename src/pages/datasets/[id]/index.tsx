@@ -25,7 +25,7 @@ export default function DatasetDetail() {
   const { dataset, loading, error, updateDataset } = useDatasetDetails(id);
   const { quality, loading: loadingQuality } = useQualityMetrics(id);
   const { associations, loading: loadingAssociations, refetch: refetchAssociations } = useTreeAssociations(id);
-  const { dimensions, loading: loadingDimensions } = useDimensions();
+  const { dimensions, loading: loadingDimensions } = useDimensions(dataset?.claimCategory);
   const { previewData, loading: loadingPreview, loadPreview, currentPage, totalPages, totalRows, nextPage, prevPage, pageSize } = useDataPreview(dataset);
   const { handleDelete, deleting } = useDatasetDelete(id);
   const { editMode, editableAlignment, validationError, hasChanges, startEdit, cancelEdit, handleDimensionChange, validate } = useAlignmentEditor(dataset);

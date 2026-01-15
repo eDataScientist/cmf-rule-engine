@@ -1,5 +1,7 @@
 // Rule Builder Type Definitions
 
+import type { ClaimCategory } from '../db/types';
+
 // Operators supported by the rule builder
 export type RuleOperator =
   | '='
@@ -70,6 +72,7 @@ export interface RuleBuilderDimension {
   dataType: DimensionDataType;
   category: string;
   isCritical: boolean;
+  claimCategory: ClaimCategory;
 }
 
 // Grouped dimensions by data type (for palette display)

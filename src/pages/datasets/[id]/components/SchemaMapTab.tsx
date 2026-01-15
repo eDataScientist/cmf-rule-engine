@@ -1,7 +1,8 @@
-import { Edit, Save, X, Loader2, AlertCircle } from 'lucide-react';
+import { Edit, Save, X, Loader2, AlertCircle, Car, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { DatasetWithStatus, Dimension } from '@/lib/db/operations';
 import AlignmentTable from './AlignmentTable';
+import { Badge } from '@/components/ui/badge';
 
 interface SchemaMapTabProps {
   dataset: DatasetWithStatus;
@@ -37,9 +38,26 @@ export default function SchemaMapTab({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Schema Mapping</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Schema Mapping</h2>
+            <Badge
+              variant="outline"
+              className={`flex items-center gap-1.5 ${
+                dataset.claimCategory === 'medical'
+                  ? 'border-pink-500/50 bg-pink-500/10 text-pink-400'
+                  : 'border-blue-500/50 bg-blue-500/10 text-blue-400'
+              }`}
+            >
+              {dataset.claimCategory === 'medical' ? (
+                <Stethoscope className="h-3.5 w-3.5" />
+              ) : (
+                <Car className="h-3.5 w-3.5" />
+              )}
+              {dataset.claimCategory === 'medical' ? 'Medical' : 'Motor'}
+            </Badge>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Map original CSV columns to standard dimensions
+            Map original CSV columns to {dataset.claimCategory} dimensions
           </p>
         </div>
         {!editMode ? (

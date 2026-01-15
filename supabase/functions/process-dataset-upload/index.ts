@@ -22,7 +22,7 @@ import {
   createColumnPresenceRecords,
   deleteDataset,
 } from "../_shared/database.ts";
-import type { ProcessState, DatasetMetadata } from "../_shared/types.ts";
+import type { ProcessState, DatasetMetadata, ClaimCategory } from "../_shared/types.ts";
 
 // CORS headers
 const corsHeaders = {
@@ -76,6 +76,11 @@ function validateFormData(formData: FormData) {
   const insuranceCompany = formData.get("Insurance Company Name") as string;
   const email = formData.get("Email") as string;
   const country = formData.get("Country") as string;
+  const claimCategoryRaw = formData.get("Claim Category") as string;
+
+  // Validate claim category (default to 'motor' if not provided for backwards compatibility)
+  const claimCategory: ClaimCategory =
+    claimCategoryRaw === 'medical' ? 'medical' : 'motor';
 
   if (!file || !insuranceCompany || !country) {
     throw new Error(
@@ -83,7 +88,7 @@ function validateFormData(formData: FormData) {
     );
   }
 
-  return { file, insuranceCompany, email, country };
+  return { file, insuranceCompany, email, country, claimCategory };
 }
 
 // Cleanup resources on error
@@ -217,6 +222,7 @@ async function processDatasetUpload(
       alignedFilePath: state.alignedFilePath,
       userId: metadata.userId,
       alignmentMapping: alignment,
+      claimCategory: metadata.claimCategory,
     });
     console.log(`Dataset record created: ${state.datasetId}`);
 
@@ -282,9 +288,9 @@ Deno.serve(async (req: Request) => {
 
     // Parse and validate form data
     const formData = await req.formData();
-    const { file, insuranceCompany, email, country } = validateFormData(formData);
+    const { file, insuranceCompany, email, country, claimCategory } = validateFormData(formData);
 
-    console.log(`Processing upload for user ${user.id}: ${file.name}`);
+    console.log(`Processing upload for user ${user.id}: ${file.name} (${claimCategory})`);
 
     // Process dataset upload
     const result = await processDatasetUpload(
@@ -294,6 +300,7 @@ Deno.serve(async (req: Request) => {
         country,
         email,
         userId: user.id,
+        claimCategory,
       },
       authHeader
     );

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getAllDimensions, type Dimension } from '@/lib/db/operations';
+import type { ClaimCategory } from '@/lib/db/types';
 
-export function useDimensions() {
+export function useDimensions(claimCategory?: ClaimCategory) {
   const [dimensions, setDimensions] = useState<Dimension[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -9,7 +10,7 @@ export function useDimensions() {
     async function load() {
       try {
         setLoading(true);
-        const data = await getAllDimensions();
+        const data = await getAllDimensions(claimCategory);
         setDimensions(data);
       } catch (err) {
         console.error('Failed to load dimensions:', err);
@@ -19,7 +20,7 @@ export function useDimensions() {
     }
 
     load();
-  }, []);
+  }, [claimCategory]);
 
   return { dimensions, loading };
 }

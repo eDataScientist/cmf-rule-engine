@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Tree, TreeType } from '../types/tree';
+import type { ClaimCategory } from './types';
 
 export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
   // Get current user
@@ -98,6 +99,7 @@ export interface Dataset {
   createdAt: string;
   userId: string | null;
   alignmentMapping: Record<string, string> | null;
+  claimCategory: ClaimCategory;
 }
 
 export interface DatasetWithStatus extends Dataset {
@@ -230,6 +232,7 @@ function rowToDatasetWithStatus(row: any): DatasetWithStatus {
     createdAt: row.created_at,
     userId: row.user_id,
     alignmentMapping: row.alignment_mapping,
+    claimCategory: row.claim_category as ClaimCategory,
     uploadStatus,
   };
 }
@@ -241,6 +244,7 @@ export interface DimensionMapping {
   category: string;
   dataType: string;
   isCritical: boolean;
+  claimCategory: ClaimCategory;
 }
 
 export async function getDatasetColumnMappings(datasetId: number): Promise<DimensionMapping[]> {
@@ -254,7 +258,8 @@ export async function getDatasetColumnMappings(datasetId: number): Promise<Dimen
         display_name,
         category,
         data_type,
-        is_critical
+        is_critical,
+        claim_category
       )
     `)
     .eq('dataset_id', datasetId);
@@ -270,6 +275,7 @@ export async function getDatasetColumnMappings(datasetId: number): Promise<Dimen
     category: row.dimensions.category,
     dataType: row.dimensions.data_type,
     isCritical: row.dimensions.is_critical ?? false,
+    claimCategory: row.dimensions.claim_category as ClaimCategory,
   }));
 }
 
@@ -358,13 +364,20 @@ export interface Dimension {
   category: string;
   dataType: string;
   isCritical: boolean;
+  claimCategory: ClaimCategory;
 }
 
-export async function getAllDimensions(): Promise<Dimension[]> {
-  const { data, error } = await supabase
+export async function getAllDimensions(claimCategory?: ClaimCategory): Promise<Dimension[]> {
+  let query = supabase
     .from('dimensions')
-    .select('id, name, display_name, category, data_type, is_critical')
+    .select('id, name, display_name, category, data_type, is_critical, claim_category')
     .order('display_name', { ascending: true });
+
+  if (claimCategory) {
+    query = query.eq('claim_category', claimCategory);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`Failed to fetch dimensions: ${error.message}`);
@@ -377,6 +390,7 @@ export async function getAllDimensions(): Promise<Dimension[]> {
     category: row.category,
     dataType: row.data_type,
     isCritical: row.is_critical ?? false,
+    claimCategory: row.claim_category as ClaimCategory,
   }));
 }
 
@@ -532,6 +546,7 @@ export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
       createdAt: row.created_at,
       userId: row.user_id,
       alignmentMapping: row.alignment_mapping,
+      claimCategory: row.claim_category as ClaimCategory,
       ruleset,
     };
   });

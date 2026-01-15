@@ -119,6 +119,7 @@ export async function createDatasetRecord(
       user_id: params.userId,
       uploaded_at: new Date().toISOString(),
       alignment_mapping: params.alignmentMapping,
+      claim_category: params.claimCategory,
     })
     .select()
     .single();

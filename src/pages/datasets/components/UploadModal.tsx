@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileUp, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/lib/auth/context';
 import { supabase } from '@/lib/db/supabase';
+import type { ClaimCategory } from '@/lib/db/types';
 
 type UploadStatus = 'idle' | 'uploading' | 'success';
 
@@ -30,6 +31,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
   const [nickname, setNickname] = useState('');
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [country, setCountry] = useState('');
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>('motor');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +74,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
       formData.append('Insurance Company Name', insuranceCompany);
       formData.append('Country', country);
       formData.append('Email', user.email || '');
+      formData.append('Claim Category', claimCategory);
       if (nickname) {
         formData.append('Dataset Nickname', nickname);
       }
@@ -104,6 +107,7 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
         setNickname('');
         setInsuranceCompany('');
         setCountry('');
+        setClaimCategory('motor');
         setUploadStatus('idle');
       }, 800);
     } catch (err) {
@@ -166,6 +170,39 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
                   </span>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Claim Category Selector */}
+          <div>
+            <Label className="text-xs text-zinc-400 mb-2 block">
+              Claim Category *
+            </Label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setClaimCategory('motor')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  claimCategory === 'motor'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                }`}
+              >
+                <Car className="h-5 w-5" />
+                <span className="font-medium">Motor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClaimCategory('medical')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  claimCategory === 'medical'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-zinc-700 hover:border-zinc-600 text-zinc-400'
+                }`}
+              >
+                <Stethoscope className="h-5 w-5" />
+                <span className="font-medium">Medical</span>
+              </button>
             </div>
           </div>
 

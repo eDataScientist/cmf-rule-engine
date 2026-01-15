@@ -33,7 +33,7 @@ export type Database = {
           evaluated_at: string
           id: string
           metadata: Json | null
-          results_jsonb: Json
+          results_jsonb: Json | null
           tree_id: string
           user_id: string
         }
@@ -43,7 +43,7 @@ export type Database = {
           evaluated_at?: string
           id?: string
           metadata?: Json | null
-          results_jsonb: Json
+          results_jsonb?: Json | null
           tree_id: string
           user_id: string
         }
@@ -53,7 +53,7 @@ export type Database = {
           evaluated_at?: string
           id?: string
           metadata?: Json | null
-          results_jsonb?: Json
+          results_jsonb?: Json | null
           tree_id?: string
           user_id?: string
         }
@@ -90,8 +90,10 @@ export type Database = {
       datasets: {
         Row: {
           aligned_file_path: string | null
-          aligned_web_url: string
+          aligned_web_url: string | null
+          alignment_mapping: Json | null
           arabic_columns: number | null
+          claim_category: string
           columns: number
           country: string
           created_at: string
@@ -101,15 +103,17 @@ export type Database = {
           insurance_company: string
           nickname: string | null
           raw_file_path: string | null
-          raw_web_url: string
+          raw_web_url: string | null
           rows: number
           uploaded_at: string | null
           user_id: string | null
         }
         Insert: {
           aligned_file_path?: string | null
-          aligned_web_url: string
+          aligned_web_url?: string | null
+          alignment_mapping?: Json | null
           arabic_columns?: number | null
+          claim_category?: string
           columns: number
           country: string
           created_at?: string
@@ -119,15 +123,17 @@ export type Database = {
           insurance_company: string
           nickname?: string | null
           raw_file_path?: string | null
-          raw_web_url: string
+          raw_web_url?: string | null
           rows: number
           uploaded_at?: string | null
           user_id?: string | null
         }
         Update: {
           aligned_file_path?: string | null
-          aligned_web_url?: string
+          aligned_web_url?: string | null
+          alignment_mapping?: Json | null
           arabic_columns?: number | null
+          claim_category?: string
           columns?: number
           country?: string
           created_at?: string
@@ -137,7 +143,7 @@ export type Database = {
           insurance_company?: string
           nickname?: string | null
           raw_file_path?: string | null
-          raw_web_url?: string
+          raw_web_url?: string | null
           rows?: number
           uploaded_at?: string | null
           user_id?: string | null
@@ -146,6 +152,7 @@ export type Database = {
       dimensions: {
         Row: {
           category: string
+          claim_category: string
           created_at: string
           data_type: string
           description: string | null
@@ -156,6 +163,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          claim_category: string
           created_at?: string
           data_type: string
           description?: string | null
@@ -166,6 +174,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          claim_category?: string
           created_at?: string
           data_type?: string
           description?: string | null
@@ -173,6 +182,41 @@ export type Database = {
           id?: number
           is_critical?: boolean | null
           name?: string
+        }
+      }
+      rule_sets: {
+        Row: {
+          created_at: string | null
+          dataset_id: number | null
+          id: string
+          last_edited_at: string | null
+          name: string
+          rule_count: number | null
+          rules: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dataset_id?: number | null
+          id?: string
+          last_edited_at?: string | null
+          name: string
+          rule_count?: number | null
+          rules?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dataset_id?: number | null
+          id?: string
+          last_edited_at?: string | null
+          name?: string
+          rule_count?: number | null
+          rules?: Json
+          updated_at?: string | null
+          user_id?: string | null
         }
       }
       trees: {
@@ -216,3 +260,6 @@ export type Database = {
     }
   }
 }
+
+// Claim category type used across the application
+export type ClaimCategory = 'medical' | 'motor';

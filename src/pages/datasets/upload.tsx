@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileUp, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth/context';
 import { supabase } from '@/lib/db/supabase';
+import type { ClaimCategory } from '@/lib/db/types';
 
 type UploadStatus = 'idle' | 'uploading' | 'success';
 
@@ -17,6 +18,7 @@ export default function DatasetUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [insuranceCompany, setInsuranceCompany] = useState('');
   const [country, setCountry] = useState('');
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>('motor');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,7 @@ export default function DatasetUpload() {
       formData.append('Insurance Company Name', insuranceCompany);
       formData.append('Country', country);
       formData.append('Email', user.email || '');
+      formData.append('Claim Category', claimCategory);
 
       // Call Edge Function and wait for upload status creation
       const response = await fetch(
@@ -129,6 +132,37 @@ export default function DatasetUpload() {
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               )}
+            </div>
+          </div>
+
+          {/* Claim Category */}
+          <div>
+            <Label>Claim Category *</Label>
+            <div className="mt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setClaimCategory('motor')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  claimCategory === 'motor'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/25 hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                <Car className="h-5 w-5" />
+                <span className="font-medium">Motor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClaimCategory('medical')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-all ${
+                  claimCategory === 'medical'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/25 hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                <Stethoscope className="h-5 w-5" />
+                <span className="font-medium">Medical</span>
+              </button>
             </div>
           </div>
 

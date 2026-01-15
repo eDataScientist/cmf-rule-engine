@@ -1,6 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+// Claim category type
+type ClaimCategory = 'medical' | 'motor';
+
 // Response type
 interface DatasetDimension {
   id: number;
@@ -9,6 +12,7 @@ interface DatasetDimension {
   dataType: string;
   category: string;
   isCritical: boolean;
+  claimCategory: ClaimCategory;
 }
 
 // CORS headers
@@ -66,7 +70,8 @@ Deno.serve(async (req: Request) => {
           display_name,
           data_type,
           category,
-          is_critical
+          is_critical,
+          claim_category
         )
       `)
       .eq("dataset_id", dataset_id);
@@ -96,6 +101,7 @@ Deno.serve(async (req: Request) => {
         dataType: capitalizeDataType(row.dimensions.data_type),
         category: row.dimensions.category,
         isCritical: row.dimensions.is_critical ?? false,
+        claimCategory: row.dimensions.claim_category as ClaimCategory,
       }));
 
     console.log(`Found ${dimensions.length} dimensions for dataset ${dataset_id}`);

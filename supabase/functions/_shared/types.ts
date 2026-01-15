@@ -14,6 +14,7 @@ export interface DatasetMetadata {
   country: string;
   email: string;
   userId: string;
+  claimCategory: ClaimCategory;
 }
 
 // DataPreview API response
@@ -56,6 +57,7 @@ export interface CreateDatasetParams {
   alignedFilePath: string;
   userId: string;
   alignmentMapping: Record<string, string>; // Original column name -> Dimension name
+  claimCategory: ClaimCategory;
 }
 
 // Upload status update parameters
@@ -65,8 +67,12 @@ export interface UploadStatusUpdate {
   error_message?: string;
 }
 
+// Claim category type
+export type ClaimCategory = 'medical' | 'motor';
+
 // Dimension structure
 export interface Dimension {
   id: number;
   name: string;
+  claim_category: ClaimCategory;
 }
