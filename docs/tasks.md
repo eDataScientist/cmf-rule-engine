@@ -1,6 +1,226 @@
 # Claims Rule Engine - Detailed Task Log
+## Milestone 3 - Phase M3.1 Gate Progress (2026-02-16)
 
-## Phase 18: Probability Scaling, Analytics Tab & Table Enhancements ✅
+### Stream M3.1 Stabilization (2026-02-16)
+- [~] P3.1.3.1 - Auth - Fix first-attempt admin password sign-in regression - Stream A (Dependent)
+  - [x] Root cause confirmed: `RoleGuard` treated `profile === null` as invalid before auth/profile hydration finished.
+  - [x] Updated `src/lib/auth/context.tsx` to:
+    - [x] Force `loading=true` during every auth sync until profile fetch resolves
+    - [x] Ignore stale async auth/profile responses via sync-version guard
+    - [x] Stabilize auth action functions with `useCallback` + memoized provider value
+  - [x] Updated `src/components/shared/RoleGuard.tsx` to evaluate invalid account only after loading resolves and to trigger sign-out once.
+  - [x] Moved Kanban task to `In review`.
+- [~] P3.1.3.2 - Auth - Fix refresh-time auth revalidation loop/session loss - Stream A (Dependent)
+  - [x] Addressed via shared auth/guard race-condition fixes in:
+    - [x] `src/lib/auth/context.tsx`
+    - [x] `src/components/shared/RoleGuard.tsx`
+  - [x] Moved Kanban task to `In review`.
+- [~] P3.1.3.3 - UI - Fix admin companies/users create modal auto-open and cancel lock - Stream B (Dependent)
+  - [x] Root cause confirmed in shared dialog primitive: `DialogContent` always rendered regardless of `open`.
+  - [x] Updated `src/components/ui/dialog.tsx`:
+    - [x] `DialogContent` now renders only when `open === true`
+    - [x] Modal content now mounts through `DialogPortal` correctly
+    - [x] `DialogTrigger` typing updated to preserve child click handlers and satisfy lint
+  - [x] Moved Kanban task to `In review`.
+- Validation for stabilization patch:
+  - [x] `cmd /c npx eslint src/lib/auth/context.tsx src/components/shared/RoleGuard.tsx src/components/ui/dialog.tsx src/pages/auth/admin.tsx src/pages/admin/companies/index.tsx src/pages/admin/users/index.tsx src/App.tsx`
+  - [ ] `cmd /c npm run build` (currently fails on unrelated pre-existing error: `src/pages/generate-tree/components/TreeForm.tsx:115`, `TS2345`)
+
+### Gate M3.1.0 - Database & Auth Foundation
+- Deployment note (2026-02-16):
+  - [x] Applied DB migrations P3.1.0.1 through P3.1.0.8 to Supabase project `cayqhjjpqucsoymjvbzr`
+  - [x] Verified migration registration, table presence, helper SQL functions, unique index, and tree admin insert RLS policy
+- [x] P3.1.0.1 - DB - Create companies table - Gate (Independent)
+  - [x] Added migration `supabase/migrations/20260216094613_m3_1_0_1_create_companies_table.sql`
+  - [x] Implemented schema fields: `id`, `name`, `country`, `insurance_type`, `max_user_slots`, `is_active`, `created_by`, `created_at`, `updated_at`
+  - [x] Added base indexes for `name`, `created_by`, and `is_active`
+- [x] P3.1.0.2 - DB - Create user_profiles table - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094626_m3_1_0_2_create_user_profiles_table.sql`
+  - [x] Added role constraints (`admin`, `client_admin`, `client_user`) and role/company consistency check
+  - [x] Seeded `mali@edata.ae` as `admin` with `company_id = NULL` (idempotent upsert)
+- [x] P3.1.0.3 - DB - Create admin_activity_log table - Gate (Independent)
+  - [x] Added migration `supabase/migrations/20260216094634_m3_1_0_3_create_admin_activity_log_table.sql`
+  - [x] Added append-only audit fields (`user_id`, `action`, `target_type`, `target_id`, `details`, `ip_address`, `created_at`)
+  - [x] Added required index on `(action, created_at)` plus `user_id` lookup index
+- [x] P3.1.0.4 - DB - Create slot_requests table - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094642_m3_1_0_4_create_slot_requests_table.sql`
+  - [x] Added FK relations (`company_id`, `requested_by`, `reviewed_by`) and status workflow (`pending|approved|denied`)
+  - [x] Added validations for positive `requested_slots` and indexed company/status access paths
+- [x] P3.1.0.5 - DB - Add company_id to existing tables - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094657_m3_1_0_5_add_company_id_to_core_tables.sql`
+  - [x] Added nullable `company_id` columns + FK constraints for `trees`, `datasets`, `rule_sets`, `dataset_tree_associations`, and `dataset_upload_status`
+  - [x] Added `company_id` indexes for all affected tables
+- [x] P3.1.0.6 - DB - Backfill and enforce company_id constraints - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094704_m3_1_0_6_enforce_company_id_not_null.sql`
+  - [x] Applied approved legacy data reset for core company-scoped tables
+  - [x] Enforced `company_id` as NOT NULL on all gate-target tables
+- [x] P3.1.0.7 - DB - Rewrite RLS with company scope - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094739_m3_1_0_7_rewrite_rls_company_scope.sql`
+  - [x] Added helper SQL functions `get_user_company_id()` and `is_admin()`
+  - [x] Replaced legacy policies with company-scoped RLS + admin bypass across core tables
+  - [x] Enforced admin-only tree insert policy
+- [x] P3.1.0.8 - DB - Update rule_sets unique constraint - Gate (Dependent)
+  - [x] Added migration `supabase/migrations/20260216094750_m3_1_0_8_update_rule_sets_unique_company_scope.sql`
+  - [x] Removed legacy uniqueness on `(dataset_id, user_id)`
+  - [x] Added unique index on `(dataset_id, company_id)`
+- [x] P3.1.0.9 - API - Restructure storage path convention - Gate (Dependent)
+  - [x] Updated shared storage helpers to support `{company_id}/{dataset_id}/{timestamp}_{filename}` paths
+  - [x] Added pending-path helper for pre-dataset uploads (`{company_id}/pending/...`)
+  - [x] Deployed company-scoped `process-dataset-upload` flow now writing `{company_id}/{dataset_id}/...` paths in production
+- [x] P3.1.0.10 - API - Create register-user Edge Function - Gate (Dependent)
+  - [x] Added `supabase/functions/register-user/index.ts`
+  - [x] Implemented admin authorization, company slot capacity checks, and role validation
+  - [x] Implemented auth user creation + `user_profiles` insertion + `admin_activity_log` write
+- [x] P3.1.0.11 - API - Create deactivate-company Edge Function - Gate (Dependent)
+  - [x] Added `supabase/functions/deactivate-company/index.ts`
+  - [x] Implemented admin-only company deactivation + company user deactivation flow
+  - [x] Added best-effort session revocation and admin activity audit logging
+- [x] P3.1.0.12 - API - Update process-dataset-upload for company scope - Gate (Dependent)
+  - [x] Resolved `company_id` from `user_profiles` in upload auth validation
+  - [x] Updated upload status + dataset creation helpers to persist `company_id`
+  - [x] Switched storage paths to `{company_id}/{dataset_id}/{timestamp}_{filename}` via early dataset creation flow
+  - [x] Added dataset post-upload update step for final file paths/alignment/arabic metadata
+- [x] P3.1.0.13 - Auth - Configure Supabase OTP login - Gate (Independent)
+  - [x] Supabase Dashboard: enabled email OTP sign-in for project `cayqhjjpqucsoymjvbzr`
+  - [x] Kept existing admin password login path active (did not disable email/password globally)
+  - [x] Validated both flows manually:
+    - [x] Newly provisioned client user can request OTP and log in
+    - [x] Existing admin `mali@edata.ae` can still log in with password
+
+### Gate M3.1.0 Review Outcome (2026-02-16)
+- Kanban review status:
+  - Gate tasks `P3.1.0.1` through `P3.1.0.12` have been moved to `Done`.
+  - `P3.1.0.13` remains `Done`.
+- Review remediation completed:
+  - Reconciled migration history drift by renaming local migration files to match applied Supabase versions (`20260216094613` ... `20260216094750`).
+  - Fixed touched-file lint issue in `supabase/functions/_shared/external-apis.ts` by removing unused `N8nAlignmentResponse` import.
+  - Deployed missing functions:
+    - `register-user` (`version=1`, `status=ACTIVE`)
+    - `deactivate-company` (`version=1`, `status=ACTIVE`)
+  - Deployed updated company-scoped `process-dataset-upload` (`version=15`, `status=ACTIVE`) with shared helper bundle.
+  - Verified deployed source for all three functions from Supabase to confirm expected production code is live.
+- Validation notes:
+  - Targeted lint for touched function files passes via `npx eslint` on modified paths.
+  - Direct live HTTP smoke invocations from this sandbox are blocked (`Unable to connect to the remote server`), so endpoint-level run-time smoke should be executed from a network-enabled environment if required.
+
+### Stream M3.1.A Progress (2026-02-16)
+- [x] P3.1.1.2 - Auth - Extend AuthProvider with profile context - Stream A (Independent)
+  - [x] Updated `src/lib/auth/context.tsx` to expose `profile` (`role`, `company_id`, `full_name`, `is_active`) from `user_profiles`
+  - [x] Added session-sync profile fetch on initial restore and auth state changes
+  - [x] Removed `signUp` from auth context and added `signInWithOtp(email)` + `verifyOtp(email, token)`
+  - [x] Kept password login support via `signIn(email, password)` for existing admin flow
+  - [x] Updated `src/pages/auth/index.tsx` to remove sign-up dependency after auth-context contract change
+  - [x] Validation:
+    - [x] `npx eslint src/lib/auth/context.tsx src/pages/auth/index.tsx`
+    - [x] `npx tsc -b`
+    - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+- [x] P3.1.1.1 - Auth - Update login page for OTP flow - Stream A (Dependent)
+  - [x] Reworked `src/pages/auth/index.tsx` to OTP-first flow (email -> send code -> verify code)
+  - [x] Removed in-page password mode toggle; `/auth` is now OTP-only
+  - [x] Added dedicated admin password route/page at `/auth/admin` (`src/pages/auth/admin.tsx`)
+  - [x] Password flow now verifies active admin profile before routing and redirects successful admin logins to `/admin`
+  - [x] Preserved admin password fallback via dedicated route-based flow (`/auth/admin`)
+  - [x] Added unregistered-user message mapping to `Access denied. Contact your administrator.`
+  - [x] Added resend-code and change-email affordances in OTP step
+  - [x] Validation:
+    - [x] `npx eslint src/lib/auth/context.tsx src/pages/auth/index.tsx`
+    - [x] `npx tsc -b`
+    - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+- [x] P3.1.1.3 - Auth - Create RoleGuard for role-based routing - Stream A (Dependent)
+  - [x] Added `src/components/shared/RoleGuard.tsx` with `allowedRoles` enforcement and per-role landing redirects
+  - [x] Added deactivated/unprovisioned account handling (sign out then redirect to `/auth` with message state)
+  - [x] Added `getRoleLandingPath()` helper for upcoming route-wiring task
+  - [x] Validation:
+    - [x] `npx eslint src/components/shared/RoleGuard.tsx src/lib/auth/context.tsx src/pages/auth/index.tsx`
+    - [x] `npx tsc -b`
+    - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+- [x] P3.1.1.4 - Routing - Apply RoleGuard and role landings - Stream A (Dependent)
+  - [x] Replaced `ProtectedRoute` usage in `src/App.tsx` with `RoleGuard`
+  - [x] Applied role constraints:
+    - [x] `/admin*` routes -> admin only
+    - [x] `/company/users` -> client_admin only
+    - [x] `/generate-tree` -> admin only
+    - [x] Core data routes (`/datasets`, `/rules`, visualizer routes) -> all authenticated roles
+  - [x] Added role-based root redirect (`/`) using profile role (`admin -> /admin`, clients -> `/datasets`)
+  - [x] Added guarded placeholder pages for not-yet-built route surfaces
+  - [x] Validation:
+    - [x] `npx eslint src/App.tsx src/components/shared/RoleGuard.tsx src/lib/auth/context.tsx src/pages/auth/index.tsx src/pages/admin/companies/index.tsx`
+    - [x] `npx tsc -b`
+    - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+- [x] P3.1.1.5 - UI - Make sidebar role-aware navigation - Stream A (Dependent)
+  - [x] Rebuilt `src/components/shared/Layout/Sidebar.tsx` with role-filtered nav groups:
+    - [x] Admin: core nav + Admin section (`/admin`, `/admin/companies`, `/admin/users`, `/admin/logs`)
+    - [x] Client Admin: core nav + My Company section (`/company/users`)
+    - [x] Client User: core nav only
+  - [x] Hidden `Generate Tree` for non-admin roles
+  - [x] Added company-name resolution (from `companies`) for client-user profile context in sidebar footer
+  - [x] Validation:
+    - [x] `npx eslint src/App.tsx src/components/shared/Layout/Sidebar.tsx src/components/shared/RoleGuard.tsx src/lib/auth/context.tsx src/pages/auth/index.tsx src/pages/admin/companies/index.tsx`
+    - [x] `npx tsc -b`
+    - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+
+### Stream M3.1.B Review Outcome (2026-02-16)
+- Kanban review status:
+  - `P3.1.2.1` through `P3.1.2.5` remain in `In review` (fixes required).
+- Blocking findings captured on all Stream B tasks:
+  - `src/lib/db/admin-operations.ts` writes `user_email` to `admin_activity_log`, but the migrated schema has no `user_email` column; audit writes from Stream B UI paths fail.
+  - Company deactivation UI toggles `companies.is_active` directly and does not invoke `deactivate-company` edge function (no guaranteed user deactivation/session revocation).
+  - Slot request approval can mark requests approved without guaranteeing `max_user_slots` increment (no atomicity/error enforcement).
+- Additional findings:
+  - `getPendingSlotRequests()` uses `requester:user_profiles!requested_by` relation although `requested_by` references `auth.users`.
+  - Admin user list currently maps `email` to `null`, reducing search/manage usability.
+  - Admin logs search is client-side on the current page only; expanded detail row rendering is detached from parent rows.
+- Validation run during review:
+  - [x] `npx.cmd eslint src/lib/db/admin-operations.ts src/pages/admin/index.tsx src/pages/admin/hooks/useAdminDashboard.ts src/pages/admin/components/StatCard.tsx src/pages/admin/components/ActivityFeed.tsx src/pages/admin/components/PendingRequests.tsx src/pages/admin/companies/index.tsx src/pages/admin/companies/components/CreateCompanyDialog.tsx src/pages/admin/companies/components/CompanyRow.tsx src/pages/admin/users/index.tsx src/pages/admin/users/components/RegisterUserDialog.tsx src/pages/admin/logs/index.tsx src/App.tsx`
+  - [x] `npx.cmd tsc -b`
+  - [ ] `npm.cmd run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+
+### Stream M3.1.B Review Remediation (2026-02-16)
+- [x] Addressed shared blocking issues in admin operations
+  - [x] Kept `admin_activity_log` insert contract aligned to schema (no `user_email` writes)
+  - [x] Made `logAdminAction()` fail loudly on actor/insert errors
+  - [x] Kept slot-request requester resolution via valid `user_profiles.user_id` lookup
+- [x] Added DB migration for review fixes
+  - [x] `supabase/migrations/20260216113000_m3_1_2_admin_review_fixes.sql`
+  - [x] Added `user_profiles.email` snapshot + backfill from `auth.users`
+  - [x] Hardened `get_admin_user_list()` with admin-only guard
+  - [x] Added atomic RPCs:
+    - [x] `approve_slot_request_admin(p_request_id uuid)`
+    - [x] `deny_slot_request_admin(p_request_id uuid)`
+    - [x] `toggle_user_active_admin(p_user_id uuid, p_is_active boolean)`
+- [x] Company management remediations
+  - [x] Company deactivate action now invokes `deactivate-company` Edge Function
+  - [x] Company reactivate remains direct update path with audit log
+  - [x] Insurance type input constrained to DB-safe enum values (`motor`, `medical`)
+- [x] User management remediations
+  - [x] User status toggles now use backend RPC with audit trail
+  - [x] User list email source aligned to admin RPC + profile snapshot
+- [x] Admin logs remediations
+  - [x] Search moved into data query path (before pagination)
+  - [x] Added 300ms debounced server-side search to reduce query thrash while typing
+  - [x] Expanded details now render inline under each parent row
+  - [x] User column now uses resolved actor name fallback
+- [x] Edge function update
+  - [x] Updated `supabase/functions/register-user/index.ts` profile insert to persist `email`
+- [x] Validation
+  - [x] `npx eslint src/lib/db/admin-operations.ts src/pages/admin/index.tsx src/pages/admin/hooks/useAdminDashboard.ts src/pages/admin/components/StatCard.tsx src/pages/admin/components/ActivityFeed.tsx src/pages/admin/components/PendingRequests.tsx src/pages/admin/companies/index.tsx src/pages/admin/companies/components/CreateCompanyDialog.tsx src/pages/admin/companies/components/CompanyRow.tsx src/pages/admin/users/index.tsx src/pages/admin/users/components/RegisterUserDialog.tsx src/pages/admin/logs/index.tsx src/App.tsx supabase/functions/register-user/index.ts`
+  - [ ] `npx tsc -b` (blocked by unrelated existing error in `src/pages/generate-tree/components/TreeForm.tsx:115`)
+  - [ ] `npm run build` (blocked in sandbox by vite/esbuild `spawn EPERM`)
+
+### Stream M3.1.D Review (2026-02-16)
+- **Status**: All tasks complete - Approved
+- Review completed: 2026-02-16
+- [x] P3.1.D.1 - Update tree operations (company_id support) - operations.ts:21, tree.ts:27
+- [x] P3.1.D.2 - Update dataset operations (company_id support) - operations.ts:103, 238
+- [x] P3.1.D.3 - Update ruleset operations (company_id uniqueness) - operations.ts:432, 467
+- [x] P3.1.D.4 - Update DB type interfaces - src/lib/db/types.ts (company_id in all tables)
+- [x] P3.1.D.5 - Add company selector to Generate Tree - src/pages/generate-tree/index.tsx
+- Review Notes:
+  - All Stream D acceptance criteria met
+  - Pre-existing lint warnings (any types) noted but non-blocking
+  - Access control properly handled via RoleGuard from Stream A
+
+## Phase 18: Probability Scaling, Analytics Tab & Table Enhancements âœ…
 
 ### Session: 2025-10-28 - Major Table Visualizer & Scoring Refactor
 
@@ -21,8 +241,8 @@
 
 - [x] Updated risk classification thresholds
   - [x] STP (Safe to Process): probability < 0.5
-  - [x] Moderate Non-STP: 0.5 ≤ probability < 0.75
-  - [x] High Risk STP: probability ≥ 0.75
+  - [x] Moderate Non-STP: 0.5 â‰¤ probability < 0.75
+  - [x] High Risk STP: probability â‰¥ 0.75
 
 ### Analytics Tab Implementation (NEW)
 - [x] Created AnalyticsOverview component with Recharts
@@ -37,7 +257,7 @@
   - [x] Empty state handling
 
 - [x] Enhanced table visualizer workflow
-  - [x] Added analytics as 4th tab: Setup → Validation → Analytics → Results
+  - [x] Added analytics as 4th tab: Setup â†’ Validation â†’ Analytics â†’ Results
   - [x] Auto-navigate to analytics after processing
   - [x] Users review batch insights before drilling into detail table
   - [x] Tab disabled states based on data availability
@@ -89,7 +309,7 @@
 
 ---
 
-## Phase 1: Project Foundation ✅
+## Phase 1: Project Foundation âœ…
 
 ### Setup & Configuration
 - [x] Initialize Vite project with React + TypeScript template
@@ -114,7 +334,7 @@
 
 ---
 
-## Phase 2: Type System & Database ✅
+## Phase 2: Type System & Database âœ…
 
 ### Type Definitions
 - [x] Create lib/types/tree.ts
@@ -168,7 +388,7 @@
 
 ---
 
-## Phase 3: Core Logic ✅
+## Phase 3: Core Logic âœ…
 
 ### Scoring Engine
 - [x] Create lib/scoring/transforms.ts
@@ -201,7 +421,7 @@
 
 ---
 
-## Phase 4: State Management ✅
+## Phase 4: State Management âœ…
 
 ### Jotai Atoms
 - [x] Create store/atoms/trees.ts
@@ -222,7 +442,7 @@
 
 ---
 
-## Phase 5: UI Components ✅
+## Phase 5: UI Components âœ…
 
 ### shadcn/ui Base Components
 - [x] Create components/ui/button.tsx
@@ -259,7 +479,7 @@
 
 ---
 
-## Phase 6: Layout Components ✅
+## Phase 6: Layout Components âœ…
 
 ### Application Layout
 - [x] Create components/shared/Layout/Navbar.tsx
@@ -280,7 +500,7 @@
 
 ---
 
-## Phase 7: Shared Components ✅
+## Phase 7: Shared Components âœ…
 
 ### TreeVisualizer
 - [x] Create components/shared/TreeVisualizer/TreeNode.tsx
@@ -305,7 +525,7 @@
 
 ---
 
-## Phase 8: Generate Tree Page ✅
+## Phase 8: Generate Tree Page âœ…
 
 ### Components
 - [x] Create pages/generate-tree/components/TypeSelector.tsx
@@ -374,7 +594,7 @@
 
 ---
 
-## Phase 9: Review Trees Page ✅
+## Phase 9: Review Trees Page âœ…
 
 ### Components
 - [x] Create pages/review-trees/components/TreeCard.tsx
@@ -420,7 +640,7 @@
 
 ---
 
-## Phase 10: Router & App Integration ✅
+## Phase 10: Router & App Integration âœ…
 
 ### Application Setup
 - [x] Update App.tsx
@@ -438,7 +658,7 @@
 
 ---
 
-## Phase 11: Testing & Bug Fixes ✅
+## Phase 11: Testing & Bug Fixes âœ…
 
 ### Issues Fixed
 - [x] Fixed Tailwind CSS v4 compatibility issues
@@ -446,7 +666,7 @@
   - [x] Added @import "tailwindcss"
   - [x] Updated CSS variables to OKLCH format in @theme
 
-- [x] Fixed tree preview (plain text → visual tree)
+- [x] Fixed tree preview (plain text â†’ visual tree)
   - [x] Created TreeVisualizer component
   - [x] Added connector lines and node styling
   - [x] Integrated into PreviewPane
@@ -470,7 +690,7 @@
 
 ---
 
-## Phase 12: Documentation & Version Control ✅
+## Phase 12: Documentation & Version Control âœ…
 
 ### Documentation
 - [x] Create TODO.md
@@ -492,7 +712,7 @@
 
 ---
 
-## Phase 13: UI Refinements & Documentation ✅
+## Phase 13: UI Refinements & Documentation âœ…
 
 ### UI Fixes
 - [x] Fix preview pane scrollbar issue
@@ -532,7 +752,7 @@
 
 ---
 
-## Phase 14: ScoreCard & 3-Tab Decision Trees Workflow ✅
+## Phase 14: ScoreCard & 3-Tab Decision Trees Workflow âœ…
 
 ### ScoreCard Component Module
 - [x] Create components/shared/ScoreCard/RiskBadge.tsx
@@ -696,7 +916,7 @@
 
 ---
 
-## Phase 15: Table Visualizer with Bulk CSV Processing ✅
+## Phase 15: Table Visualizer with Bulk CSV Processing âœ…
 
 ### UI Components (shadcn/ui)
 - [x] Create components/ui/table.tsx
@@ -789,7 +1009,7 @@
 
 ---
 
-## Phase 16: Table Visualizer Refactor & Tree Structure Visualizer ✅
+## Phase 16: Table Visualizer Refactor & Tree Structure Visualizer âœ…
 
 ### TabularClaimsProcessor Class
 - [x] Create lib/processing/TabularClaimsProcessor.ts
@@ -853,13 +1073,13 @@
 - [x] Create TreeDiagram component
   - [x] **Horizontal spreading layout** (left=true, right=false)
   - [x] Calculate node positions with binary space partitioning
-  - [x] Use 90-degree connector lines (vertical → horizontal → vertical)
+  - [x] Use 90-degree connector lines (vertical â†’ horizontal â†’ vertical)
   - [x] Match TracedTreeVisualizer design:
     - [x] Fira Code monospace font
     - [x] Color-coded leaf nodes (red to green gradient)
     - [x] Root nodes with blue background (#e0e7ff)
     - [x] Decision nodes show parsed feature names
-    - [x] Formatted branch labels (≤, >, is patterns)
+    - [x] Formatted branch labels (â‰¤, >, is patterns)
     - [x] Black connector lines (#18181b, 2px width)
     - [x] All nodes fully visible (no muting)
   - [x] Parse conditions using shared utils
@@ -902,7 +1122,7 @@
 
 ---
 
-## Phase 17: Medical/Motor Theme System ✅
+## Phase 17: Medical/Motor Theme System âœ…
 
 ### Theme Architecture
 - [x] Create appThemeAtom with localStorage persistence
@@ -1002,7 +1222,7 @@
 
 ---
 
-## Phase 19: Row-to-Visualization Navigation & Datasets Feature Planning ✅ (In Progress)
+## Phase 19: Row-to-Visualization Navigation & Datasets Feature Planning âœ… (In Progress)
 
 ### Session: 2025-10-27 - Direct Table Navigation
 
@@ -1045,8 +1265,8 @@
 - [ ] Database schema expansion
   - [ ] Add datasets table (id, name, tree_id, file_name, row_count, created_at)
   - [ ] Add dataset_rows table (id, dataset_id, claim_number, claim_data_json)
-  - [ ] Foreign key: datasets.tree_id → trees.id
-  - [ ] Foreign key: dataset_rows.dataset_id → datasets.id
+  - [ ] Foreign key: datasets.tree_id â†’ trees.id
+  - [ ] Foreign key: dataset_rows.dataset_id â†’ datasets.id
   - [ ] Cascade delete on tree deletion
 
 - [ ] Dataset management page
@@ -1065,8 +1285,8 @@
   - [ ] Can load same dataset again without re-upload
 
 ### Dataset Workflow
-1. User selects a tree → uploads CSV → creates Dataset(tree_id, data)
-2. CSV processed → results stored → can navigate freely, data persists
+1. User selects a tree â†’ uploads CSV â†’ creates Dataset(tree_id, data)
+2. CSV processed â†’ results stored â†’ can navigate freely, data persists
 3. User can load saved dataset again with same tree
 4. If want to test different tree: upload same CSV again (creates new dataset with different tree)
 
@@ -1082,7 +1302,7 @@
 
 ---
 
-## Phase 20: Supabase Migration for Tree Persistence ✅
+## Phase 20: Supabase Migration for Tree Persistence âœ…
 
 ### Session: 2025-11-23 - Database Migration
 
@@ -1150,12 +1370,12 @@
 - [x] No changes required in page components
 
 ### Benefits Achieved
-✅ **Cloud persistence** - Data stored in Supabase PostgreSQL
-✅ **Cross-device access** - Trees accessible from anywhere
-✅ **Better scalability** - PostgreSQL vs browser storage
-✅ **Real-time potential** - Foundation for real-time features
-✅ **Backup & recovery** - Automatic backups via Supabase
-✅ **Collaboration ready** - Multi-user foundation in place
+âœ… **Cloud persistence** - Data stored in Supabase PostgreSQL
+âœ… **Cross-device access** - Trees accessible from anywhere
+âœ… **Better scalability** - PostgreSQL vs browser storage
+âœ… **Real-time potential** - Foundation for real-time features
+âœ… **Backup & recovery** - Automatic backups via Supabase
+âœ… **Collaboration ready** - Multi-user foundation in place
 
 ### Migration Notes
 - **Backward compatibility maintained** - All existing hooks work unchanged
@@ -1169,7 +1389,7 @@
 
 ---
 
-## Phase 21: Supabase Authentication & User-Specific Trees ✅
+## Phase 21: Supabase Authentication & User-Specific Trees âœ…
 
 ### Session: 2025-11-23 - Authentication System
 
@@ -1259,11 +1479,11 @@
   - [x] Logout clears session
 
 ### Security Features
-✅ **User isolation** - RLS policies enforce data separation
-✅ **Automatic user linking** - Trees auto-assigned to authenticated user
-✅ **Session persistence** - Users stay logged in
-✅ **Route protection** - Unauthenticated users redirected
-✅ **Secure passwords** - Handled by Supabase Auth (hashed, salted)
+âœ… **User isolation** - RLS policies enforce data separation
+âœ… **Automatic user linking** - Trees auto-assigned to authenticated user
+âœ… **Session persistence** - Users stay logged in
+âœ… **Route protection** - Unauthenticated users redirected
+âœ… **Secure passwords** - Handled by Supabase Auth (hashed, salted)
 
 ### Git Commits
 - [x] Commit: feat: implement Supabase authentication with user-specific trees
@@ -1271,7 +1491,7 @@
 
 ---
 
-## Phase 22: Dataset Quality Tracking & Edge Functions ✅
+## Phase 22: Dataset Quality Tracking & Edge Functions âœ…
 
 ### Session: 2025-11-25 - Edge Functions & Data Quality Infrastructure
 
@@ -1329,11 +1549,11 @@
   - [x] Map alignment array to dimension IDs
   - [x] Create dataset_column_presence records
   - [x] Update status to "uploaded" with dataset_id
-  - [x] Handle errors → update status to "failed"
+  - [x] Handle errors â†’ update status to "failed"
 - [x] Required fields validation
 - [x] N8N webhook URL configuration
 - [x] Deploy via Supabase MCP tool (Version 1)
-- [x] Fix n8n webhook URL (webhook-test → webhook)
+- [x] Fix n8n webhook URL (webhook-test â†’ webhook)
 - [x] Redeploy with corrected URL (Version 2)
 
 ### Type Safety Updates
@@ -1396,12 +1616,12 @@
 - **Key Achievement:** Complete dataset quality infrastructure with n8n integration
 
 ### Phase 22 Completed Features Summary
-1. ✅ File storage schema with separate raw/aligned paths
-2. ✅ Upload status tracking table with RLS
-3. ✅ Supabase Edge Functions setup for version control
-4. ✅ Quality metrics calculation Edge Function
-5. ✅ Complete upload workflow Edge Function with n8n integration
-6. ✅ TypeScript types updated and synced
+1. âœ… File storage schema with separate raw/aligned paths
+2. âœ… Upload status tracking table with RLS
+3. âœ… Supabase Edge Functions setup for version control
+4. âœ… Quality metrics calculation Edge Function
+5. âœ… Complete upload workflow Edge Function with n8n integration
+6. âœ… TypeScript types updated and synced
 
 ### Phase 21 Statistics
 - **Commits This Phase:** 1 major commit
@@ -1412,12 +1632,12 @@
 - **Key Achievement:** Complete authentication system with user isolation
 
 ### Phase 21 Completed Features Summary
-1. ✅ Supabase Auth integration with email/password
-2. ✅ User-specific tree isolation with RLS policies
-3. ✅ Protected routes with auth guards
-4. ✅ Login/signup UI with error handling
-5. ✅ Session persistence across page loads
-6. ✅ User profile display and logout functionality
+1. âœ… Supabase Auth integration with email/password
+2. âœ… User-specific tree isolation with RLS policies
+3. âœ… Protected routes with auth guards
+4. âœ… Login/signup UI with error handling
+5. âœ… Session persistence across page loads
+6. âœ… User profile display and logout functionality
 
 ---
 
@@ -1427,14 +1647,14 @@
 
 ### Phase 1: Upload Experience Enhancement
 - [ ] Upload Button Loading States
-  - [ ] Add state to track upload progress (idle → uploading → success)
+  - [ ] Add state to track upload progress (idle â†’ uploading â†’ success)
   - [ ] Show spinner when upload button is clicked
   - [ ] After 1 second, change spinner to checkmark icon
   - [ ] Navigate to datasets list page after checkmark is shown
 
 - [ ] Verify Status Updates
   - [ ] Confirm realtime subscription on datasets list page works correctly
-  - [ ] Ensure status badges update automatically (uploading → processing → uploaded)
+  - [ ] Ensure status badges update automatically (uploading â†’ processing â†’ uploaded)
 
 ### Phase 2: Dataset Detail Page - Download Functionality
 - [ ] Implement Download Buttons
@@ -1453,7 +1673,7 @@
 - [ ] Fetch Alignment Data
   - [ ] Query `dataset_column_presence` table
   - [ ] Join with `dimensions` table to get dimension names
-  - [ ] Transform data into mapping format (original → matched)
+  - [ ] Transform data into mapping format (original â†’ matched)
 
 - [ ] Display Mapping
   - [ ] Render mapping table
@@ -1579,12 +1799,12 @@
 
 ---
 
-## Phase 23: Dataset UX Refinements - Initial Implementation ✅
+## Phase 23: Dataset UX Refinements - Initial Implementation âœ…
 
 ### Session: 2025-11-25 - Complete Dataset Management UI (Part 1)
 
 ### Phase 1-2: Upload & Download (Already Complete)
-- [x] Upload button loading states (spinner → checkmark → navigate)
+- [x] Upload button loading states (spinner â†’ checkmark â†’ navigate)
 - [x] Download buttons for raw and aligned datasets
 - [x] Signed URLs from Supabase Storage
 
@@ -1646,7 +1866,7 @@
 ### Session: 2025-11-25 - Polish and Fix Dataset Management UI
 
 ### Upload Navigation Fix
-- [ ] Fix 3-step upload navigation (upload → processing → complete)
+- [ ] Fix 3-step upload navigation (upload â†’ processing â†’ complete)
 - [ ] Navigate immediately after Edge Function call starts
 - [ ] Show real-time status updates on datasets page
 - [ ] Remove 1-second delay before navigation
@@ -1713,7 +1933,7 @@
 
 ---
 
-## Phase 25: Link Existing Tree to Dataset ✅
+## Phase 25: Link Existing Tree to Dataset âœ…
 
 ### Session: 2025-11-26 - Tree Association Enhancement
 
@@ -1764,7 +1984,7 @@
 
 ---
 
-## Phase 26: Dataset Selector for Table Visualizer ✅
+## Phase 26: Dataset Selector for Table Visualizer âœ…
 
 ### Session: 2025-11-26 - Table Visualizer Enhancement
 
@@ -1775,7 +1995,7 @@
     - [x] File name
     - [x] Insurance company
     - [x] Country
-    - [x] Size (rows × columns)
+    - [x] Size (rows Ã— columns)
   - [x] "Load Dataset" button with loading states
   - [x] Downloads raw CSV from Supabase storage
   - [x] Converts blob to File object
@@ -1812,7 +2032,7 @@
 
 ---
 
-## Phase 27: Table Visualizer State Caching ✅
+## Phase 27: Table Visualizer State Caching âœ…
 
 ### Session: 2025-11-26 - Persistent State Management
 
@@ -1833,10 +2053,10 @@
 
 ### State Management Overhaul
 - [x] Replaced local useState with persisted atoms
-  - [x] selectedTreeId → tableVisualizerTreeIdAtom
-  - [x] activeTab → tableVisualizerActiveTabAtom
-  - [x] claimsWithResults → tableVisualizerClaimsWithResultsAtom
-  - [x] validation → tableVisualizerValidationAtom
+  - [x] selectedTreeId â†’ tableVisualizerTreeIdAtom
+  - [x] activeTab â†’ tableVisualizerActiveTabAtom
+  - [x] claimsWithResults â†’ tableVisualizerClaimsWithResultsAtom
+  - [x] validation â†’ tableVisualizerValidationAtom
   - [x] Added fileMetadata atom for file info
 - [x] Smart processor initialization
   - [x] useEffect recreates processor for cached tree on mount
@@ -1878,14 +2098,14 @@
 ## Current Status
 
 **Total Tasks Completed:**
-- Phase 23: 29/29 (100%) ✅
-- Phase 24 Part 1: 9/9 (100%) ✅
-- Phase 24 Part 2: 14/14 (100%) ✅
-- Phase 25: 4/4 (100%) ✅
-- Phase 26: 3/3 (100%) ✅
-- Phase 27: 7/7 (100%) ✅
+- Phase 23: 29/29 (100%) âœ…
+- Phase 24 Part 1: 9/9 (100%) âœ…
+- Phase 24 Part 2: 14/14 (100%) âœ…
+- Phase 25: 4/4 (100%) âœ…
+- Phase 26: 3/3 (100%) âœ…
+- Phase 27: 7/7 (100%) âœ…
 
-**Current Phase:** Phase 27 - COMPLETE ✅
+**Current Phase:** Phase 27 - COMPLETE âœ…
 
 ### Phase 23 Statistics (COMMITTED: 24a69c8)
 - **Commits This Phase:** 1
@@ -1931,36 +2151,36 @@
 - **New Atoms:** 5 persisted atoms with localStorage
 - **Key Achievement:** Complete state persistence across navigation and refresh
 
-### Phase 24 Part 1 Completed Features ✅
-1. ✅ Data Preview moved before Column Alignment
-2. ✅ Data Preview reduced to 5 rows
-3. ✅ Rich table styling for Data Preview (alternating rows, borders)
-4. ✅ Download button hover effects (scale + shadow)
-5. ✅ Upload button flow fixed (spinner → tick → navigate)
-6. ✅ Dataset appears after upload navigation
-7. ✅ Added alignment_mapping JSONB column to database
-8. ✅ Edge Function stores alignment mapping
-9. ✅ TypeScript types updated for alignment mapping
+### Phase 24 Part 1 Completed Features âœ…
+1. âœ… Data Preview moved before Column Alignment
+2. âœ… Data Preview reduced to 5 rows
+3. âœ… Rich table styling for Data Preview (alternating rows, borders)
+4. âœ… Download button hover effects (scale + shadow)
+5. âœ… Upload button flow fixed (spinner â†’ tick â†’ navigate)
+6. âœ… Dataset appears after upload navigation
+7. âœ… Added alignment_mapping JSONB column to database
+8. âœ… Edge Function stores alignment mapping
+9. âœ… TypeScript types updated for alignment mapping
 
-### Phase 24 Part 2 Completed Features ✅
-1. ✅ Fetch all dimensions for dropdown options
-2. ✅ Create state for edit mode and editable alignment
-3. ✅ Build alignment table with original columns + dropdowns
-4. ✅ Add pagination (10 rows per page)
-5. ✅ Style table with alternating row colors
-6. ✅ Implement Edit/Save/Cancel mode
-7. ✅ Add duplicate dimension validation
-8. ✅ Implement save functionality to update database
-9. ✅ Create regenerate-aligned-dataset Edge Function
-10. ✅ Implement aligned CSV regeneration on save
-11. ✅ Add refresh button to Data Preview
-12. ✅ Sort columns alphabetically in both sections
-13. ✅ Add cache-busting for fresh downloads
-14. ✅ Add change tracking to disable Save when no changes
+### Phase 24 Part 2 Completed Features âœ…
+1. âœ… Fetch all dimensions for dropdown options
+2. âœ… Create state for edit mode and editable alignment
+3. âœ… Build alignment table with original columns + dropdowns
+4. âœ… Add pagination (10 rows per page)
+5. âœ… Style table with alternating row colors
+6. âœ… Implement Edit/Save/Cancel mode
+7. âœ… Add duplicate dimension validation
+8. âœ… Implement save functionality to update database
+9. âœ… Create regenerate-aligned-dataset Edge Function
+10. âœ… Implement aligned CSV regeneration on save
+11. âœ… Add refresh button to Data Preview
+12. âœ… Sort columns alphabetically in both sections
+13. âœ… Add cache-busting for fresh downloads
+14. âœ… Add change tracking to disable Save when no changes
 
 ---
 
-## Phase 24 Part 2: Editable Alignment Mapping Table ✅
+## Phase 24 Part 2: Editable Alignment Mapping Table âœ…
 
 ### Session: 2025-11-26 - Complete Editable Alignment with CSV Regeneration
 
@@ -2065,7 +2285,7 @@
 5. **Alphabetical Sorting**: Improves UX by making columns easy to find in both tables
 
 ### Bug Fixes
-1. Fixed Select component import path (utils/cn → utils)
+1. Fixed Select component import path (utils/cn â†’ utils)
 2. Fixed refresh button not clickable (flex layout issue)
 3. Fixed preview showing old data after save (browser caching)
 4. Fixed validation triggering when no changes made (hasChanges check)
@@ -2078,15 +2298,15 @@
 
 ## Next Steps (Priority Order)
 
-1. [x] Fix preview scrollbar issue (UI bug) ✅
-2. [x] Commit UI fixes ✅
-3. [x] Create CLAUDE.md documentation ✅
-4. [x] Build ScoreCard component module ✅
-5. [x] Build Visualize Trace page with scoring ✅ (merged into Decision Trees)
-6. [x] Build Table Visualizer page with CSV upload ✅
-7. [x] Implement Medical/Motor theme variants ✅
-8. [x] Add Analytics tab with probability scaling ✅
-9. [x] Complete Phase 23 Dataset UX Refinements ✅
+1. [x] Fix preview scrollbar issue (UI bug) âœ…
+2. [x] Commit UI fixes âœ…
+3. [x] Create CLAUDE.md documentation âœ…
+4. [x] Build ScoreCard component module âœ…
+5. [x] Build Visualize Trace page with scoring âœ… (merged into Decision Trees)
+6. [x] Build Table Visualizer page with CSV upload âœ…
+7. [x] Implement Medical/Motor theme variants âœ…
+8. [x] Add Analytics tab with probability scaling âœ…
+9. [x] Complete Phase 23 Dataset UX Refinements âœ…
 10. [ ] Complete Phase 24 Dataset UX Enhancements
 11. [ ] Add error boundaries and loading states
 12. [ ] Add DB export/import functionality
@@ -2240,7 +2460,7 @@
 
 #### Implementation Progress
 
-**Phase 28.1: Sidebar Profile Section** ✅
+**Phase 28.1: Sidebar Profile Section** âœ…
 - [x] Moved user profile to sidebar footer
 - [x] Display user avatar with initials
 - [x] Display user name (from email prefix)
@@ -2248,7 +2468,7 @@
 - [x] Keep Sign Out button functional
 - [x] Removed profile avatar from Header
 
-**Phase 28.2: Header Updates** ✅
+**Phase 28.2: Header Updates** âœ…
 - [x] Removed notification bell button
 - [x] Created uiThemeAtom ('light' | 'dark') with localStorage
 - [x] Updated ThemeProvider to apply theme class to documentElement
@@ -2258,7 +2478,7 @@
 - [x] Fixed theme-responsive colors for all layout components
 - [x] Fixed invisible text in both themes
 
-**Phase 28.3: Remove Tabs & Add View Toggle** ✅
+**Phase 28.3: Remove Tabs & Add View Toggle** âœ…
 - [x] Removed tabs (All Trees, Claim Form, Visualization)
 - [x] Created ViewModeToggle component
 - [x] Added treeViewModeAtom, treeSearchQueryAtom state atoms
@@ -2266,7 +2486,7 @@
 - [x] Updated page description to "Manage logic flows and claim evaluations"
 - [x] Simplified page layout - trees display only
 
-**Phase 28.4: Search Functionality** ✅
+**Phase 28.4: Search Functionality** âœ…
 - [x] Created SearchInput component with debouncing (300ms)
 - [x] Added search icon and clear button
 - [x] Implemented search logic with useMemo filtering
@@ -2274,7 +2494,7 @@
 - [x] Empty state for no search results
 - [x] Auto-resets pagination on search
 
-**Phase 28.5: List/Table Mode Implementation** ✅
+**Phase 28.5: List/Table Mode Implementation** âœ…
 - [x] Created TreeActionsMenu component
 - [x] Created TreeStatusDot component
 - [x] Built table layout with all columns (Name, Type, Complexity, Last Edited, Actions)
@@ -2283,7 +2503,7 @@
 - [x] Delete confirmation flow in menu
 - [x] Full theme support for table and menu
 
-**Phase 28.6: Pagination** ✅
+**Phase 28.6: Pagination** âœ…
 - [x] Created Pagination component
 - [x] Added pagination state management (localStorage)
 - [x] Implemented page navigation (Previous/Next)
@@ -2291,7 +2511,7 @@
 - [x] Shows "X-Y of Z trees" with current page
 - [x] Only displays when items > pageSize (10)
 
-**Phase 28.7: Polish & Testing** ✅
+**Phase 28.7: Polish & Testing** âœ…
 - [x] Theme switching tested (light/dark modes)
 - [x] View mode switching tested (grid/list)
 - [x] All functionality working correctly
@@ -2318,17 +2538,17 @@
 **Total Lines Changed:** +1,168 insertions, -621 deletions
 
 **Key Features Delivered:**
-1. ✅ User profile in sidebar with avatar and sign out
-2. ✅ Light/Dark theme switcher with full UI support
-3. ✅ Grid/List view toggle for Decision Trees
-4. ✅ Live search with debouncing
-5. ✅ Table view with status dots and actions menu
-6. ✅ Pagination for both grid and list modes
-7. ✅ All theme-responsive colors and components
+1. âœ… User profile in sidebar with avatar and sign out
+2. âœ… Light/Dark theme switcher with full UI support
+3. âœ… Grid/List view toggle for Decision Trees
+4. âœ… Live search with debouncing
+5. âœ… Table view with status dots and actions menu
+6. âœ… Pagination for both grid and list modes
+7. âœ… All theme-responsive colors and components
 
 ---
 
-## Phase 29: Infinite Canvas Tree Visualizer ✅
+## Phase 29: Infinite Canvas Tree Visualizer âœ…
 
 ### Session: 2025-11-27 - React Flow Integration
 
@@ -2442,14 +2662,15 @@ Replaced the static tree-visualizer page with an infinite canvas using React Flo
 - InfiniteCanvas, ZoomToolbar, RootNode, DecisionNode, LeafNode, types.ts, treeToReactFlow.ts
 
 **Key Features Delivered:**
-1. ✅ Infinite canvas with pan/zoom (React Flow)
-2. ✅ Minimap for navigation
-3. ✅ Custom styled nodes (root, decision, leaf)
-4. ✅ Zoom toolbar with fit-to-screen reset
-5. ✅ Grid layout for multiple trees (3 columns)
-6. ✅ Full canvas mode (header integration)
-7. ✅ Collapsible sidebar with CMF branding
+1. âœ… Infinite canvas with pan/zoom (React Flow)
+2. âœ… Minimap for navigation
+3. âœ… Custom styled nodes (root, decision, leaf)
+4. âœ… Zoom toolbar with fit-to-screen reset
+5. âœ… Grid layout for multiple trees (3 columns)
+6. âœ… Full canvas mode (header integration)
+7. âœ… Collapsible sidebar with CMF branding
 
 ---
 
-_Last Updated: 2025-11-27 (Phase 29 Complete ✅ - Infinite Canvas Tree Visualizer)_
+_Last Updated: 2025-11-27 (Phase 29 Complete âœ… - Infinite Canvas Tree Visualizer)_
+

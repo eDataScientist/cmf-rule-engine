@@ -14,25 +14,48 @@ function getStorageClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-/**
- * Generate unique storage path with timestamp
- * @param userId - User ID for isolation
- * @param filename - Original filename
- * @param suffix - Optional suffix (e.g., '_aligned')
- * @returns Unique storage path: {userId}/{timestamp}_{filename}{suffix}
- */
-export function generateStoragePath(
-  userId: string,
-  filename: string,
-  suffix?: string
-): string {
+function buildVersionedFilename(filename: string, suffix?: string): string {
   const timestamp = Date.now();
   const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const finalFilename = suffix
     ? cleanFilename.replace(/(\.[^.]+)$/, `${suffix}$1`)
     : cleanFilename;
 
-  return `${userId}/${timestamp}_${finalFilename}`;
+  return `${timestamp}_${finalFilename}`;
+}
+
+/**
+ * Generate company-scoped storage path.
+ * @param companyId - Owning company id
+ * @param datasetId - Owning dataset id
+ * @param filename - Original filename
+ * @param suffix - Optional suffix (e.g., '_aligned')
+ * @returns Path: {company_id}/{dataset_id}/{timestamp}_{filename}
+ */
+export function generateStoragePath(
+  companyId: string,
+  datasetId: number | string,
+  filename: string,
+  suffix?: string
+): string {
+  const versionedFilename = buildVersionedFilename(filename, suffix);
+  return `${companyId}/${datasetId}/${versionedFilename}`;
+}
+
+/**
+ * Temporary helper for uploads before a dataset id exists.
+ * @param companyId - Owning company id
+ * @param filename - Original filename
+ * @param suffix - Optional suffix (e.g., '_aligned')
+ * @returns Path: {company_id}/pending/{timestamp}_{filename}
+ */
+export function generatePendingStoragePath(
+  companyId: string,
+  filename: string,
+  suffix?: string
+): string {
+  const versionedFilename = buildVersionedFilename(filename, suffix);
+  return `${companyId}/pending/${versionedFilename}`;
 }
 
 /**

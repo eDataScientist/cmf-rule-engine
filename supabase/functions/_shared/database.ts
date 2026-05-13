@@ -3,6 +3,8 @@ import type {
   CreateDatasetParams,
   UploadStatusUpdate,
   Dimension,
+  DimensionWithDetails,
+  ClaimCategory,
 } from "./types.ts";
 
 /**
@@ -47,7 +49,8 @@ function getUserClient(authHeader: string) {
 export async function createUploadStatus(
   userId: string,
   status: string,
-  authHeader: string
+  authHeader: string,
+  companyId: string
 ): Promise<string> {
   const supabase = getUserClient(authHeader);
 
@@ -55,6 +58,7 @@ export async function createUploadStatus(
     .from("dataset_upload_status")
     .insert({
       user_id: userId,
+      company_id: companyId,
       status,
     })
     .select()
@@ -117,6 +121,7 @@ export async function createDatasetRecord(
       raw_web_url: params.rawFilePath, // Storage key
       aligned_web_url: params.alignedFilePath, // Storage key
       user_id: params.userId,
+      company_id: params.companyId,
       uploaded_at: new Date().toISOString(),
       alignment_mapping: params.alignmentMapping,
       claim_category: params.claimCategory,
@@ -130,6 +135,37 @@ export async function createDatasetRecord(
   }
 
   return data.id;
+}
+
+/**
+ * Update dataset record fields after upload processing
+ */
+export async function updateDatasetRecord(
+  datasetId: number,
+  update: {
+    rawFilePath: string;
+    alignedFilePath: string;
+    arabicColumns: number;
+    alignmentMapping: Record<string, string>;
+  }
+): Promise<void> {
+  const supabase = getServiceRoleClient();
+
+  const { error } = await supabase
+    .from("datasets")
+    .update({
+      raw_file_path: update.rawFilePath,
+      aligned_file_path: update.alignedFilePath,
+      raw_web_url: update.rawFilePath,
+      aligned_web_url: update.alignedFilePath,
+      arabic_columns: update.arabicColumns,
+      alignment_mapping: update.alignmentMapping,
+    })
+    .eq("id", datasetId);
+
+  if (error) {
+    throw new Error(`Failed to update dataset: ${error.message}`);
+  }
 }
 
 /**
@@ -163,6 +199,30 @@ export async function getDimensions(): Promise<Map<string, number>> {
 }
 
 /**
+ * Get dimensions with full details filtered by claim category
+ * @param claimCategory - 'medical' or 'motor'
+ * @returns Array of dimensions with all details for AI prompt building
+ */
+export async function getDimensionsByCategory(
+  claimCategory: ClaimCategory
+): Promise<DimensionWithDetails[]> {
+  const supabase = getServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from("dimensions")
+    .select("id, name, display_name, category, data_type, is_critical, description, claim_category")
+    .eq("claim_category", claimCategory)
+    .order("category")
+    .order("name");
+
+  if (error) {
+    throw new Error(`Failed to fetch dimensions by category: ${error.message}`);
+  }
+
+  return data as DimensionWithDetails[];
+}
+
+/**
  * Create column presence records for matched dimensions
  * @param datasetId - Dataset ID
  * @param alignment - Alignment mapping (original -> matched dimension)
@@ -178,7 +238,7 @@ export async function createColumnPresenceRecords(
   // Collect unique dimension IDs from alignment
   const uniqueDimensionIds = new Set<number>();
 
-  Object.entries(alignment).forEach(([_originalColumn, matchedDimension]) => {
+  Object.entries(alignment).forEach(([, matchedDimension]) => {
     // Skip unmapped columns
     if (!matchedDimension || matchedDimension.trim() === "") {
       return;

@@ -28,6 +28,7 @@ export type Database = {
       }
       dataset_tree_associations: {
         Row: {
+          company_id: string
           created_at: string
           dataset_id: number
           evaluated_at: string
@@ -38,6 +39,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id: string
           created_at?: string
           dataset_id: number
           evaluated_at?: string
@@ -48,6 +50,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           dataset_id?: number
           evaluated_at?: string
@@ -60,6 +63,7 @@ export type Database = {
       }
       dataset_upload_status: {
         Row: {
+          company_id: string
           created_at: string
           dataset_id: number | null
           error_message: string | null
@@ -69,6 +73,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id: string
           created_at?: string
           dataset_id?: number | null
           error_message?: string | null
@@ -78,6 +83,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           dataset_id?: number | null
           error_message?: string | null
@@ -95,6 +101,7 @@ export type Database = {
           arabic_columns: number | null
           claim_category: string
           columns: number
+          company_id: string
           country: string
           created_at: string
           date_period: string | null
@@ -116,6 +123,7 @@ export type Database = {
           arabic_columns?: number | null
           claim_category?: string
           columns: number
+          company_id: string
           country: string
           created_at?: string
           date_period?: string | null
@@ -137,6 +145,7 @@ export type Database = {
           arabic_columns?: number | null
           claim_category?: string
           columns?: number
+          company_id?: string
           country?: string
           created_at?: string
           date_period?: string | null
@@ -189,6 +198,7 @@ export type Database = {
       }
       rule_sets: {
         Row: {
+          company_id: string
           created_at: string | null
           dataset_id: number | null
           id: string
@@ -200,6 +210,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          company_id: string
           created_at?: string | null
           dataset_id?: number | null
           id?: string
@@ -211,6 +222,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          company_id?: string
           created_at?: string | null
           dataset_id?: number | null
           id?: string
@@ -224,6 +236,7 @@ export type Database = {
       }
       trees: {
         Row: {
+          company_id: string
           created_at: string
           id: string
           name: string
@@ -232,6 +245,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          company_id: string
           created_at?: string
           id: string
           name: string
@@ -240,6 +254,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          company_id?: string
           created_at?: string
           id?: string
           name?: string

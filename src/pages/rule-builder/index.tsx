@@ -9,6 +9,7 @@ import { OperatorsPanel } from './components/OperatorsPanel';
 import { useDatasetDimensions } from './hooks/useDatasetDimensions';
 import { useRuleSetLoad } from './hooks/useRuleSetLoad';
 import { useRuleAutoSave } from './hooks/useRuleAutoSave';
+import { useAuth } from '@/lib/auth/context';
 import { fullCanvasModeAtom, headerBreadcrumbsAtom, headerActionsAtom } from '@/store/atoms/header';
 import { ruleBuilderDatasetIdAtom, ruleCountAtom } from '@/store/atoms/ruleBuilder';
 
@@ -55,11 +56,13 @@ export default function RuleBuilder() {
     }
   }, [datasetId, setDatasetId]);
 
+  const { profile } = useAuth();
+
   // Load existing ruleset for this dataset
   const { loading: loadingRuleset, error: loadError, hasLoaded } = useRuleSetLoad(datasetId || 0);
 
   // Auto-save when rules change (pass hasLoaded to prevent saving during initial load)
-  const { saveStatus } = useRuleAutoSave(datasetId || 0, hasLoaded);
+  const { saveStatus } = useRuleAutoSave(datasetId || 0, hasLoaded, profile?.company_id || '');
 
   // Fetch dimensions when dataset changes
   useDatasetDimensions(datasetId);

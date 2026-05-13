@@ -112,7 +112,7 @@ export function TreeForm({ datasetContext: _datasetContext }: TreeFormProps) {
     }
 
     try {
-      await save(name, treeType, structureToSave, _datasetContext?.id);
+      await save(name, treeType, structureToSave, undefined, _datasetContext?.id);
       setShowSaveDialog(false);
       navigate('/review-trees');
     } catch {

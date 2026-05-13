@@ -22,7 +22,7 @@ interface UseRuleAutoSaveResult {
  * @param datasetId - The dataset ID to save rules for
  * @param hasLoaded - Flag from useRuleSetLoad indicating initial load is complete
  */
-export function useRuleAutoSave(datasetId: number, hasLoaded: boolean): UseRuleAutoSaveResult {
+export function useRuleAutoSave(datasetId: number, hasLoaded: boolean, companyId: string): UseRuleAutoSaveResult {
   const [rules] = useAtom(ruleBuilderRulesAtom);
   const [saveStatus, setSaveStatus] = useAtom(ruleBuilderSaveStatusAtom);
   const [lastSavedAt, setLastSavedAt] = useAtom(ruleBuilderLastSavedAtAtom);
@@ -46,18 +46,18 @@ export function useRuleAutoSave(datasetId: number, hasLoaded: boolean): UseRuleA
   }, [datasetId]);
 
   const save = useCallback(async () => {
-    if (!datasetId) return;
+    if (!datasetId || !companyId) return;
 
     setSaveStatus('saving');
     try {
-      await upsertRuleset(datasetId, rules);
+      await upsertRuleset(datasetId, rules, companyId);
       setSaveStatus('saved');
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Failed to save ruleset:', error);
       setSaveStatus('error');
     }
-  }, [datasetId, rules, setSaveStatus, setLastSavedAt]);
+  }, [datasetId, rules, companyId, setSaveStatus, setLastSavedAt]);
 
   // Save when rules change (but only after initial load is complete)
   useEffect(() => {

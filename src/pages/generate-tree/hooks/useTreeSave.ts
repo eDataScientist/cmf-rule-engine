@@ -10,15 +10,26 @@ export function useTreeSave() {
   const setTrees = useSetAtom(treesAtom);
 
   const save = useCallback(
-    async (name: string, treeType: TreeType, structure: Tree['structure'], datasetId?: number) => {
+    async (
+      name: string,
+      treeType: TreeType,
+      structure: Tree['structure'],
+      companyId?: string,
+      datasetId?: number
+    ) => {
       setIsSaving(true);
       setError(null);
 
       try {
+        if (!companyId) {
+          throw new Error('Company is required to save a tree');
+        }
+
         const newTree = await createTree({
           id: crypto.randomUUID(),
           name,
           treeType,
+          companyId,
           structure,
         });
 

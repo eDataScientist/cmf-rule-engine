@@ -14,7 +14,9 @@ export interface DatasetMetadata {
   country: string;
   email: string;
   userId: string;
+  companyId: string;
   claimCategory: ClaimCategory;
+  granularity: DatasetGranularity;
 }
 
 // DataPreview API response
@@ -24,7 +26,7 @@ export interface DataPreviewResponse {
     columns: number;
   };
   column_names: string[];
-  sample: Record<string, any>[];
+  sample: Record<string, unknown>[];
 }
 
 // N8N alignment response
@@ -56,6 +58,7 @@ export interface CreateDatasetParams {
   rawFilePath: string;
   alignedFilePath: string;
   userId: string;
+  companyId: string;
   alignmentMapping: Record<string, string>; // Original column name -> Dimension name
   claimCategory: ClaimCategory;
   granularity: DatasetGranularity;
@@ -79,4 +82,27 @@ export interface Dimension {
   id: number;
   name: string;
   claim_category: ClaimCategory;
+}
+
+// Dimension with full details for AI alignment
+export interface DimensionWithDetails {
+  id: number;
+  name: string;
+  display_name: string;
+  category: string;
+  data_type: string;
+  is_critical: boolean;
+  description: string;
+  claim_category: ClaimCategory;
+}
+
+// AI Alignment request payload
+export interface AIAlignmentRequest {
+  preview_data: DataPreviewResponse;
+  claim_category: ClaimCategory;
+}
+
+// AI Alignment response (same as N8N for compatibility)
+export interface AIAlignmentResponse {
+  alignment: Record<string, string>;
 }

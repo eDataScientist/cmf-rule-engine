@@ -4,6 +4,7 @@ import { useSetAtom } from 'jotai';
 import { ArrowLeft, Save, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getDatasets, type DatasetWithStatus } from '@/lib/db/operations';
+import { getCompanies } from '@/lib/db/admin-operations';
 import { TreeInput } from './components/TreeInput';
 import { PreviewPane } from './components/PreviewPane';
 import { LeftPanel } from './components/LeftPanel';
@@ -59,6 +60,8 @@ export default function GenerateTree() {
   const navigationDataset = (location.state as any)?.fromDataset as DatasetContext | undefined;
 
   // State
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [datasets, setDatasets] = useState<DatasetWithStatus[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(navigationDataset?.id ?? null);
   const [loading, setLoading] = useState(true);
@@ -133,14 +136,18 @@ export default function GenerateTree() {
   );
 
   const structureToSave = processedTrees ?? parsed;
-  const canSave = Boolean(isValid && structureToSave && structureToSave.length > 0);
+  const canSave = Boolean(isValid && structureToSave && structureToSave.length > 0 && selectedCompanyId);
 
   async function loadDatasets() {
     try {
-      const data = await getDatasets();
-      setDatasets(data);
+      const [datasetData, companyData] = await Promise.all([
+        getDatasets(),
+        getCompanies(),
+      ]);
+      setDatasets(datasetData);
+      setCompanies(companyData);
     } catch (err) {
-      console.error('Failed to load datasets:', err);
+      console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
@@ -160,7 +167,7 @@ export default function GenerateTree() {
   const handleLoadSample = () => setInput(SAMPLE_TREE);
 
   const handleSave = async (name: string) => {
-    if (!structureToSave) return;
+    if (!structureToSave || !selectedCompanyId) return;
 
     const structureError = validateTreeStructure(structureToSave);
     if (structureError) {
@@ -169,7 +176,7 @@ export default function GenerateTree() {
     }
 
     try {
-      await save(name, treeType, structureToSave, datasetContext?.id);
+      await save(name, treeType, structureToSave, selectedCompanyId, datasetContext?.id);
       setShowSaveDialog(false);
       navigate('/review-trees');
     } catch {
@@ -229,6 +236,9 @@ export default function GenerateTree() {
     <div className="flex h-full" style={{ backgroundColor: '#09090b' }}>
       {/* Left Panel - Configuration */}
       <LeftPanel
+        companies={companies}
+        selectedCompanyId={selectedCompanyId}
+        onCompanyChange={setSelectedCompanyId}
         datasets={datasets}
         selectedDatasetId={selectedDatasetId}
         onDatasetChange={setSelectedDatasetId}

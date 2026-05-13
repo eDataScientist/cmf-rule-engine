@@ -81,6 +81,42 @@ export async function downloadAlignedDataset(filePath: string, bustCache: boolea
   return downloadFile('aligned-datasets', filePath, bustCache);
 }
 
+function buildVersionedFilename(filename: string, suffix?: string): string {
+  const timestamp = Date.now();
+  const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const finalFilename = suffix
+    ? cleanFilename.replace(/(\.[^.]+)$/, `${suffix}$1`)
+    : cleanFilename;
+  return `${timestamp}_${finalFilename}`;
+}
+
+/**
+ * Generate company-scoped storage path.
+ * Format: {company_id}/{dataset_id}/{timestamp}_{filename}
+ */
+export function generateStoragePath(
+  companyId: string,
+  datasetId: number | string,
+  filename: string,
+  suffix?: string
+): string {
+  const versionedFilename = buildVersionedFilename(filename, suffix);
+  return `${companyId}/${datasetId}/${versionedFilename}`;
+}
+
+/**
+ * Generate temporary path before a dataset id exists.
+ * Format: {company_id}/pending/{timestamp}_{filename}
+ */
+export function generatePendingStoragePath(
+  companyId: string,
+  filename: string,
+  suffix?: string
+): string {
+  const versionedFilename = buildVersionedFilename(filename, suffix);
+  return `${companyId}/pending/${versionedFilename}`;
+}
+
 /**
  * Trigger browser download of a blob
  * @param blob - File blob

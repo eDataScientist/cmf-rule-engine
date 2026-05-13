@@ -18,6 +18,7 @@ export async function createTree(tree: Omit<Tree, 'createdAt'>): Promise<Tree> {
       tree_type: tree.treeType,
       structure: tree.structure as any,
       user_id: user.id,
+      company_id: tree.companyId,
     })
     .select()
     .single();
@@ -76,6 +77,7 @@ function rowToTree(row: any): Tree {
     id: row.id,
     name: row.name,
     treeType: row.tree_type as TreeType,
+    companyId: row.company_id,
     structure: row.structure as Tree['structure'],
     createdAt: new Date(row.created_at),
   };
@@ -98,6 +100,7 @@ export interface Dataset {
   uploadedAt: string | null;
   createdAt: string;
   userId: string | null;
+  companyId: string;
   alignmentMapping: Record<string, string> | null;
   claimCategory: ClaimCategory;
   granularity: DatasetGranularity;
@@ -232,6 +235,7 @@ function rowToDatasetWithStatus(row: any): DatasetWithStatus {
     uploadedAt: row.uploaded_at,
     createdAt: row.created_at,
     userId: row.user_id,
+    companyId: row.company_id,
     alignmentMapping: row.alignment_mapping,
     claimCategory: row.claim_category as ClaimCategory,
     granularity: row.granularity as DatasetGranularity,
@@ -425,6 +429,7 @@ export interface RuleSet {
   createdAt: string;
   updatedAt: string;
   userId: string;
+  companyId: string;
 }
 
 export interface DatasetWithRuleset extends Dataset {
@@ -441,7 +446,8 @@ export interface DatasetWithRuleset extends Dataset {
  */
 export async function upsertRuleset(
   datasetId: number,
-  rules: any[]
+  rules: any[],
+  companyId: string
 ): Promise<RuleSet> {
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -453,11 +459,12 @@ export async function upsertRuleset(
     .from('rule_sets')
     .upsert({
       dataset_id: datasetId,
+      company_id: companyId,
       user_id: user.id,
       rules: rules,
-      name: `Ruleset for Dataset ${datasetId}`, // Auto-generated name
+      name: `Ruleset for Dataset ${datasetId}`,
     }, {
-      onConflict: 'dataset_id,user_id'
+      onConflict: 'dataset_id,company_id'
     })
     .select()
     .single();
@@ -474,17 +481,10 @@ export async function upsertRuleset(
  * Returns null if no ruleset exists
  */
 export async function getRulesetForDataset(datasetId: number): Promise<RuleSet | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
   const { data, error } = await supabase
     .from('rule_sets')
     .select('*')
     .eq('dataset_id', datasetId)
-    .eq('user_id', user.id)
     .maybeSingle();
 
   if (error) {
@@ -499,12 +499,6 @@ export async function getRulesetForDataset(datasetId: number): Promise<RuleSet |
  * Used by Rule Manager page to show dataset cards
  */
 export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return [];
-  }
-
   const { data, error } = await supabase
     .from('datasets')
     .select(`
@@ -515,7 +509,6 @@ export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
         last_edited_at
       )
     `)
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -547,6 +540,7 @@ export async function getDatasetsWithRulesets(): Promise<DatasetWithRuleset[]> {
       uploadedAt: row.uploaded_at,
       createdAt: row.created_at,
       userId: row.user_id,
+      companyId: row.company_id,
       alignmentMapping: row.alignment_mapping,
       claimCategory: row.claim_category as ClaimCategory,
       granularity: row.granularity as DatasetGranularity,
@@ -566,5 +560,6 @@ function rowToRuleSet(row: any): RuleSet {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     userId: row.user_id,
+    companyId: row.company_id,
   };
 }

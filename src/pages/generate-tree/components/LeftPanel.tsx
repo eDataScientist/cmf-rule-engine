@@ -1,9 +1,14 @@
-import { Database, X } from 'lucide-react';
+import { Database, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { TypeSelector } from './TypeSelector';
 import type { TreeType } from '@/lib/types/tree';
 import type { DatasetWithStatus } from '@/lib/db/operations';
+
+interface Company {
+  id: string;
+  name: string;
+}
 
 interface DatasetContext {
   id: number;
@@ -13,6 +18,9 @@ interface DatasetContext {
 }
 
 interface LeftPanelProps {
+  companies: Company[];
+  selectedCompanyId: string | null;
+  onCompanyChange: (id: string | null) => void;
   datasets: DatasetWithStatus[];
   selectedDatasetId: number | null;
   onDatasetChange: (id: number | null) => void;
@@ -25,6 +33,9 @@ interface LeftPanelProps {
 }
 
 export function LeftPanel({
+  companies,
+  selectedCompanyId,
+  onCompanyChange,
   datasets,
   selectedDatasetId,
   onDatasetChange,
@@ -50,6 +61,28 @@ export function LeftPanel({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-6">
+          {/* Company Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2" style={{ color: '#fafafa' }}>
+              <Building2 className="h-4 w-4" style={{ color: '#8b5cf6' }} />
+              Company
+            </label>
+            <p className="text-xs" style={{ color: '#71717a' }}>
+              Select the company this tree belongs to
+            </p>
+            <Select
+              value={selectedCompanyId ?? ''}
+              onChange={(e) => onCompanyChange(e.target.value || null)}
+              options={[
+                { value: '', label: '(Select a company)' },
+                ...companies.map(c => ({
+                  value: c.id,
+                  label: c.name
+                }))
+              ]}
+            />
+          </div>
+
           {/* Dataset Selection */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: '#fafafa' }}>

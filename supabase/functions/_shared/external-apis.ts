@@ -1,19 +1,20 @@
 import type {
   DataPreviewResponse,
-  N8nAlignmentResponse,
   ArabicCheckResponse,
+  ClaimCategory,
+  AIAlignmentResponse,
 } from "./types.ts";
 
 const DATA_PREVIEW_URL = "https://data-preview-376890531459.asia-south1.run.app";
 const ARABIC_CHECK_URL = "https://data-language-processor-534363377036.me-central1.run.app/api/stats";
 
-// N8N URL will be environment variable
-const getN8nAlignmentUrl = () => {
-  const url = Deno.env.get("N8N_ALIGNMENT_WEBHOOK_URL");
-  if (!url) {
-    throw new Error("N8N_ALIGNMENT_WEBHOOK_URL environment variable not set");
+// Get AI alignment edge function URL
+const getAIAlignmentUrl = () => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!supabaseUrl) {
+    throw new Error("SUPABASE_URL environment variable not set");
   }
-  return url;
+  return `${supabaseUrl}/functions/v1/ai-column-alignment`;
 };
 
 /**
@@ -100,25 +101,35 @@ export async function callDataPreviewAPI(
 }
 
 /**
- * Call N8N alignment webhook to get column mapping
+ * Call AI alignment edge function to get column mapping
+ * Uses Gemini API with dynamic dimension loading based on claim category
  * @param previewData - Dataset preview data
+ * @param claimCategory - 'medical' or 'motor' to load appropriate dimensions
+ * @param authHeader - Authorization header for authenticated request
  * @returns Alignment mapping from original to matched columns
  */
-export async function callN8nAlignment(
-  previewData: DataPreviewResponse
-): Promise<N8nAlignmentResponse> {
+export async function callAIAlignment(
+  previewData: DataPreviewResponse,
+  claimCategory: ClaimCategory,
+  authHeader: string
+): Promise<AIAlignmentResponse> {
   return retryWithBackoff(async () => {
-    const response = await fetch(getN8nAlignmentUrl(), {
+    const response = await fetch(getAIAlignmentUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": authHeader,
       },
-      body: JSON.stringify({ preview_data: previewData }),
+      body: JSON.stringify({
+        preview_data: previewData,
+        claim_category: claimCategory,
+      }),
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       throw new Error(
-        `N8N alignment API failed: ${response.status} ${response.statusText}`
+        `AI alignment API failed: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
@@ -126,11 +137,11 @@ export async function callN8nAlignment(
 
     // Validate response structure
     if (!data?.alignment || typeof data.alignment !== "object") {
-      throw new Error("Invalid response from N8N alignment API");
+      throw new Error("Invalid response from AI alignment API");
     }
 
-    return data as N8nAlignmentResponse;
-  }, 3, 5000); // 3 retries, starting with 5s delay (AI can be slow)
+    return data as AIAlignmentResponse;
+  }, 3, 10000); // 3 retries, starting with 10s delay (Gemini can be slow)
 }
 
 /**

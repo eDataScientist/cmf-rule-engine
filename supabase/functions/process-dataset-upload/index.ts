@@ -5,7 +5,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { parseCSV, applyAlignment, generateCSV } from "../_shared/csv.ts";
 import {
   callDataPreviewAPI,
-  callN8nAlignment,
+  callAIAlignment,
   callArabicCheckAPI,
 } from "../_shared/external-apis.ts";
 import {
@@ -18,6 +18,7 @@ import {
   createUploadStatus,
   updateUploadStatus,
   createDatasetRecord,
+  updateDatasetRecord,
   getDimensions,
   createColumnPresenceRecords,
   deleteDataset,
@@ -42,7 +43,7 @@ function handleCors(req: Request): Response | null {
   return null;
 }
 
-// Validate request and return authenticated user
+// Validate request and return authenticated user + company context
 async function validateRequest(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -67,7 +68,25 @@ async function validateRequest(req: Request) {
     throw new Error("User not authenticated");
   }
 
-  return { user, authHeader };
+  const { data: profile, error: profileError } = await supabase
+    .from("user_profiles")
+    .select("company_id, is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error("User profile not found");
+  }
+
+  if (!profile.is_active) {
+    throw new Error("User account is deactivated");
+  }
+
+  if (!profile.company_id) {
+    throw new Error("User is not assigned to a company");
+  }
+
+  return { user, authHeader, companyId: profile.company_id as string };
 }
 
 // Parse and validate form data
@@ -149,12 +168,58 @@ async function processDatasetUpload(
     state.uploadStatusId = await createUploadStatus(
       metadata.userId,
       "uploading",
-      authHeader
+      authHeader,
+      metadata.companyId
     );
     console.log(`Upload status created: ${state.uploadStatusId}`);
 
-    console.log("Step 2: Uploading raw file to storage...");
-    const rawPath = generateStoragePath(metadata.userId, file.name);
+    console.log("Step 2: Calling DataPreview API...");
+    const previewData = await callDataPreviewAPI(file);
+    console.log(
+      `Preview data received: ${previewData.shape.rows} rows, ${previewData.shape.columns} columns`
+    );
+
+    console.log("Step 3: Calling AI alignment edge function...");
+    const { alignment } = await callAIAlignment(previewData, metadata.claimCategory, authHeader);
+    const matchedColumns = Object.values(alignment).filter(
+      (v) => v && v.trim() !== ""
+    ).length;
+    console.log(
+      `Alignment received: ${matchedColumns}/${Object.keys(alignment).length} columns matched`
+    );
+
+    console.log("Step 4: Creating initial dataset record...");
+    state.datasetId = await createDatasetRecord({
+      insuranceCompany: metadata.insuranceCompany,
+      country: metadata.country,
+      fileName: file.name,
+      rows: previewData.shape.rows,
+      columns: previewData.shape.columns,
+      arabicColumns: 0,
+      rawFilePath: "",
+      alignedFilePath: "",
+      userId: metadata.userId,
+      companyId: metadata.companyId,
+      alignmentMapping: alignment,
+      claimCategory: metadata.claimCategory,
+      granularity: metadata.granularity,
+    });
+    console.log(`Initial dataset record created: ${state.datasetId}`);
+    const datasetId = state.datasetId;
+
+    console.log("Step 5: Updating status to processing...");
+    await updateUploadStatus(
+      state.uploadStatusId,
+      { status: "processing", dataset_id: datasetId },
+      authHeader
+    );
+
+    console.log("Step 6: Uploading raw file to storage...");
+    const rawPath = generateStoragePath(
+      metadata.companyId,
+      datasetId,
+      file.name
+    );
     state.rawFilePath = await uploadToStorage(
       "raw-datasets",
       rawPath,
@@ -163,29 +228,7 @@ async function processDatasetUpload(
     );
     console.log(`Raw file uploaded: ${state.rawFilePath}`);
 
-    console.log("Step 3: Updating status to processing...");
-    await updateUploadStatus(
-      state.uploadStatusId,
-      { status: "processing" },
-      authHeader
-    );
-
-    console.log("Step 4: Calling DataPreview API...");
-    const previewData = await callDataPreviewAPI(file);
-    console.log(
-      `Preview data received: ${previewData.shape.rows} rows, ${previewData.shape.columns} columns`
-    );
-
-    console.log("Step 5: Calling N8N for AI alignment...");
-    const { alignment } = await callN8nAlignment(previewData);
-    const matchedColumns = Object.values(alignment).filter(
-      (v) => v && v.trim() !== ""
-    ).length;
-    console.log(
-      `Alignment received: ${matchedColumns}/${Object.keys(alignment).length} columns matched`
-    );
-
-    console.log("Step 6: Transforming CSV data...");
+    console.log("Step 7: Transforming CSV data...");
     const rawBlob = await downloadFromStorage("raw-datasets", state.rawFilePath);
     const rawContent = await rawBlob.text();
     const parsed = await parseCSV(rawContent);
@@ -195,8 +238,13 @@ async function processDatasetUpload(
       `CSV transformed: ${transformed.rows.length} rows, ${transformed.headers.length} aligned columns`
     );
 
-    console.log("Step 7: Uploading aligned file to storage...");
-    const alignedPath = generateStoragePath(metadata.userId, file.name, "_aligned");
+    console.log("Step 8: Uploading aligned file to storage...");
+    const alignedPath = generateStoragePath(
+      metadata.companyId,
+      datasetId,
+      file.name,
+      "_aligned"
+    );
     state.alignedFilePath = await uploadToStorage(
       "aligned-datasets",
       alignedPath,
@@ -205,7 +253,7 @@ async function processDatasetUpload(
     );
     console.log(`Aligned file uploaded: ${state.alignedFilePath}`);
 
-    console.log("Step 8: Calling ArabicCheck API...");
+    console.log("Step 9: Calling ArabicCheck API...");
     const alignedBlob = await downloadFromStorage(
       "aligned-datasets",
       state.alignedFilePath
@@ -216,33 +264,26 @@ async function processDatasetUpload(
     const arabicColumns = await callArabicCheckAPI(alignedFile);
     console.log(`Arabic columns detected: ${arabicColumns}`);
 
-    console.log("Step 9: Creating dataset record...");
-    state.datasetId = await createDatasetRecord({
-      insuranceCompany: metadata.insuranceCompany,
-      country: metadata.country,
-      fileName: file.name,
-      rows: previewData.shape.rows,
-      columns: previewData.shape.columns,
-      arabicColumns,
+    console.log("Step 10: Updating dataset record with final file paths...");
+    await updateDatasetRecord(datasetId, {
       rawFilePath: state.rawFilePath,
       alignedFilePath: state.alignedFilePath,
-      userId: metadata.userId,
+      arabicColumns,
       alignmentMapping: alignment,
-      claimCategory: metadata.claimCategory,
     });
-    console.log(`Dataset record created: ${state.datasetId}`);
+    console.log("Dataset record updated");
 
-    console.log("Step 10: Creating column presence records...");
+    console.log("Step 11: Creating column presence records...");
     const dimensions = await getDimensions();
-    await createColumnPresenceRecords(state.datasetId, alignment, dimensions);
+    await createColumnPresenceRecords(datasetId, alignment, dimensions);
     console.log(`Column presence records created`);
 
-    console.log("Step 11: Updating status to uploaded...");
+    console.log("Step 12: Updating status to uploaded...");
     await updateUploadStatus(
       state.uploadStatusId,
       {
         status: "uploaded",
-        dataset_id: state.datasetId,
+        dataset_id: datasetId,
       },
       authHeader
     );
@@ -251,7 +292,7 @@ async function processDatasetUpload(
     return {
       success: true,
       upload_status_id: state.uploadStatusId,
-      dataset_id: state.datasetId,
+      dataset_id: datasetId,
       matched_columns: matchedColumns,
       total_columns: Object.keys(alignment).length,
       alignment,
@@ -290,13 +331,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Validate request and authenticate user
-    const { user, authHeader } = await validateRequest(req);
+    const { user, authHeader, companyId } = await validateRequest(req);
 
     // Parse and validate form data
     const formData = await req.formData();
-    const { file, insuranceCompany, email, country, claimCategory } = validateFormData(formData);
+    const { file, insuranceCompany, email, country, claimCategory, granularity } = validateFormData(formData);
 
-    console.log(`Processing upload for user ${user.id}: ${file.name} (${claimCategory})`);
+    console.log(`Processing upload for user ${user.id}: ${file.name} (${claimCategory}, ${granularity})`);
 
     // Process dataset upload
     const result = await processDatasetUpload(
@@ -306,7 +347,9 @@ Deno.serve(async (req: Request) => {
         country,
         email,
         userId: user.id,
+        companyId,
         claimCategory,
+        granularity,
       },
       authHeader
     );

@@ -24,6 +24,7 @@ export interface Tree {
   id: string;
   name: string;
   treeType: TreeType;
+  companyId: string;
   structure: {
     title: string;
     root: TreeNode;

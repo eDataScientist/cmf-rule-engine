@@ -46,9 +46,13 @@ function DialogTrigger({ asChild, children }: DialogTriggerProps) {
   const { onOpenChange } = useDialog();
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      onClick: () => onOpenChange(true),
-    } as any);
+    const child = children as React.ReactElement<{ onClick?: React.MouseEventHandler }>;
+    return React.cloneElement(child, {
+      onClick: (event) => {
+        child.props.onClick?.(event);
+        onOpenChange(true);
+      },
+    });
   }
 
   return (
@@ -94,21 +98,27 @@ interface DialogContentProps {
 }
 
 function DialogContent({ className, children }: DialogContentProps) {
+  const { open } = useDialog();
+
+  if (!open) return null;
+
   return (
-    <>
-      <DialogOverlay />
-      <div
-        className={cn(
-          'fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2',
-          'bg-[var(--color-bg-panel)] border border-[var(--color-border-subtle)]',
-          'rounded-lg shadow-xl w-full max-w-lg p-6',
-          className
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </>
+    <DialogPortal>
+      <>
+        <DialogOverlay />
+        <div
+          className={cn(
+            'fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2',
+            'bg-[var(--color-bg-panel)] border border-[var(--color-border-subtle)]',
+            'rounded-lg shadow-xl w-full max-w-lg p-6',
+            className
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </>
+    </DialogPortal>
   );
 }
 
