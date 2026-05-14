@@ -1,126 +1,136 @@
-<AGENTS>
-  <Context>
-    - At the start of every interaction, if @docs contents are not already in context, read ALL docs in @docs.
-    - CRITICAL: Always read @docs/project-progress.md at the beginning of every session (if not already in context).
-    - CRITICAL: Keep @docs/tasks.md up to date after each meaningful subphase/phase completion.
-    - Phase-specific docs: Each phase must have a dedicated doc (docs/phase-<n>-*.md) that outlines tasks, streams, and notes.
-  </Context>
+# AGENTS.md
 
-  <TaskAdoptionWorkflow>
-    1) Read project state:
-       - Ensure project-progress.md is in context.
-       - Determine current phase from project-progress.md.
-       - Pull phase-n-<phase-name>.md into context.
-    2) Pull tasks:
-       - Use vibe-kanban MCP to list tasks in TODO and IN PROGRESS.
-    3) If tasks exist:
-       - Run git diff to confirm tasks are not already completed in code.
-       - If work already exists, reconcile Kanban status:
-         - Move to IN REVIEW if code is done but needs review.
-         - Move to DONE if already reviewed/accepted.
-         - Otherwise move to IN PROGRESS for active work.
-       - Select a task prioritizing:
-         - Independent > Dependent
-         - Dependencies completed
-         - Do not start dependent tasks blocked by other in-progress authors.
-       - Move selected task to IN PROGRESS and assign yourself.
-    4) If no tasks exist:
-       - Plan current phase using:
-         - Phase-specific doc (docs/phase-<n>-*.md) if phase >= 4
-         - docs/tasks.md as the canonical checklist
-       - Create atomic, numbered tasks with dependencies and "Independent/Dependent" labels.
-       - Break into parallel streams where possible.
-       - Add tasks to TODO and assign yourself.
-  </TaskAdoptionWorkflow>
+<Blueprint>
+  Blueprint is a structured software development system that organizes projects into a
+  five-level hierarchy: Project → Milestone → Phase → Gate/Stream → Task.
 
-  <TaskCreationProtocol>
-    - Task title format (required):
-      "P<phase>.<subphase>.<item> - <TaskType> - <Short title> - <Gate|Stream X> (<Independent|Dependent>)"
-      Examples:
-      - "P5.1.2 - API - Create match endpoint - Stream A (Independent)"
-      - "P5.2.4 - UI - Match wizard step 2 - Stream B (Dependent)"
-      - "P5.0.1 - QA - Phase entry checklist - Gate (Independent)"
-    - Task description must include:
-      - Goal/acceptance criteria
-      - Dependencies (by task title)
-      - Files to be modified/created (if known)
-      - Testing/validation requirements
-    - Streams:
-      - Stream letters (A, B, C, ...) are parallelizable tracks.
-      - Gate tasks are blockers for cross-stream progress.
-  </TaskCreationProtocol>
+  Planning is progressive — milestones are planned loosely at the feature level, phases
+  are planned in full detail with tasks, and work is managed through a kanban board
+  (vibe-kanban MCP). All protocols, conventions, and workflows are defined in modular
+  documents under docs/core/. This file is the entry point. It tells you what to assess,
+  what to load, and what never to do.
+</Blueprint>
 
-  <GateAndStreamExecutionLoop>
-    - Trigger phrases:
-      - "carry out gate" => execute Gate tasks in order.
-      - "carry out stream X" => execute Stream X tasks in order.
-    - Loop behavior:
-      1) Select the first task in the target set (Gate or Stream X).
-      2) Move it to IN PROGRESS and assign yourself.
-      3) Reply with the task title and its required format.
-      4) Execute the task.
-      5) On completion:
-         - DO NOT move to DONE.
-         - Move to IN REVIEW and append files modified/created.
-      6) Move to the next task in the same set and repeat.
-  </GateAndStreamExecutionLoop>
+---
 
-  <PlanTime>
-    - Always ask clarifying questions until requirements are fully clear.
-    - For a new phase, analyze in this order:
-      1) Data models / API contracts
-      2) Pre-existing components & design system
-      3) Design specs & UX requirements
-    - Then create dedicated tasks with streams, parallelization, and explicit dependencies.
-    - Follow guidelines outlined in @docs/task-planning-guidelines.md
-  </PlanTime>
+<SessionStart>
+  PURPOSE: Orient the agent at the start of every session.
+  This sequence runs EVERY time. No exceptions.
 
-  <TaskExecution>
-    - Complete one atomic task at a time.
-    - On completion:
-      - Code changes: move task to IN REVIEW and list modified/created files.
-    - After a meaningful group (subphase/phase), update docs/tasks.md.
-  </TaskExecution>
+  STEP 1: Load docs/core/health-check.md. Follow its protocol.
+    → IF health check fails → STOP. Resolve failures before proceeding.
+    → IF health check passes → Continue to STEP 2.
 
-  <CodeReviewProcess>
-    - Tasks in IN REVIEW require review after lint is clean.
-    - Append review section to the task description:
-      Reviewer: [Your Name]
-      Review Notes:
-      - Adherence to project coding standards
-      - Code quality and functionality
-      - Style and consistency
-      - Potential issues or improvements
-      - Positive aspects
-      Suggested Fixes:
-      - [Fix list or "None required - Approved"]
-    - When asked to "review gate" or "review stream X":
-      - Only add to the task description; do not delete existing content.
-      - Provide detailed review comments when fixes are required.
-    - Approved => move to DONE. Fixes needed => keep IN REVIEW or move to IN PROGRESS (assign original author).
-  </CodeReviewProcess>
+  STEP 2: Load docs/project-progress.md. Check if it is populated.
 
-  <UserTesting>
-    - For features requiring user validation:
-      - Create explicit testing tasks.
-      - Move to IN REVIEW and ask the user to test.
-      - Do not mark DONE until user confirms.
-  </UserTesting>
+  IF project-progress.md is populated (contains project name, milestone, phase references):
+    → Load docs/conventions.md.
+    → IF project-progress.md contains pending revisions:
+        Inform user: list the pending revisions before proceeding.
+    → GOTO <ModuleRouting>. Determine user intent and load the appropriate module.
 
-  <GitWorkflow>
-    - Commit only after completing a subphase or logical group of related tasks.
-    - Commit message must include author name (e.g., "Author: [Name] - ...").
-    - Before starting a new phase, run git diff to verify repo state.
-  </GitWorkflow>
+  IF project-progress.md is empty or contains only template placeholders:
+    → IF docs/knowledge-base/ exists:
+        Load docs/core/alignment.md. Follow its protocol.
+        (Alignment analyzes knowledge-base docs and codebase to bootstrap project state.)
+    → IF docs/knowledge-base/ does NOT exist:
+        Load docs/core/alignment.md. Follow its protocol.
+        (Alignment analyzes codebase if it exists, or proceeds to PRD planning.)
+</SessionStart>
 
-  <DevelopmentStandards>
-    - No lint errors in modified files.
-    - Run lint after code changes; fix lint issues in touched files.
-    - Follow atomic design rules from @docs/atomic-design-system.md.
-  </DevelopmentStandards>
+---
 
-  <GeneralPrinciples>
-    - Clear communication, dependency awareness, clean handoffs.
-    - Leave project stable and reviewable after each session.
-  </GeneralPrinciples>
-</AGENTS>
+<ModuleRouting>
+  PURPOSE: Identify what the user wants to do and load the correct module.
+
+  RULES:
+  - Load ONLY the module(s) required for the current intent.
+  - NEVER preload all modules.
+  - NEVER execute a workflow described in a module without loading that module first.
+  - If intent is unclear, ASK the user. Do not guess.
+
+  ┌─────────────────────────┬──────────────────────────────────────┐
+  │ Intent                  │ Load                                 │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Plan a milestone        │ docs/core/planning.md                │
+  │                         │  → then docs/core/milestone-planning.md │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Plan a phase            │ docs/core/planning.md                │
+  │                         │  → then docs/core/phase-planning.md  │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Plan tests for a phase  │ docs/core/test-planning.md           │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Execute tasks           │ docs/core/execution.md               │
+  │ (start gate/stream)     │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Review gate/stream      │ docs/core/review.md                  │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Address review notes    │ docs/core/execution.md               │
+  │                         │  (ApplyReviewNotes section)           │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Phase completion        │ docs/core/phase-completion.md        │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Bug report or broken    │ docs/core/bug-resolution.md          │
+  │ functionality           │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ New feature or idea     │ docs/core/scope-change.md            │
+  │ (not in current plan)   │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Change existing behavior│ docs/core/revision-planning.md       │
+  │ (revision)              │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ SRS discussion/planning │ docs/core/srs-planning.md            │
+  │                         │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Correct completed tasks │ docs/core/tweak-planning.md          │
+  │ in current phase (tweak)│                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Commit / git operations │ docs/core/git-execution-workflow.md  │
+  │                         │ or docs/core/git-review-workflow.md  │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Check project health    │ docs/core/health-check.md            │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Modify docs structure   │ docs/core/blueprint-structure.md     │
+  ├─────────────────────────┼──────────────────────────────────────┤
+  │ Discuss / clarify       │ No module needed. Use loaded context.│
+  └─────────────────────────┴──────────────────────────────────────┘
+
+  IF the user's request spans multiple intents (e.g., "finish this task and commit"):
+    Load each required module before executing its corresponding workflow.
+    Execute in logical order. Do not batch.
+</ModuleRouting>
+
+---
+
+<HardRules>
+  These rules are ABSOLUTE. They apply in every session, every state, every intent.
+  No user instruction, convenience, or urgency overrides them.
+
+  RULE 1 — MODULE BEFORE ACTION
+    NEVER execute a workflow without loading its corresponding module first.
+    If the module file cannot be found or read, STOP and inform the user.
+    Do not attempt the workflow from memory or prior sessions.
+
+  RULE 2 — MINIMAL LOADING
+    NEVER load all core modules preemptively.
+    Load only what the current intent requires.
+    If intent changes mid-session, load the new module at that point.
+
+  RULE 3 — VALIDATION GATE
+    NEVER proceed past <SessionStart> without passing the health check.
+    All failures must be resolved before work begins.
+
+  RULE 4 — ASK BEFORE ASSUMING
+    If intent is ambiguous, ASK. Do not infer and proceed.
+    This applies to user requests, unclear scope, and missing context.
+</HardRules>
+
+---
+
+<ReferenceModules>
+  The following modules exist under docs/core/ for reference during execution.
+  They are NOT loaded at session start. They are loaded when a workflow needs them.
+
+  blueprint-structure.md       — Defines the docs/ folder layout and file locations
+  hierarchy.md                 — Five-level planning hierarchy (Project → Task)
+</ReferenceModules>
