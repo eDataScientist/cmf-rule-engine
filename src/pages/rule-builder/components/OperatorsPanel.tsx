@@ -2,6 +2,7 @@ import { useAtom } from 'jotai';
 import { Code, Type, CircleSlash } from 'lucide-react';
 import { OperatorItem } from './OperatorItem';
 import { EffectSelector } from './EffectSelector';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import { OPERATOR_GROUPS } from '../utils/operators';
 import { ruleBuilderDatasetIdAtom } from '@/store/atoms/ruleBuilder';
 
@@ -13,6 +14,7 @@ const GROUP_CONFIG = {
 
 export function OperatorsPanel() {
   const [datasetId] = useAtom(ruleBuilderDatasetIdAtom);
+  const { canWrite } = useWriteAccess();
 
   return (
     <aside className="h-full border-l flex flex-col overflow-hidden" style={{ borderColor: '#27272a', backgroundColor: '#18181b' }}>
@@ -33,7 +35,7 @@ export function OperatorsPanel() {
             </span>
             <span className="text-[9px] text-red-400">(required)</span>
           </div>
-          <EffectSelector disabled={!datasetId} />
+          <EffectSelector disabled={!datasetId || !canWrite} title={!canWrite ? 'Read-only access for client users.' : undefined} />
         </div>
 
         {/* Divider */}
@@ -55,7 +57,7 @@ export function OperatorsPanel() {
                 </div>
                 <div className="space-y-0.5">
                   {operators.map((op) => (
-                    <OperatorItem key={op.symbol} operator={op} disabled={!datasetId} />
+                    <OperatorItem key={op.symbol} operator={op} disabled={!datasetId || !canWrite} />
                   ))}
                 </div>
               </div>
@@ -72,13 +74,15 @@ export function OperatorsPanel() {
           </div>
           <div className="flex gap-2 px-2">
             <button
-              disabled={!datasetId}
+              disabled={!datasetId || !canWrite}
+              title={!canWrite ? 'Read-only access for client users.' : undefined}
               className="flex-1 px-3 py-1.5 text-xs font-mono bg-zinc-800 text-zinc-300 rounded border border-zinc-700 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               AND
             </button>
             <button
-              disabled={!datasetId}
+              disabled={!datasetId || !canWrite}
+              title={!canWrite ? 'Read-only access for client users.' : undefined}
               className="flex-1 px-3 py-1.5 text-xs font-mono bg-zinc-800 text-zinc-300 rounded border border-zinc-700 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               OR

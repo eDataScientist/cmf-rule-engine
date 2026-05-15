@@ -11,6 +11,7 @@ interface TreeTableProps {
   onVisualize: (id: string) => void;
   onViewStructure: (id: string) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
 function countLeaves(node: TreeNode): number {
@@ -29,7 +30,7 @@ function getTreeStatus(tree: Tree): 'active' | 'inactive' {
   return daysSinceCreation <= 7 ? 'active' : 'inactive';
 }
 
-export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDeleting }: TreeTableProps) {
+export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDeleting, canWrite }: TreeTableProps) {
   return (
     <div className="rounded-lg border overflow-visible" style={{ borderColor: 'var(--color-border)' }}>
       <div className="w-full">
@@ -93,6 +94,7 @@ export function TreeTable({ trees, onDelete, onVisualize, onViewStructure, isDel
                     onViewStructure={onViewStructure}
                     onDelete={onDelete}
                     isDeleting={isDeleting}
+                    canWrite={canWrite}
                   />
                 </td>
               </tr>

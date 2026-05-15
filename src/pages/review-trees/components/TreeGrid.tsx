@@ -7,9 +7,10 @@ interface TreeGridProps {
   onVisualize: (id: string) => void;
   onViewStructure: (id: string) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
-export function TreeGrid({ trees, onDelete, onVisualize, onViewStructure, isDeleting }: TreeGridProps) {
+export function TreeGrid({ trees, onDelete, onVisualize, onViewStructure, isDeleting, canWrite }: TreeGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {trees.map((tree) => (
@@ -20,6 +21,7 @@ export function TreeGrid({ trees, onDelete, onVisualize, onViewStructure, isDele
           onVisualize={onVisualize}
           onViewStructure={onViewStructure}
           isDeleting={isDeleting}
+          canWrite={canWrite}
         />
       ))}
     </div>

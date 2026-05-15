@@ -8,6 +8,7 @@ interface TreeActionsMenuProps {
   onViewStructure: (id: string) => void;
   onDelete: (id: string) => void;
   isDeleting?: boolean;
+  canWrite?: boolean;
 }
 
 export function TreeActionsMenu({
@@ -15,7 +16,8 @@ export function TreeActionsMenu({
   onVisualize,
   onViewStructure,
   onDelete,
-  isDeleting
+  isDeleting,
+  canWrite = true
 }: TreeActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -91,18 +93,22 @@ export function TreeActionsMenu({
                   <Network className="h-4 w-4" />
                   View Structure
                 </button>
-                <div
-                  className="my-1"
-                  style={{ height: '1px', backgroundColor: 'var(--color-border)' }}
-                />
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-900/10 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
+                {canWrite && (
+                  <>
+                    <div
+                      className="my-1"
+                      style={{ height: '1px', backgroundColor: 'var(--color-border)' }}
+                    />
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-900/10 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </button>
+                  </>
+                )}
               </>
             ) : (
               <>

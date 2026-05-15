@@ -10,6 +10,7 @@ interface DatasetTableProps {
   sortConfig: { column: string; direction: 'asc' | 'desc' };
   onSort: (column: string) => void;
   onUploadClick: () => void;
+  canWrite?: boolean;
 }
 
 export default function DatasetTable({
@@ -19,6 +20,7 @@ export default function DatasetTable({
   sortConfig,
   onSort,
   onUploadClick,
+  canWrite = true,
 }: DatasetTableProps) {
   const getSortIcon = (column: string) => {
     if (sortConfig.column !== column) {
@@ -39,9 +41,9 @@ export default function DatasetTable({
           <Database className="h-12 w-12 text-zinc-600 mb-4" />
           <h3 className="text-lg font-medium text-zinc-300 mb-2">No datasets yet</h3>
           <p className="text-sm text-zinc-500 mb-4 max-w-sm">
-            Upload your first claims dataset to get started
+            {canWrite ? 'Upload your first claims dataset to get started' : 'No datasets available'}
           </p>
-          <Button onClick={onUploadClick}>Upload Dataset</Button>
+          {canWrite && <Button onClick={onUploadClick}>Upload Dataset</Button>}
         </div>
       </div>
     );
@@ -101,6 +103,7 @@ export default function DatasetTable({
                 dataset={dataset}
                 onDelete={onDelete}
                 isDeleting={deletingId === dataset.id}
+                canWrite={canWrite}
               />
             ))}
           </tbody>

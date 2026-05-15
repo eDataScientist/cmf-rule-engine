@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getDatasets, deleteDataset, type DatasetWithStatus } from '@/lib/db/operations';
 import { supabase } from '@/lib/db/supabase';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import DatasetTable from './components/DatasetTable';
 import UploadModal from './components/UploadModal';
 import { useDatasetSort } from './hooks/useDatasetSort';
@@ -13,6 +14,7 @@ export default function Datasets() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { canWrite } = useWriteAccess();
 
   const { sortedDatasets, sortConfig, handleSort } = useDatasetSort(datasets);
 
@@ -101,10 +103,12 @@ export default function Datasets() {
             </kbd>
           </div>
           {/* Upload button */}
-          <Button onClick={() => setUploadModalOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Dataset
-          </Button>
+          {canWrite && (
+            <Button onClick={() => setUploadModalOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Dataset
+            </Button>
+          )}
         </div>
       </div>
 
@@ -115,6 +119,7 @@ export default function Datasets() {
         sortConfig={sortConfig}
         onSort={handleSort}
         onUploadClick={() => setUploadModalOpen(true)}
+        canWrite={canWrite}
       />
 
       <UploadModal

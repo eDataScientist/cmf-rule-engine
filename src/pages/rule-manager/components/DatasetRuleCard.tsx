@@ -7,9 +7,10 @@ import type { DatasetWithRuleset } from '@/lib/db/operations';
 interface DatasetRuleCardProps {
   dataset: DatasetWithRuleset;
   onEdit: () => void;
+  canWrite?: boolean;
 }
 
-export function DatasetRuleCard({ dataset, onEdit }: DatasetRuleCardProps) {
+export function DatasetRuleCard({ dataset, onEdit, canWrite = true }: DatasetRuleCardProps) {
   const hasRuleset = dataset.ruleset !== null;
 
   return (
@@ -46,9 +47,15 @@ export function DatasetRuleCard({ dataset, onEdit }: DatasetRuleCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={onEdit} className="w-full">
-          {hasRuleset ? 'Edit Rules' : 'Create Rules'}
-        </Button>
+        {canWrite ? (
+          <Button onClick={onEdit} className="w-full">
+            {hasRuleset ? 'Edit Rules' : 'Create Rules'}
+          </Button>
+        ) : (
+          <div className="w-full text-center text-sm text-muted-foreground">
+            Read-only access
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

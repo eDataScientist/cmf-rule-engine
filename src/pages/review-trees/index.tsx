@@ -11,12 +11,14 @@ import { SearchInput } from './components/SearchInput';
 import { Pagination } from './components/Pagination';
 import { useTreeList } from './hooks/useTreeList';
 import { useTreeDelete } from './hooks/useTreeDelete';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import { treeViewModeAtom, treeSearchQueryAtom, treeCurrentPageAtom, treePageSizeAtom } from '@/store/atoms/trees';
 
 export default function ReviewTrees() {
   const navigate = useNavigate();
   const { trees, isLoading, error } = useTreeList();
   const { remove, isDeleting } = useTreeDelete();
+  const { canWrite } = useWriteAccess();
   const [viewMode, setViewMode] = useAtom(treeViewModeAtom);
   const [searchQuery, setSearchQuery] = useAtom(treeSearchQueryAtom);
   const [currentPage, setCurrentPage] = useAtom(treeCurrentPageAtom);
@@ -93,17 +95,19 @@ export default function ReviewTrees() {
                 onChange={setSearchQuery}
                 placeholder="Search trees..."
               />
-              <Button
-                onClick={() => navigate('/generate-tree')}
-                style={{
-                  backgroundColor: 'var(--color-foreground)',
-                  color: 'var(--color-background)'
-                }}
-                className="hover:opacity-90 transition-opacity whitespace-nowrap"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Tree
-              </Button>
+              {canWrite && (
+                <Button
+                  onClick={() => navigate('/generate-tree')}
+                  style={{
+                    backgroundColor: 'var(--color-foreground)',
+                    color: 'var(--color-background)'
+                  }}
+                  className="hover:opacity-90 transition-opacity whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Tree
+                </Button>
+              )}
             </div>
           </div>
 
@@ -123,6 +127,7 @@ export default function ReviewTrees() {
                   onVisualize={handleVisualize}
                   onViewStructure={handleViewStructure}
                   isDeleting={isDeleting}
+                  canWrite={canWrite}
                 />
               ) : (
                 <TreeTable
@@ -131,6 +136,7 @@ export default function ReviewTrees() {
                   onVisualize={handleVisualize}
                   onViewStructure={handleViewStructure}
                   isDeleting={isDeleting}
+                  canWrite={canWrite}
                 />
               )}
 

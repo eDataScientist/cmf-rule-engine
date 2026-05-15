@@ -10,9 +10,10 @@ interface DatasetTableRowProps {
   dataset: DatasetWithStatus;
   onDelete: (id: number) => void;
   isDeleting: boolean;
+  canWrite?: boolean;
 }
 
-export default function DatasetTableRow({ dataset, onDelete, isDeleting }: DatasetTableRowProps) {
+export default function DatasetTableRow({ dataset, onDelete, isDeleting, canWrite = true }: DatasetTableRowProps) {
   const formattedDate = dataset.uploadedAt || dataset.createdAt
     ? new Date(dataset.uploadedAt || dataset.createdAt).toLocaleDateString('en-GB', {
         day: '2-digit',
@@ -21,7 +22,7 @@ export default function DatasetTableRow({ dataset, onDelete, isDeleting }: Datas
       })
     : '-';
 
-  const status = dataset.uploadStatus?.status || 'ready';
+  const status = (dataset.uploadStatus?.status || 'ready') as 'uploading' | 'processing' | 'uploaded' | 'failed' | 'ready';
 
   return (
     <tr className="border-b border-[var(--color-border-subtle)] hover:bg-zinc-900 transition-colors">
@@ -55,7 +56,7 @@ export default function DatasetTableRow({ dataset, onDelete, isDeleting }: Datas
 
       {/* STATUS */}
       <td className="py-3 px-4">
-        <StatusBadge status={status as any} />
+        <StatusBadge status={status} />
       </td>
 
       {/* UPLOADED */}
@@ -73,19 +74,21 @@ export default function DatasetTableRow({ dataset, onDelete, isDeleting }: Datas
               </Button>
             </Link>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(dataset.id)}
-            disabled={isDeleting}
-            className="h-8 px-2"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
+          {canWrite && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(dataset.id)}
+              disabled={isDeleting}
+              className="h-8 px-2"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
       </td>
     </tr>

@@ -6,11 +6,13 @@ import { headerBreadcrumbsAtom } from '@/store/atoms/header';
 import { useDatasetRulesets } from './hooks/useDatasetRulesets';
 import { DatasetRuleCard } from './components/DatasetRuleCard';
 import { EmptyState } from './components/EmptyState';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 
 export default function RuleManagerPage() {
   const navigate = useNavigate();
   const setBreadcrumbs = useSetAtom(headerBreadcrumbsAtom);
   const { datasets, loading, error } = useDatasetRulesets();
+  const { canWrite } = useWriteAccess();
 
   useEffect(() => {
     setBreadcrumbs([
@@ -59,6 +61,7 @@ export default function RuleManagerPage() {
             key={dataset.id}
             dataset={dataset}
             onEdit={() => navigate(`/rule-builder/${dataset.id}`)}
+            canWrite={canWrite}
           />
         ))}
       </div>

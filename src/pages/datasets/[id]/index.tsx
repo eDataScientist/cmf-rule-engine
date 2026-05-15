@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { getRawDatasetUrl, getAlignedDatasetUrl } from '@/lib/storage/helpers';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import { useDatasetDetails } from './hooks/useDatasetDetails';
 import { useQualityMetrics } from './hooks/useQualityMetrics';
 import { useTreeAssociations } from './hooks/useTreeAssociations';
@@ -21,6 +22,7 @@ import SchemaMapTab from './components/SchemaMapTab';
 export default function DatasetDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  const { canWrite } = useWriteAccess();
 
   const { dataset, loading, error, updateDataset } = useDatasetDetails(id);
   const { quality, loading: loadingQuality } = useQualityMetrics(id);
@@ -94,6 +96,7 @@ export default function DatasetDetail() {
         onDownloadRaw={() => handleDownload('raw')}
         onDownloadAligned={() => handleDownload('aligned')}
         deleting={deleting}
+        canWrite={canWrite}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -144,6 +147,7 @@ export default function DatasetDetail() {
             onEditCancel={cancelEdit}
             onSave={handleSave}
             onDimensionChange={handleDimensionChange}
+            canWrite={canWrite}
           />
         </TabsContent>
       </Tabs>

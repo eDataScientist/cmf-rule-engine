@@ -17,6 +17,7 @@ interface SchemaMapTabProps {
   onEditCancel: () => void;
   onSave: () => void;
   onDimensionChange: (originalCol: string, newDim: string) => void;
+  canWrite?: boolean;
 }
 
 export default function SchemaMapTab({
@@ -32,6 +33,7 @@ export default function SchemaMapTab({
   onEditCancel,
   onSave,
   onDimensionChange,
+  canWrite = true,
 }: SchemaMapTabProps) {
   return (
     <div className="space-y-4">
@@ -61,7 +63,7 @@ export default function SchemaMapTab({
           </p>
         </div>
         {!editMode ? (
-          <Button onClick={onEditStart} variant="outline" size="sm">
+          <Button onClick={onEditStart} variant="outline" size="sm" disabled={!canWrite} title={!canWrite ? 'Read-only access for client users.' : undefined}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Mapping
           </Button>

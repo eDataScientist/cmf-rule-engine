@@ -13,6 +13,7 @@ interface DatasetHeaderProps {
   onDownloadRaw: () => void;
   onDownloadAligned: () => void;
   deleting: boolean;
+  canWrite?: boolean;
 }
 
 export default function DatasetHeader({
@@ -21,6 +22,7 @@ export default function DatasetHeader({
   onDownloadRaw,
   onDownloadAligned,
   deleting,
+  canWrite = true,
 }: DatasetHeaderProps) {
   const status = dataset.uploadStatus?.status || 'ready';
 
@@ -91,24 +93,26 @@ export default function DatasetHeader({
             <span className="text-xs">Aligned</span>
           </Button>
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onDelete}
-          disabled={deleting}
-        >
-          {deleting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              <span className="text-xs">Deleting...</span>
-            </>
-          ) : (
-            <>
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              <span className="text-xs">Delete</span>
-            </>
-          )}
-        </Button>
+        {canWrite && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onDelete}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                <span className="text-xs">Deleting...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                <span className="text-xs">Delete</span>
+              </>
+            )}
+          </Button>
+        )}
         <Button variant="outline" size="sm" disabled title="Quality metrics auto-update when alignment changes">
           Run Quality Check
         </Button>

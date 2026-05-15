@@ -12,9 +12,10 @@ interface TreeCardProps {
   onVisualize: (id: string) => void;
   onViewStructure: (id: string) => void;
   isDeleting: boolean;
+  canWrite: boolean;
 }
 
-export function TreeCard({ tree, onDelete, onVisualize, onViewStructure, isDeleting }: TreeCardProps) {
+export function TreeCard({ tree, onDelete, onVisualize, onViewStructure, isDeleting, canWrite }: TreeCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = () => {
@@ -93,15 +94,17 @@ export function TreeCard({ tree, onDelete, onVisualize, onViewStructure, isDelet
               <span className="hidden xl:inline">Structure</span>
               <span className="xl:hidden">Struct</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowConfirm(true)}
-              disabled={isDeleting}
-              className="text-zinc-400 hover:text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canWrite && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowConfirm(true)}
+                disabled={isDeleting}
+                className="text-zinc-400 hover:text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </>
         ) : (
           <>
