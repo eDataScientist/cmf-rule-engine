@@ -90,7 +90,8 @@ export default function AdminCompanies() {
     insuranceType: 'motor' | 'medical';
     maxUserSlots: number;
   }) {
-    await updateCompany(params);
+    const { id, ...updates } = params;
+    await updateCompany(id, updates);
     await loadCompanies();
     setEditOpen(false);
     setEditingCompany(null);

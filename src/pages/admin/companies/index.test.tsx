@@ -8,6 +8,7 @@ import type { Company } from "@/lib/db/admin-operations";
 vi.mock("@/lib/db/admin-operations", () => ({
   getCompanies: vi.fn(),
   createCompany: vi.fn(),
+  updateCompany: vi.fn(),
   deactivateCompany: vi.fn(),
   reactivateCompany: vi.fn(),
 }));
@@ -300,6 +301,48 @@ describe("AdminCompanies", () => {
 
       await waitFor(() => {
         expect(adminOps.reactivateCompany).toHaveBeenCalledWith("2");
+      });
+    });
+  });
+
+  describe("Edit company dialog", () => {
+    it("should open edit dialog and update company", async () => {
+      const user = userEvent.setup();
+      const updatedCompany: Company = {
+        ...mockCompanies[0],
+        name: "Updated Acme",
+        country: "KSA",
+      };
+
+      vi.mocked(adminOps.updateCompany).mockResolvedValue(updatedCompany);
+      vi.mocked(adminOps.getCompanies)
+        .mockResolvedValueOnce(mockCompanies)
+        .mockResolvedValueOnce([updatedCompany, ...mockCompanies.slice(1)]);
+
+      render(<AdminCompanies />);
+      await waitFor(() => {
+        expect(screen.getByText("Acme Insurance")).toBeDefined();
+      });
+
+      const editButtons = screen.getAllByTitle(/Edit/);
+      await user.click(editButtons[0]);
+
+      expect(screen.getByText("Edit Company")).toBeDefined();
+
+      const nameInput = screen.getByDisplayValue("Acme Insurance") as HTMLInputElement;
+      await user.clear(nameInput);
+      await user.type(nameInput, "Updated Acme");
+
+      const saveButton = screen.getByText("Save");
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(adminOps.updateCompany).toHaveBeenCalledWith("1", {
+          name: "Updated Acme",
+          country: "UAE",
+          insuranceType: "motor",
+          maxUserSlots: 10,
+        });
       });
     });
   });
