@@ -13,11 +13,13 @@ import { headerBreadcrumbsAtom } from '@/store/atoms/header';
 import {
   getCompanies,
   createCompany,
+  updateCompany,
   deactivateCompany,
   reactivateCompany,
   type Company,
 } from '@/lib/db/admin-operations';
 import { CreateCompanyDialog } from './components/CreateCompanyDialog';
+import { EditCompanyDialog } from './components/EditCompanyDialog';
 import { CompanyRow } from './components/CompanyRow';
 
 export default function AdminCompanies() {
@@ -27,6 +29,8 @@ export default function AdminCompanies() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +81,24 @@ export default function AdminCompanies() {
     } finally {
       setTogglingId(null);
     }
+  }
+
+  async function handleEdit(params: {
+    id: string;
+    name: string;
+    country: string;
+    insuranceType: 'motor' | 'medical';
+    maxUserSlots: number;
+  }) {
+    await updateCompany(params);
+    await loadCompanies();
+    setEditOpen(false);
+    setEditingCompany(null);
+  }
+
+  function openEdit(company: Company) {
+    setEditingCompany(company);
+    setEditOpen(true);
   }
 
   const filtered = useMemo(() => {
@@ -152,6 +174,7 @@ export default function AdminCompanies() {
                   <CompanyRow
                     key={company.id}
                     company={company}
+                    onEdit={openEdit}
                     onToggleActive={handleToggleActive}
                     toggling={togglingId === company.id}
                   />
@@ -167,6 +190,15 @@ export default function AdminCompanies() {
         onOpenChange={setCreateOpen}
         onSubmit={handleCreate}
       />
+
+      {editingCompany && (
+        <EditCompanyDialog
+          open={editOpen}
+          company={editingCompany}
+          onOpenChange={setEditOpen}
+          onSubmit={handleEdit}
+        />
+      )}
     </div>
   );
 }

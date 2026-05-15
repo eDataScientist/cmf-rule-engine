@@ -1,14 +1,15 @@
-import { Button } from '@/components/ui/button';
-import { Power, Loader2 } from 'lucide-react';
+﻿import { Button } from '@/components/ui/button';
+import { Power, Loader2, Edit } from 'lucide-react';
 import type { Company } from '@/lib/db/admin-operations';
 
 interface CompanyRowProps {
   company: Company;
+  onEdit: (company: Company) => void;
   onToggleActive: (company: Company) => void;
   toggling: boolean;
 }
 
-export function CompanyRow({ company, onToggleActive, toggling }: CompanyRowProps) {
+export function CompanyRow({ company, onEdit, onToggleActive, toggling }: CompanyRowProps) {
   return (
     <tr className="border-b last:border-0" style={{ borderColor: 'var(--color-border-subtle)' }}>
       <td className="px-4 py-3">
@@ -36,7 +37,16 @@ export function CompanyRow({ company, onToggleActive, toggling }: CompanyRowProp
           {company.isActive ? 'Active' : 'Inactive'}
         </span>
       </td>
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => onEdit(company)}
+          title="Edit company"
+        >
+          <Edit className="h-4 w-4" style={{ color: 'var(--color-text-secondary)' }} />
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -58,3 +68,4 @@ export function CompanyRow({ company, onToggleActive, toggling }: CompanyRowProp
     </tr>
   );
 }
+
