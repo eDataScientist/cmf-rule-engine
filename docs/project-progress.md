@@ -28,9 +28,9 @@
 
 | Field     | Value |
 |-----------|-------|
-| Phase     | Phase 3 - Admin Console |
-| Objective | Admin dashboard, company lifecycle, user provisioning and recovery, slot request review, audit logs, and regression coverage |
-| Status    | Planned - phase plan and test plan complete; begin Gate 3.0 next |
+| Phase     | Phase 4 - Client Admin Features |
+| Objective | TBD — pending phase planning |
+| Status    | Planning |
 
 ---
 
@@ -60,6 +60,7 @@
 | 2 | Milestone structure: full numbers only (M1-M8) | Cleaner separation than decimal sub-milestones (M3.1-M3.9) | 2026-05-13 |
 | 3 | MVP boundary at M2 | Platform Foundation delivered complete fraud analysis app | 2026-05-13 |
 | 4 | Admin Console merged into M3 (was separate M3.8) | Company and user provisioning are integral to the role system | 2026-05-13 |
+| 5 | Phase 3 - Admin Console completed | All 21 tasks done, full test suite green (130 tests, 7 files), all DoD criteria met | 2026-05-15 |
 
 ---
 
@@ -97,7 +98,7 @@ M2 - Platform Foundation
 M3 - Accounts & Roles
 |- Phase 1 - Database & Auth Foundation [complete]
 |- Phase 2 - Auth, Routes & Role Guards [in review]
-|- Phase 3 - Admin Console [planned]
+|- Phase 3 - Admin Console [complete]
 |- Phase 4 - Client Admin Features [not started]
 \- Phase 5 - Operations & Tree Assignment [complete]
 ```
