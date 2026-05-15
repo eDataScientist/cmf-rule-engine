@@ -410,6 +410,67 @@ export async function toggleUserActive(userId: string, currentlyActive: boolean)
   if (error) {
     throw new Error(`Failed to toggle user status: ${error.message}`);
   }
+  // Audit logging is handled by the toggle_user_active_admin RPC directly.
+}
+
+/** Update user profile fields (role, company, name) with audit logging. */
+export async function updateUser(
+  userId: string,
+  updates: Partial<{
+    fullName: string;
+    role: 'client_admin' | 'client_user';
+    companyId: string;
+  }>
+): Promise<void> {
+  const dbUpdates: Record<string, unknown> = {};
+  if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+  if (updates.role !== undefined) dbUpdates.role = updates.role;
+  if (updates.companyId !== undefined) dbUpdates.company_id = updates.companyId;
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update(dbUpdates)
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(`Failed to update user: ${error.message}`);
+  }
+
+  await logAdminAction('edit_user', 'user', userId, updates as Record<string, unknown>);
+}
+
+/** Resend invitation email to a user. */
+export async function resendUserInvite(userId: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('resend-user-invite', {
+    body: { user_id: userId },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to resend user invite');
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  await logAdminAction('resend_user_invite', 'user', userId, {});
+}
+
+/** Reset user access and send recovery email. */
+export async function resetUserAccess(userId: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('reset-user-access', {
+    body: { user_id: userId },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to reset user access');
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  await logAdminAction('reset_user_access', 'user', userId, {});
 }
 
 // --- Slot Requests ---

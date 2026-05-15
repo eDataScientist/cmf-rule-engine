@@ -29,6 +29,7 @@ export default function AdminLogs() {
   const [page, setPage] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -51,6 +52,7 @@ export default function AdminLogs() {
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const filters: ActivityLogFilters = {};
       if (actionFilter) {
@@ -64,7 +66,9 @@ export default function AdminLogs() {
       setEntries(result.entries);
       setTotal(result.total);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load activity logs';
       console.error('Failed to load logs:', err);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -149,15 +153,37 @@ export default function AdminLogs() {
           <option value="deactivate_company">Deactivate Company</option>
           <option value="reactivate_company">Reactivate Company</option>
           <option value="register_user">Register User</option>
+          <option value="edit_user">Edit User</option>
           <option value="deactivate_user">Deactivate User</option>
           <option value="reactivate_user">Reactivate User</option>
+          <option value="resend_user_invite">Resend User Invite</option>
+          <option value="reset_user_access">Reset User Access</option>
           <option value="approve_slot_request">Approve Slot Request</option>
           <option value="deny_slot_request">Deny Slot Request</option>
         </select>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
+      {error !== null ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <ScrollText className="mb-3 h-10 w-10" style={{ color: 'var(--color-status-red)' }} />
+            <p className="text-sm font-medium" style={{ color: 'var(--color-status-red)' }}>
+              Failed to load activity logs
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {error}
+            </p>
+            <button
+              className="mt-3 text-xs underline"
+              style={{ color: 'var(--color-text-secondary)' }}
+              onClick={() => void loadLogs()}
+            >
+              Retry
+            </button>
+          </CardContent>
+        </Card>
+      ) : loading ? (
+        <div className="flex items-center justify-center py-20" role="status" aria-label="Loading logs">
           <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--color-text-muted)' }} />
         </div>
       ) : entries.length === 0 ? (
