@@ -15,10 +15,11 @@ interface UserProfile {
 
 // Simulate the assertRegisterUserAuthorized logic
 // This matches the implementation in supabase/functions/register-user/index.ts
+// targetRole accepts string (not the narrow union) so tests can pass "admin" to verify rejection
 function simulateAssertRegisterUserAuthorized(
   callerProfile: UserProfile,
   targetCompanyId: string,
-  targetRole: "client_admin" | "client_user"
+  targetRole: string
 ): void {
   if (!callerProfile.is_active) {
     throw new Error("Not authorized to register users");
@@ -345,7 +346,7 @@ describe("M3-4.A.1: register-user edge function authorization", () => {
               simulateAssertRegisterUserAuthorized(
                 profile,
                 resolvedCompanyId,
-                target_role as "client_admin" | "client_user"
+                target_role
               );
             },
             `${caller} -> ${target_company} as ${target_role} should be rejected`
@@ -356,7 +357,7 @@ describe("M3-4.A.1: register-user edge function authorization", () => {
               simulateAssertRegisterUserAuthorized(
                 profile,
                 resolvedCompanyId,
-                target_role as "client_admin" | "client_user"
+                target_role
               );
             },
             `${caller} -> ${target_company} as ${target_role} should be allowed`

@@ -121,11 +121,11 @@ describe('client-operations - Type-safe wrapper results', () => {
 
   describe('Result type discrimination', () => {
     it('should allow type guard on ok property', () => {
-      // Arrange
-      const result: ClientOperationResult = {
-        ok: true,
-        data: { userId: 'user-123', email: 'test@example.com', companyId: 'company-a', role: 'client_admin' },
-      };
+      // Arrange: use explicit union to keep both branches reachable
+      const result: ClientOperationResult =
+        Math.random() >= 0
+          ? ({ ok: true, data: { userId: 'user-123', email: 'test@example.com', companyId: 'company-a', role: 'client_admin' } } as ClientOperationResult)
+          : ({ ok: false, error: 'fallback' } as ClientOperationResult);
 
       // Act & Assert
       if (result.ok) {
@@ -138,11 +138,11 @@ describe('client-operations - Type-safe wrapper results', () => {
     });
 
     it('should prevent accessing data on error results', () => {
-      // Arrange
-      const result: ClientOperationResult = {
-        ok: false,
-        error: 'Not authorized',
-      };
+      // Arrange: use explicit union to keep both branches reachable
+      const result: ClientOperationResult =
+        Math.random() < 0
+          ? ({ ok: true, data: undefined } as ClientOperationResult)
+          : ({ ok: false, error: 'Not authorized' } as ClientOperationResult);
 
       // Act & Assert
       if (result.ok) {
