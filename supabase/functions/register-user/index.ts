@@ -69,7 +69,11 @@ function parseAndValidateBody(body: unknown): RegisterUserRequest {
   };
 }
 
-async function assertAdminCaller(authHeader: string): Promise<{ userId: string }> {
+async function assertRegisterUserAuthorized(
+  authHeader: string,
+  targetCompanyId: string,
+  targetRole: RegisterUserRole
+): Promise<{ userId: string; role: string; companyId: string | null }> {
   const userClient = getUserClient(authHeader);
 
   const {
@@ -84,7 +88,7 @@ async function assertAdminCaller(authHeader: string): Promise<{ userId: string }
   const serviceClient = getServiceClient();
   const { data: profile, error: profileError } = await serviceClient
     .from("user_profiles")
-    .select("role, is_active")
+    .select("role, is_active, company_id")
     .eq("user_id", user.id)
     .single();
 
@@ -92,11 +96,30 @@ async function assertAdminCaller(authHeader: string): Promise<{ userId: string }
     throw new Error(`Failed to load caller profile: ${profileError.message}`);
   }
 
-  if (!profile?.is_active || profile.role !== "admin") {
-    throw new Error("Only admins can register users");
+  if (!profile?.is_active) {
+    throw new Error("Not authorized to register users");
   }
 
-  return { userId: user.id };
+  // Admin can register any non-admin role in any company
+  if (profile.role === "admin") {
+    if (targetRole === "admin") {
+      throw new Error("Cannot register admin users from edge function");
+    }
+    return { userId: user.id, role: profile.role, companyId: profile.company_id };
+  }
+
+  // Client_admin can only register within their own company
+  if (profile.role === "client_admin") {
+    if (profile.company_id !== targetCompanyId) {
+      throw new Error("Not authorized to register users");
+    }
+    if (targetRole === "admin") {
+      throw new Error("Not authorized to register users");
+    }
+    return { userId: user.id, role: profile.role, companyId: profile.company_id };
+  }
+
+  throw new Error("Not authorized to register users");
 }
 
 async function assertCompanyHasSlots(companyId: string): Promise<void> {
@@ -220,7 +243,11 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const payload = parseAndValidateBody(body);
-    const { userId: actorUserId } = await assertAdminCaller(authHeader);
+    const { userId: actorUserId } = await assertRegisterUserAuthorized(
+      authHeader,
+      payload.company_id,
+      payload.role
+    );
 
     await assertCompanyHasSlots(payload.company_id);
     const { userId: targetUserId } = await createUserAndProfile(payload, actorUserId);
