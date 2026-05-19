@@ -87,8 +87,9 @@ export function renderWithCompanyAuth(
 
   // Inject the auth stub via module mock (caller must have set up vi.mock('@/lib/auth/context'))
   // This helper sets the __mockAuth export that the mock factory reads.
-  if (typeof (globalThis as Record<string, unknown>).__setMockAuth === 'function') {
-    (globalThis as Record<string, unknown>).__setMockAuth(authStub);
+  const globalSetMockAuth = (globalThis as Record<string, unknown>).__setMockAuth;
+  if (typeof globalSetMockAuth === 'function') {
+    globalSetMockAuth(authStub);
   }
 
   return render(
