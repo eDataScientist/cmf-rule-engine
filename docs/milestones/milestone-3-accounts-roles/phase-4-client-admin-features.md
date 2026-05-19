@@ -470,3 +470,49 @@ Note: Stream D is technically independent of Stream A and can begin immediately 
 _None._
 
 ---
+
+### M3-4.AUDIT.1 - Existing /company/users Scaffolding Audit
+
+**Audited file:** `src/pages/company/users/index.tsx` (19,737 bytes)
+
+**What EXISTS vs. Stream C Requirements:**
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| User listing with table | ✅ EXISTS | Full table with name, email, role, status, added date columns |
+| User search | ✅ EXISTS | Search input filters by name, email, role |
+| Role badges | ✅ EXISTS | Role badge styling with client_admin/client_user differentiation |
+| Status badges | ✅ EXISTS | Active/Inactive status with color coding |
+| Slot request UI | ⚠️ EXISTS but mis-located | Slot UI is on `/company/users` - should be moved to `/company` per Decision #4 |
+| Slot request display | ✅ EXISTS | Shows pending/approved/denied requests in a card |
+| Request slots dialog | ✅ EXISTS | Dialog for requesting additional slots |
+| User count summary | ✅ EXISTS | Shows total users count |
+
+**What's MISSING vs. Stream C Requirements:**
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| Register User dialog | ❌ MISSING | No "Register User" button or dialog present |
+| Edit user dialog | ❌ MISSING | Actions menu exists but only shows slot UI |
+| Deactivate/Reactivate | ❌ MISSING | No user status toggle actions |
+| Resend invite | ❌ MISSING | No recovery actions for users |
+| Reset access | ❌ MISSING | No access recovery for users |
+| useCompanyUserMgmt hook | ❌ MISSING | All state is inline in component |
+| useWriteAccess integration | ❌ MISSING | No role-based write gating |
+
+**File Ownership Conflicts:**
+- Current file mixes slot UI (which belongs on `/company` per Stream B) with user listing
+- Stream C owns `src/pages/company/users/index.tsx` - complete replacement required
+- Stream B owns `/company` slot lifecycle - current slot UI must be removed from users page
+- No conflict with Stream A (backend) - uses different files
+
+**Recommended Actions:**
+1. REPLACE the current `src/pages/company/users/index.tsx` entirely (Stream C)
+2. REMOVE slot request UI from `/company/users` - it belongs on `/company` (Stream B)
+3. BUILD new components per Stream C task list: RegisterCompanyUserDialog, EditCompanyUserDialog, UserStatusConfirmDialog, UserRecoveryMenu
+4. BUILD useCompanyUserMgmt hook to centralize state
+
+**Cross-stream Dependencies:**
+- Stream C depends on Stream A's `client-operations.ts` for all user management actions
+- Stream C must NOT import from admin/users components - those are separate ownership
+- Current file imports from `@/lib/db/admin-operations` - should use new `client-operations.ts`

@@ -5,9 +5,10 @@ import type { RuleEffect } from '@/lib/types/ruleBuilder';
 
 interface EffectSelectorProps {
   disabled?: boolean;
+  title?: string;
 }
 
-export function EffectSelector({ disabled }: EffectSelectorProps) {
+export function EffectSelector({ disabled, title }: EffectSelectorProps) {
   const [effect, setEffect] = useAtom(ruleBuilderCurrentEffectAtom);
 
   const handleSelect = (newEffect: RuleEffect) => {
@@ -21,6 +22,7 @@ export function EffectSelector({ disabled }: EffectSelectorProps) {
       <button
         onClick={() => handleSelect('moderate')}
         disabled={disabled}
+        title={title}
         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
           effect === 'moderate'
             ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
@@ -35,6 +37,7 @@ export function EffectSelector({ disabled }: EffectSelectorProps) {
       <button
         onClick={() => handleSelect('high')}
         disabled={disabled}
+        title={title}
         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
           effect === 'high'
             ? 'bg-red-500/20 border-red-500/50 text-red-400'
