@@ -34,8 +34,8 @@ const mockTree: Tree = {
   name: 'Test Tree',
   treeType: 'motor',
   structure: [],
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  companyId: 'company-1',
+  createdAt: new Date(),
 };
 
 describe('ReviewTrees - Client User Negative Access', () => {

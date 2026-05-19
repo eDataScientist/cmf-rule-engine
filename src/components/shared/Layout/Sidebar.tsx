@@ -44,7 +44,8 @@ const adminNavItems: NavItem[] = [
 ];
 
 const companyNavItems: NavItem[] = [
-  { path: '/company/users', label: 'My Company', icon: Building2, roles: ['client_admin'] },
+  { path: '/company', label: 'Company Overview', icon: Building2, roles: ['client_admin'] },
+  { path: '/company/users', label: 'My Company', icon: Users, roles: ['client_admin'] },
 ];
 
 function isPathActive(currentPath: string, itemPath: string) {
