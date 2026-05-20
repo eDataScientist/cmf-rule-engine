@@ -6,6 +6,7 @@ import {
   ruleBuilderLastSavedAtAtom,
 } from '@/store/atoms/ruleBuilder';
 import { upsertRuleset } from '@/lib/db/operations';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
@@ -26,6 +27,7 @@ export function useRuleAutoSave(datasetId: number, hasLoaded: boolean, companyId
   const [rules] = useAtom(ruleBuilderRulesAtom);
   const [saveStatus, setSaveStatus] = useAtom(ruleBuilderSaveStatusAtom);
   const [lastSavedAt, setLastSavedAt] = useAtom(ruleBuilderLastSavedAtAtom);
+  const { canWrite } = useWriteAccess();
 
   // Track the rules state after initial load to detect actual changes
   const initialRulesRef = useRef<string | null>(null);
@@ -46,7 +48,7 @@ export function useRuleAutoSave(datasetId: number, hasLoaded: boolean, companyId
   }, [datasetId]);
 
   const save = useCallback(async () => {
-    if (!datasetId || !companyId) return;
+    if (!datasetId || !companyId || !canWrite) return;
 
     setSaveStatus('saving');
     try {
@@ -57,12 +59,12 @@ export function useRuleAutoSave(datasetId: number, hasLoaded: boolean, companyId
       console.error('Failed to save ruleset:', error);
       setSaveStatus('error');
     }
-  }, [datasetId, rules, companyId, setSaveStatus, setLastSavedAt]);
+  }, [datasetId, rules, companyId, setSaveStatus, setLastSavedAt, canWrite]);
 
   // Save when rules change (but only after initial load is complete)
   useEffect(() => {
     // Don't save until load is complete and we've recorded initial state
-    if (!hasLoaded || !hasRecordedInitialState.current) {
+    if (!hasLoaded || !hasRecordedInitialState.current || !canWrite) {
       return;
     }
 
@@ -76,7 +78,8 @@ export function useRuleAutoSave(datasetId: number, hasLoaded: boolean, companyId
     // Update the reference and save
     initialRulesRef.current = currentRulesStr;
     save();
-  }, [rules, hasLoaded, save]);
+  }, [rules, hasLoaded, save, canWrite]);
 
   return { saveStatus, lastSavedAt, save };
 }
+

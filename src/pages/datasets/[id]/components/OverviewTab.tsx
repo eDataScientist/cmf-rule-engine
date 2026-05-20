@@ -13,6 +13,7 @@ interface OverviewTabProps {
   datasetId: number;
   datasetName: string;
   onLinkSuccess: () => void;
+  canWrite?: boolean;
 }
 
 export default function OverviewTab({
@@ -23,6 +24,7 @@ export default function OverviewTab({
   datasetId,
   datasetName,
   onLinkSuccess,
+  canWrite = true,
 }: OverviewTabProps) {
   return (
     <div className="space-y-6">
@@ -50,6 +52,7 @@ export default function OverviewTab({
           datasetId={datasetId}
           datasetName={datasetName}
           onLinkSuccess={onLinkSuccess}
+          canWrite={canWrite}
         />
       </div>
     </div>
