@@ -3,6 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Loader2, AlertCircle, Cloud } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { FieldPalette } from './components/FieldPalette';
 import { LogicCanvas } from './components/LogicCanvas';
 import { OperatorsPanel } from './components/OperatorsPanel';
@@ -10,6 +11,7 @@ import { useDatasetDimensions } from './hooks/useDatasetDimensions';
 import { useRuleSetLoad } from './hooks/useRuleSetLoad';
 import { useRuleAutoSave } from './hooks/useRuleAutoSave';
 import { useAuth } from '@/lib/auth/context';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import { fullCanvasModeAtom, headerBreadcrumbsAtom, headerActionsAtom } from '@/store/atoms/header';
 import { ruleBuilderDatasetIdAtom, ruleCountAtom } from '@/store/atoms/ruleBuilder';
 
@@ -67,6 +69,8 @@ export default function RuleBuilder() {
   // Fetch dimensions when dataset changes
   useDatasetDimensions(datasetId);
 
+  const { canWrite } = useWriteAccess();
+
   // Enable full canvas mode and set header
   useEffect(() => {
     setFullCanvas(true);
@@ -79,7 +83,22 @@ export default function RuleBuilder() {
         <span className="text-sm text-muted-foreground">
           {ruleCount} {ruleCount === 1 ? 'rule' : 'rules'}
         </span>
-        <SaveStatusIndicator status={saveStatus} />
+        {canWrite ? (
+          <SaveStatusIndicator status={saveStatus} />
+        ) : (
+          <Button
+            size="sm"
+            disabled
+            title="Read-only access for client users."
+            className="opacity-50 cursor-not-allowed"
+            style={{
+              backgroundColor: 'var(--color-muted)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            Save
+          </Button>
+        )}
       </div>
     );
 
@@ -88,7 +107,7 @@ export default function RuleBuilder() {
       setBreadcrumbs(null);
       setHeaderActions(null);
     };
-  }, [setFullCanvas, setBreadcrumbs, setHeaderActions, saveStatus, ruleCount]);
+  }, [setFullCanvas, setBreadcrumbs, setHeaderActions, saveStatus, ruleCount, canWrite]);
 
   // Redirect if no dataset ID
   if (!datasetId) {

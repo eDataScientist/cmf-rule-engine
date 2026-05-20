@@ -13,6 +13,7 @@ interface LinkedTreesListProps {
   datasetId: number;
   datasetName: string;
   onLinkSuccess: () => void;
+  canWrite?: boolean;
 }
 
 export default function LinkedTreesList({
@@ -21,6 +22,7 @@ export default function LinkedTreesList({
   datasetId,
   datasetName,
   onLinkSuccess,
+  canWrite = true,
 }: LinkedTreesListProps) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const navigate = useNavigate();
@@ -46,16 +48,18 @@ export default function LinkedTreesList({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Linked Decision Trees</CardTitle>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
-              <Link2 className="mr-2 h-4 w-4" />
-              Link Existing
-            </Button>
-            <Button size="sm" onClick={handleCreateTree}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create New
-            </Button>
-          </div>
+          {canWrite && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
+                <Link2 className="mr-2 h-4 w-4" />
+                Link Existing
+              </Button>
+              <Button size="sm" onClick={handleCreateTree}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create New
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -68,10 +72,12 @@ export default function LinkedTreesList({
             <p className="text-sm text-muted-foreground mb-4">
               No trees have been evaluated with this dataset yet
             </p>
-            <Button variant="outline" onClick={handleCreateTree}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Tree
-            </Button>
+            {canWrite && (
+              <Button variant="outline" onClick={handleCreateTree}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Tree
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-2">

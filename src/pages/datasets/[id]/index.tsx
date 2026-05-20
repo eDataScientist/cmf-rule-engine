@@ -115,6 +115,7 @@ export default function DatasetDetail() {
             datasetId={dataset.id}
             datasetName={dataset.nickname || dataset.fileName || `Dataset #${dataset.id}`}
             onLinkSuccess={refetchAssociations}
+            canWrite={canWrite}
           />
         </TabsContent>
 

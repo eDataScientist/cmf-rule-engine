@@ -1,6 +1,7 @@
 import { useAtomValue } from 'jotai';
 import { X, AlertTriangle, XOctagon, GripVertical } from 'lucide-react';
 import { ruleBuilderDimensionsAtom } from '@/store/atoms/ruleBuilder';
+import { useWriteAccess } from '@/hooks/useWriteAccess';
 import { getOperatorBySymbol } from '../utils/operators';
 import type { CompositeRule, DimensionDataType } from '@/lib/types/ruleBuilder';
 
@@ -18,6 +19,7 @@ const VALUE_COLORS: Record<DimensionDataType, string> = {
 
 export function CompositeRuleCard({ rule, onDelete }: CompositeRuleCardProps) {
   const dimensions = useAtomValue(ruleBuilderDimensionsAtom);
+  const { canWrite } = useWriteAccess();
 
   // Format value for display
   const formatValue = (value: string | number | boolean | null): string => {
@@ -59,15 +61,18 @@ export function CompositeRuleCard({ rule, onDelete }: CompositeRuleCardProps) {
           </div>
 
           {/* Delete button */}
-          <button
-            onClick={onDelete}
-            className="p-1 text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-            title="Delete rule"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {canWrite && (
+            <button
+              onClick={onDelete}
+              className="p-1 text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              title="Delete rule"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
+
 
       {/* Conditions stack */}
       <div className="px-4 py-3">
