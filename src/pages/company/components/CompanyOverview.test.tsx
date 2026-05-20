@@ -96,6 +96,36 @@ describe('CompanyOverview Page (Stream B)', () => {
     expect(screen.getByText('By Admin Alice')).toBeDefined();
   });
 
+  it('renders empty recent activity state', () => {
+    setupMockData({ activities: [] });
+    render(
+      <MemoryRouter>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('No recent activity recorded.')).toBeDefined();
+  });
+
+  it('renders populated recent activity', () => {
+    setupMockData({
+      activities: [
+        { id: 'a1', action: 'register_user', userName: 'User One', createdAt: new Date().toISOString(), targetType: 'user', targetId: 'u1', details: null },
+        { id: 'a2', action: 'deactivate_user', userName: 'User Two', createdAt: new Date().toISOString(), targetType: 'user', targetId: 'u2', details: null },
+      ],
+    });
+    render(
+      <MemoryRouter>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Registered user')).toBeDefined();
+    expect(screen.getByText('Deactivated user')).toBeDefined();
+    expect(screen.getByText('By User One')).toBeDefined();
+    expect(screen.getByText('By User Two')).toBeDefined();
+  });
+
   it('allows requesting slot modal flow (T-M3-4.B.3.1)', async () => {
     setupMockData();
     vi.mocked(requestCompanySlots).mockResolvedValue({ ok: true, data: { requestId: 'req-new' } });
@@ -140,6 +170,41 @@ describe('CompanyOverview Page (Stream B)', () => {
     });
   });
 
+  it('shows cancel button when pending request exists (T-M3-4.B.3.2)', async () => {
+    setupMockData({
+      pendingRequest: {
+        id: 'existing-req',
+        requestedSlots: 3,
+        status: 'pending',
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    // Cancel button should be visible when there's a pending request (not Request More Slots)
+    expect(screen.getByText('Cancel Pending Request')).toBeDefined();
+    expect(screen.queryByText('Request More Slots')).toBeNull();
+  });
+
+  it('quick links button navigates to /company/users (T-M3-4.B.2.3)', async () => {
+    setupMockData();
+
+    render(
+      <MemoryRouter initialEntries={['/company']}>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    const quickLinksBtn = screen.getByText('Manage Company Users');
+    expect(quickLinksBtn).toBeDefined();
+    // The Link component wraps the button
+    expect(quickLinksBtn.closest('a')?.getAttribute('href')).toBe('/company/users');
+  });
+
   it('allows cancelling pending slot request (T-M3-4.B.4.1)', async () => {
     setupMockData({
       pendingRequest: {
@@ -169,5 +234,42 @@ describe('CompanyOverview Page (Stream B)', () => {
       expect(cancelSlotRequest).toHaveBeenCalledWith('request-foo');
       expect(mockRefresh).toHaveBeenCalled();
     });
+  });
+
+  it('handles cancel failure race with admin approve (T-M3-4.B.4.2)', async () => {
+    setupMockData({
+      pendingRequest: {
+        id: 'request-bar',
+        requestedSlots: 2,
+        status: 'pending',
+      },
+    });
+    vi.mocked(cancelSlotRequest).mockResolvedValue({ ok: false, error: 'Already processed by admin' });
+
+    render(
+      <MemoryRouter>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText('Cancel Pending Request'));
+    expect(screen.getByText('Cancel Slot Request')).toBeDefined();
+    fireEvent.click(screen.getByText('Confirm Cancellation'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Already processed by admin')).toBeDefined();
+    });
+  });
+
+  it('renders empty state for no pending request', () => {
+    setupMockData({ pendingRequest: null });
+    render(
+      <MemoryRouter>
+        <CompanyOverview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('No pending slot requests.')).toBeDefined();
+    expect(screen.getByText('Request More Slots')).toBeDefined();
   });
 });

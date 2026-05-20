@@ -9,12 +9,14 @@ export interface CompanyDetails {
   isActive: boolean;
 }
 
+type SupabaseRow = Record<string, unknown>;
+
 export interface ActivityLog {
   id: string;
   action: string;
   targetType: string | null;
   targetId: string | null;
-  details: Record<string, any> | null;
+  details: SupabaseRow | null;
   createdAt: string;
   userName: string | null;
 }
@@ -117,14 +119,16 @@ export function useCompanyOverview() {
       if (logsRes.error) {
         hasFetchError = true;
       } else if (logsRes.data) {
-        updatedState.activities = (logsRes.data as any[]).map((log) => ({
-          id: log.id,
-          action: log.action,
-          targetType: log.target_type,
-          targetId: log.target_id,
-          details: log.details,
-          createdAt: log.created_at,
-          userName: log.user_profiles?.full_name ?? null,
+        updatedState.activities = (logsRes.data as SupabaseRow[]).map((log) => ({
+          id: String(log.id),
+          action: String(log.action),
+          targetType: log.target_type ? String(log.target_type) : null,
+          targetId: log.target_id ? String(log.target_id) : null,
+          details: log.details as SupabaseRow | null,
+          createdAt: String(log.created_at),
+          userName: log.user_profiles && typeof log.user_profiles === 'object' && 'full_name' in log.user_profiles
+            ? String(log.user_profiles.full_name)
+            : null,
         }));
       }
 

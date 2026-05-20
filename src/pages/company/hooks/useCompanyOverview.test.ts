@@ -150,4 +150,66 @@ describe('useCompanyOverview hook', () => {
 
     expect(result.current.error).toBe('Some data slices failed to load properly.');
   });
+
+  it('detects inactive company state (T-M3-4.B.1.3)', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      profile: { company_id: 'comp-inactive' } as any,
+      user: { id: 'usr-one' } as any,
+      session: null,
+      loading: false,
+      signOut: vi.fn(),
+      signIn: vi.fn(),
+      signInWithOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      let chain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn(),
+      } as any;
+
+      if (table === 'companies') {
+        chain.maybeSingle = vi.fn().mockResolvedValue({
+          data: { id: 'comp-inactive', name: 'Inactive Co', max_user_slots: 10, is_active: false },
+          error: null,
+        });
+      } else if (table === 'user_profiles') {
+        chain.eq = vi.fn().mockResolvedValue({
+          data: [],
+          count: 5,
+          error: null,
+        });
+      } else if (table === 'slot_requests') {
+        chain.maybeSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        });
+      } else if (table === 'admin_activity_log') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        } as any;
+      }
+      return chain;
+    });
+
+    vi.mocked(supabase.from).mockImplementation(mockFrom as any);
+
+    const { result } = renderHook(() => useCompanyOverview());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.data.company?.isActive).toBe(false);
+  });
 });

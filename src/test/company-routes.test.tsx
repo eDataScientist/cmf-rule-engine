@@ -132,7 +132,7 @@ import CompanyUsers from '@/pages/company/users';
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('T-M3-4.0.5.1 — /company route access matrix', () => {
-  it('allows client_admin: renders the "coming soon" placeholder', async () => {
+  it('allows client_admin: renders the company overview page', async () => {
     setAuth(clientAdminProfile);
 
     render(
@@ -144,7 +144,8 @@ describe('T-M3-4.0.5.1 — /company route access matrix', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/company overview - coming soon/i)).toBeDefined();
+      // The real overview page shows session cards, not the placeholder
+      expect(screen.getByText('Total Slots')).toBeDefined();
     });
   });
 
