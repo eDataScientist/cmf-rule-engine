@@ -79,8 +79,14 @@ vi.mock('@/lib/auth/context', () => ({
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
-import CompanyOverview from './index';
 import { RoleGuard, getRoleLandingPath } from '@/components/shared/RoleGuard';
+import CompanyOverview from './index';
+import { useCompanyOverview } from './hooks/useCompanyOverview';
+
+// Mock useCompanyOverview for routing tests since overview layout changed
+vi.mock('./hooks/useCompanyOverview', () => ({
+  useCompanyOverview: vi.fn(),
+}));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -153,8 +159,20 @@ beforeEach(() => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('T-M3-4.0.3.1 — /company route access matrix', () => {
-  it('renders "Company Overview - coming soon" placeholder for active client_admin', async () => {
+  it('renders "Company Overview" header for active client_admin', async () => {
     mockAuth = activeClientAdmin();
+    vi.mocked(useCompanyOverview).mockReturnValue({
+      data: {
+        company: { id: 'co-1', name: 'Company A', maxUserSlots: 10, isActive: true },
+        totalUsers: 2,
+        activeUsers: 2,
+        pendingRequest: null,
+        activities: [],
+      },
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
 
     render(
       <RoleGuard allowedRoles={['client_admin']}>
@@ -163,7 +181,7 @@ describe('T-M3-4.0.3.1 — /company route access matrix', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/company overview - coming soon/i)).toBeDefined();
+      expect(screen.getByText(/Total Slots/i)).toBeDefined();
     });
   });
 
@@ -217,13 +235,25 @@ describe('T-M3-4.0.3.1 — /company route access matrix', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('T-M3-4.0.3.2 — CompanyOverview placeholder', () => {
-  it('renders the "coming soon" placeholder card', async () => {
+  it('renders the "Company Overview" cards when active', async () => {
     mockAuth = activeClientAdmin();
+    vi.mocked(useCompanyOverview).mockReturnValue({
+      data: {
+        company: { id: 'co-1', name: 'Company A', maxUserSlots: 10, isActive: true },
+        totalUsers: 2,
+        activeUsers: 2,
+        pendingRequest: null,
+        activities: [],
+      },
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
 
     render(<CompanyOverview />);
 
     await waitFor(() => {
-      expect(screen.getByText(/company overview - coming soon/i)).toBeDefined();
+      expect(screen.getByText(/Total Slots/i)).toBeDefined();
     });
   });
 
