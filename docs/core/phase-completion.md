@@ -21,10 +21,17 @@ module writes to these fields.
     - "Complete the phase"
     - "Run phase completion"
 
+  Triggered automatically by phase orchestration:
+    - When `docs/core/orchestrate.md` `<PhaseLevelInvocation>` reaches
+      step 7 (all streams closed out), the orchestrator invokes phase
+      completion as its final sub-step. No separate user command is
+      required in this path.
+
   PRECONDITIONS:
   - docs/project-progress.md is loaded
   - docs/conventions.md is loaded (testing framework, test commands)
-  - Kanban MCP is reachable
+  - docs/core/tracker.md is loaded (task queries, API recipes)
+  - Local tracker server is reachable
   - The phase document for the current phase is loaded
 
   FLOW:
@@ -36,9 +43,13 @@ module writes to these fields.
     IF project-progress.md does not reference a current phase:
       → STOP. Inform user: "No active phase found in project-progress.md."
 
-  STEP 2 — VERIFY KANBAN STATE
-    Retrieve ALL tasks for the current phase from the kanban board.
+  STEP 2 — VERIFY TRACKER STATE
+    Retrieve ALL tasks for the current phase from the tracker.
     This includes every task from the gate and every stream.
+
+    ```bash
+    curl "http://127.0.0.1:7300/tasks?phase=<phase>"
+    ```
 
     CHECK — Are all tasks in DONE?
 
@@ -51,6 +62,11 @@ module writes to these fields.
       → STOP. Report which tasks are still awaiting review.
         "Phase completion cannot proceed. The following tasks
         are still in review: {{list of task IDs and names}}"
+
+    IF any tasks are in REWORK:
+      → STOP. Report which tasks are still in rework.
+        "Phase completion cannot proceed. The following tasks
+        are still in rework: {{list of task IDs and names}}"
 
     IF all tasks are in DONE:
       → Continue to STEP 3.
@@ -151,21 +167,23 @@ module writes to these fields.
     - {{Test ID}} (from Phase {{X}}): {{what failed and why}}
 
   STEP 3 — CREATE BUG TASKS
-    For each failure, create a bug task on the kanban board.
+    For each failure, create a bug task on the tracker using
+    `POST /tasks` as documented in `docs/core/tracker.md`.
 
-    TITLE FORMAT:
-      [BUG] {{Test ID}} — {{short description of failure}}
+    ```bash
+    curl -X POST http://127.0.0.1:7300/tasks \
+      -H "Content-Type: application/json" \
+      -d '{
+        "id": "BUG-001",
+        "title": "[BUG] {{Test ID}} — {{short description}}",
+        "description": "Discovered during: Phase completion for Phase {{N}}\nFailing test: {{Test ID}}\nTest belongs to: {{Phase and stream}}\nTest output: {{Error message}}",
+        "state": "TO-DO",
+        "phase": "{{phase}}",
+        "stream": "bug"
+      }'
+    ```
 
-    DESCRIPTION:
-      Discovered during: Phase completion for Phase {{N}} — {{Name}}
-      Failing test: {{Test ID}}
-      Test belongs to: {{Phase and stream the test was written for}}
-      Test output: {{Error message or failure output}}
-
-      Review Notes:
-      (empty — populated during review)
-
-    Each bug task goes to TO-DO on the kanban board.
+    Each bug task goes to TO-DO on the tracker.
 
     The phase completion agent does NOT diagnose root causes,
     investigate the codebase, or propose fixes. It records what
@@ -179,15 +197,21 @@ module writes to these fields.
     Do NOT update project-progress.md phase status.
     The phase stays in its current state.
 
-    Inform the user:
-    "Phase completion blocked by {{N}} test failure(s).
-    Bug tasks have been created on the kanban board.
-    After bugs are resolved, run phase completion again."
+    IF invoked by the orchestrator (via `docs/core/orchestrate.md`):
+      → The orchestrator automatically spawns a bug-resolution
+        stream and re-runs phase completion when that stream
+        closes out. No manual re-trigger is needed.
 
-    The user then addresses the bugs through the normal
-    execution and review cycle. When all bugs are resolved,
-    the user triggers phase completion again. The loop
-    repeats until the full test suite is green.
+    IF invoked directly by the user:
+      Inform the user:
+      "Phase completion blocked by {{N}} test failure(s).
+      Bug tasks have been created on the tracker.
+      After bugs are resolved, run phase completion again."
+
+      The user then addresses the bugs through the normal
+      execution and review cycle. When all bugs are resolved,
+      the user triggers phase completion again. The loop
+      repeats until the full test suite is green.
 </RegressionHandling>
 
 ---
@@ -197,7 +221,7 @@ module writes to these fields.
   - Phase completion is the ONLY workflow that updates phase status
     and milestone status in project-progress.md. No other agent
     or module writes to these fields.
-  - Phase completion requires ALL kanban tasks in DONE. There are
+  - Phase completion requires ALL tracker tasks in DONE. There are
     no partial completions.
   - The full test suite must pass. There are no exceptions or
     overrides for test failures. If tests fail, bugs must be
@@ -212,3 +236,14 @@ module writes to these fields.
     but does not execute the fixes — that is the execution agent's
     job.
 </PhaseCompletionRules>
+
+---
+
+## Anti-Patterns
+
+<AntiPatterns>
+  <AntiPattern name="ANTI-PATTERN: Not Cleaning Up Completed Stream Worktrees">
+    <BadExample>Running phase completion after all stream tasks are in DONE — but leaving stream worktrees and branches in place because "cleanup can happen later."</BadExample>
+    <Why>By the time phase completion runs, every stream review is complete and every branch has been merged to main. There is no remaining reason for any stream worktree to exist. Worktrees left behind accumulate across phases, fill git worktree list with stale entries, and make it impossible to tell at a glance what is actively in-flight. Cleanup is not optional post-completion bookkeeping — it is part of closing the phase. The reviewer's WorktreeCleanup step in git-review-workflow.md handles this per stream; phase completion should verify no orphaned worktrees remain before declaring the phase done.</Why>
+  </AntiPattern>
+</AntiPatterns>

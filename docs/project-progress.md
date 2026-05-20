@@ -8,9 +8,7 @@
 
 | Board         | Link / Reference                          |
 |---------------|-------------------------------------------|
-| Project Board | claims-rule-engine (`362a85d3-5ae6-429c-9ff6-ca8ce110f7be`) |
-
-> Kanban MCP authenticated and project board reachable.
+| Project Board | claims-rule-engine  |
 
 ---
 
@@ -39,7 +37,7 @@
 - [x] Health check passing
 - [x] Tests passing (5/5)
 - [x] Kanban MCP authenticated
-- [ ] npm run build passing (pre-existing TreeForm.tsx error pending)
+- [x] npm run build passing (TreeForm.tsx fix verified in Gate 4.0)
 
 ---
 
@@ -109,7 +107,6 @@ M3 - Accounts & Roles
 
 | # | Revision | Source | Status |
 |---|----------|--------|--------|
-| 1 | Fix `npm run build` - pre-existing `TreeForm.tsx:115` TS2345 error | Stream M3.1 stabilization review | _open_ |
-| 2 | Connect Kanban MCP - authentication required | Alignment health check | _resolved_ |
+| 1 | Fix `npm run build` - pre-existing `TreeForm.tsx:115` TS2345 error | Stream M3.1 stabilization review | **resolved** (verified in Gate 4.0 M3-4.0.2) |
 | 3 | Finish M3.1 stabilization patches (auth regression, refresh loop, dialog fix) | Phase M3.1 tasks.md | _in review_ |
 

@@ -143,7 +143,6 @@ Page module pattern — each page has its own directory with `components/`, `hoo
 
 | Tool         | Purpose                        | Configuration                         |
 |--------------|--------------------------------|---------------------------------------|
-| vibe-kanban  | Task management / Kanban board | Project: `claims-rule-engine`         |
 | Supabase MCP | Database management            | Project: `cayqhjjpqucsoymjvbzr`       |
 
 ---
