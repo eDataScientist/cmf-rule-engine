@@ -36,6 +36,7 @@ const mockDataset = {
   rows: 1000,
   columns: 50,
   claimCategory: 'motor' as const,
+  companyId: 'company-1',
   company_id: 'company-1',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -45,6 +46,9 @@ const mockDataset = {
   nickname: 'Test Dataset',
   granularity: 'claim' as const,
   alignmentMapping: {},
+  userId: 'user-1',
+  arabicColumns: 0,
+  uploadStatus: null,
 };
 
 describe('DatasetDetail - Write Gating Integration Tests', () => {
@@ -79,7 +83,7 @@ describe('DatasetDetail - Write Gating Integration Tests', () => {
       loading: false,
     });
     vi.mocked(useDataPreview).mockReturnValue({
-      previewData: [],
+      previewData: { headers: [], rows: [] },
       loading: false,
       loadPreview: vi.fn(),
       currentPage: 0,
