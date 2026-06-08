@@ -7,13 +7,14 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
-import { getCompanyUsers, type AdminUser } from '@/lib/db/admin-operations';
+import { getCompanyUsers, getCompany, type AdminUser, type Company } from '@/lib/db/admin-operations';
 
 export type PendingAction =
   | { type: 'register' }
   | { type: 'edit'; userId: string }
   | { type: 'toggle'; userId: string }
-  | { type: 'recovery'; userId: string };
+  | { type: 'resend_invite'; userId: string }
+  | { type: 'reset_access'; userId: string };
 
 export interface UseCompanyUserMgmtResult {
   users: AdminUser[];
@@ -25,11 +26,13 @@ export interface UseCompanyUserMgmtResult {
   refresh: () => Promise<void>;
   pendingAction: PendingAction | null;
   setPendingAction: (action: PendingAction | null) => void;
+  company: Company | null;
 }
 
 export function useCompanyUserMgmt(): UseCompanyUserMgmtResult {
   const { profile } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +48,12 @@ export function useCompanyUserMgmt(): UseCompanyUserMgmtResult {
     setError(null);
 
     try {
-      const usersData = await getCompanyUsers(profile.company_id);
+      const [usersData, companyData] = await Promise.all([
+        getCompanyUsers(profile.company_id),
+        getCompany(profile.company_id),
+      ]);
       setUsers(usersData);
+      setCompany(companyData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
@@ -82,5 +89,6 @@ export function useCompanyUserMgmt(): UseCompanyUserMgmtResult {
     refresh: loadUsers,
     pendingAction,
     setPendingAction,
+    company,
   };
 }

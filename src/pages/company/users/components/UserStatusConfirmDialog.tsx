@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { setCompanyUserActive } from '@/lib/db/client-operations';
+import { useAuth } from '@/lib/auth/context';
 import type { AdminUser } from '@/lib/db/admin-operations';
 
 interface UserStatusConfirmDialogProps {
@@ -21,6 +22,7 @@ interface UserStatusConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  disabled?: boolean;
 }
 
 export function UserStatusConfirmDialog({
@@ -28,14 +30,25 @@ export function UserStatusConfirmDialog({
   open,
   onOpenChange,
   onSuccess,
+  disabled = false,
 }: UserStatusConfirmDialogProps) {
+  const { profile } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const targetStatus = !user.isActive;
   const actionLabel = targetStatus ? 'Reactivate' : 'Deactivate';
 
+  // Internal self-deactivation guard
+  const isSelf = user.userId === profile?.user_id;
+  const isDisabled = disabled || isSelf;
+
   async function handleConfirm() {
+    if (isDisabled) {
+      setError('This action is not available for this user.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -60,8 +73,9 @@ export function UserStatusConfirmDialog({
           </DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          Are you sure you want to {actionLabel.toLowerCase()} {user.fullName ?? user.email}?
-          {targetStatus ? ' This will allow them to sign in.' : ' This will prevent them from signing in.'}
+          {isSelf
+            ? 'You cannot deactivate your own account.'
+            : `Are you sure you want to ${actionLabel.toLowerCase()} ${user.fullName ?? user.email}?${targetStatus ? ' This will allow them to sign in.' : ' This will prevent them from signing in.'}`}
         </DialogDescription>
 
         {error && (
@@ -81,7 +95,7 @@ export function UserStatusConfirmDialog({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={submitting}
+            disabled={isDisabled || submitting}
             variant={targetStatus ? 'default' : 'destructive'}
           >
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -17,6 +17,7 @@ import {
 import { Select } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { updateCompanyUser } from '@/lib/db/client-operations';
+import { useAuth } from '@/lib/auth/context';
 import type { AdminUser } from '@/lib/db/admin-operations';
 
 interface EditCompanyUserDialogProps {
@@ -34,10 +35,15 @@ export function EditCompanyUserDialog({
   onSuccess,
   disabled = false,
 }: EditCompanyUserDialogProps) {
+  const { profile } = useAuth();
   const [fullName, setFullName] = useState(user.fullName ?? '');
   const [role, setRole] = useState<'client_admin' | 'client_user'>(user.role as 'client_admin' | 'client_user');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Internal self-edit guard: block editing the caller's own row even if parent somehow enables it
+  const isSelf = user.userId === profile?.user_id;
+  const isDisabled = disabled || isSelf;
 
   useEffect(() => {
     if (open) {
@@ -49,6 +55,11 @@ export function EditCompanyUserDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (isDisabled) {
+      setError('This action is not available for this user.');
+      return;
+    }
 
     if (!fullName.trim()) {
       setError('Full name is required');
@@ -77,7 +88,11 @@ export function EditCompanyUserDialog({
           <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          {disabled ? 'This action is not available for this user.' : `Editing ${user.email ?? user.fullName}`}
+          {isSelf
+            ? 'You cannot edit your own account.'
+            : isDisabled
+              ? 'This action is not available for this user.'
+              : `Editing ${user.email ?? user.fullName}`}
         </DialogDescription>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +103,7 @@ export function EditCompanyUserDialog({
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="John Doe"
-              disabled={disabled || submitting}
+              disabled={isDisabled || submitting}
               autoFocus
             />
           </div>
@@ -103,7 +118,7 @@ export function EditCompanyUserDialog({
               ]}
               value={role}
               onChange={(e) => setRole(e.target.value as 'client_admin' | 'client_user')}
-              disabled={disabled || submitting}
+              disabled={isDisabled || submitting}
             />
           </div>
 
@@ -122,7 +137,7 @@ export function EditCompanyUserDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={disabled || submitting}>
+            <Button type="submit" disabled={isDisabled || submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save
             </Button>

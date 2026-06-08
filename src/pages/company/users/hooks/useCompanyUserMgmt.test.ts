@@ -18,6 +18,7 @@ const mockUsers: AdminUser[] = [
     companyName: 'Company A',
     isActive: true,
     createdAt: '2024-01-01',
+    lastSignIn: null,
   },
   {
     userId: 'user-2',
@@ -28,6 +29,7 @@ const mockUsers: AdminUser[] = [
     companyName: 'Company A',
     isActive: true,
     createdAt: '2024-01-02',
+    lastSignIn: null,
   },
   {
     userId: 'user-3',
@@ -38,8 +40,20 @@ const mockUsers: AdminUser[] = [
     companyName: 'Company A',
     isActive: false,
     createdAt: '2024-01-03',
+    lastSignIn: null,
   },
 ];
+
+const mockCompany = {
+  id: 'company-a',
+  name: 'Company A',
+  country: 'US',
+  insuranceType: 'motor' as const,
+  maxUserSlots: 10,
+  isActive: true,
+  createdAt: '2024-01-01',
+  createdBy: null,
+};
 
 // Mock auth context with configurable profile
 let mockProfile: { role: 'client_admin'; company_id: string; user_id: string; full_name: string; is_active: true } | null = null;
@@ -54,6 +68,7 @@ vi.mock('@/lib/auth/context', () => ({
 
 vi.mock('@/lib/db/admin-operations', () => ({
   getCompanyUsers: vi.fn().mockImplementation(() => Promise.resolve(mockUsers)),
+  getCompany: vi.fn().mockImplementation(() => Promise.resolve(mockCompany)),
 }));
 
 vi.mock('jotai', () => ({
@@ -140,6 +155,14 @@ describe('T-M3-4.C.1.1 — useCompanyUserMgmt filtering', () => {
     });
     expect(result.current.filtered).toHaveLength(3);
   });
+
+  it('exposes company data including maxUserSlots', async () => {
+    const { useCompanyUserMgmt } = await import('./useCompanyUserMgmt');
+    const { result } = renderHook(() => useCompanyUserMgmt());
+
+    await vi.waitFor(() => expect(result.current.company).not.toBeNull());
+    expect(result.current.company?.maxUserSlots).toBe(10);
+  });
 });
 
 describe('T-M3-4.C.1.2 — useCompanyUserMgmt pendingAction mediates single-dialog behaviour', () => {
@@ -191,14 +214,24 @@ describe('T-M3-4.C.1.2 — useCompanyUserMgmt pendingAction mediates single-dial
     expect(result.current.pendingAction).toEqual({ type: 'toggle', userId: 'user-2' });
   });
 
-  it('can set pending action to recovery', async () => {
+  it('can set pending action to resend invite', async () => {
     const { useCompanyUserMgmt } = await import('./useCompanyUserMgmt');
     const { result } = renderHook(() => useCompanyUserMgmt());
 
     act(() => {
-      result.current.setPendingAction({ type: 'recovery', userId: 'user-3' });
+      result.current.setPendingAction({ type: 'resend_invite', userId: 'user-3' });
     });
-    expect(result.current.pendingAction).toEqual({ type: 'recovery', userId: 'user-3' });
+    expect(result.current.pendingAction).toEqual({ type: 'resend_invite', userId: 'user-3' });
+  });
+
+  it('can set pending action to reset access', async () => {
+    const { useCompanyUserMgmt } = await import('./useCompanyUserMgmt');
+    const { result } = renderHook(() => useCompanyUserMgmt());
+
+    act(() => {
+      result.current.setPendingAction({ type: 'reset_access', userId: 'user-3' });
+    });
+    expect(result.current.pendingAction).toEqual({ type: 'reset_access', userId: 'user-3' });
   });
 
   it('clears pending action when a new one is set', async () => {

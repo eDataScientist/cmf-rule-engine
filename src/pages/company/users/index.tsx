@@ -5,13 +5,14 @@
  * No slot UI here - that belongs on /company (Stream B).
  */
 
-import { Loader2, Search, UserPlus, Users } from 'lucide-react';
+import { Loader2, Search, UserPlus, Users, Pencil, UserX, UserCheck } from 'lucide-react';
 import { useSetAtom } from 'jotai';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { headerBreadcrumbsAtom } from '@/store/atoms/header';
 import { useEffect } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { useCompanyUserMgmt } from './hooks/useCompanyUserMgmt';
 import { RegisterCompanyUserDialog } from './components/RegisterCompanyUserDialog';
 import { EditCompanyUserDialog } from './components/EditCompanyUserDialog';
@@ -20,6 +21,7 @@ import { UserRecoveryMenu } from './components/UserRecoveryMenu';
 
 export default function CompanyUsers() {
   const setBreadcrumbs = useSetAtom(headerBreadcrumbsAtom);
+  const { profile } = useAuth();
   const {
     users,
     filtered,
@@ -30,6 +32,7 @@ export default function CompanyUsers() {
     refresh,
     pendingAction,
     setPendingAction,
+    company,
   } = useCompanyUserMgmt();
 
   useEffect(() => {
@@ -46,6 +49,9 @@ export default function CompanyUsers() {
   const isRegisterOpen = pendingAction?.type === 'register';
   const editUser = pendingAction?.type === 'edit' ? users.find((u) => u.userId === pendingAction.userId) : undefined;
   const toggleUser = pendingAction?.type === 'toggle' ? users.find((u) => u.userId === pendingAction.userId) : undefined;
+
+  const currentUserId = profile?.user_id;
+  const maxUserSlots = company?.maxUserSlots ?? 0;
 
   return (
     <div className="space-y-6">
@@ -117,6 +123,9 @@ export default function CompanyUsers() {
                     Status
                   </th>
                   <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                    Last Sign-in
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                     Added
                   </th>
                   <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--color-text-secondary)' }}>
@@ -125,70 +134,98 @@ export default function CompanyUsers() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((user) => (
-                  <tr
-                    key={user.userId}
-                    className="border-b last:border-0"
-                    style={{ borderColor: 'var(--color-border-subtle)' }}
-                  >
-                    <td className="px-4 py-3">
-                      <div>
-                        <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                          {user.fullName ?? 'Unnamed'}
+                {filtered.map((user) => {
+                  const isSelf = user.userId === currentUserId;
+                  const isAdminRow = user.role === 'admin';
+                  const canModify = !isSelf && !isAdminRow;
+
+                  return (
+                    <tr
+                      key={user.userId}
+                      className="border-b last:border-0"
+                      style={{ borderColor: 'var(--color-border-subtle)' }}
+                    >
+                      <td className="px-4 py-3">
+                        <div>
+                          <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                            {user.fullName ?? 'Unnamed'}
+                          </span>
+                          {user.email && (
+                            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                              {user.email}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{
+                            backgroundColor:
+                              user.role === 'client_admin'
+                                ? 'var(--color-brand-blue-bg, rgba(37, 99, 235, 0.1))'
+                                : 'var(--color-muted-bg, rgba(161, 161, 170, 0.1))',
+                            color:
+                              user.role === 'client_admin'
+                                ? 'var(--color-brand-blue)'
+                                : 'var(--color-text-secondary)',
+                          }}
+                        >
+                          {roleLabel[user.role] ?? user.role}
                         </span>
-                        {user.email && (
-                          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                            {user.email}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{
-                          backgroundColor:
-                            user.role === 'client_admin'
-                              ? 'var(--color-brand-blue-bg, rgba(37, 99, 235, 0.1))'
-                              : 'var(--color-muted-bg, rgba(161, 161, 170, 0.1))',
-                          color:
-                            user.role === 'client_admin'
-                              ? 'var(--color-brand-blue)'
-                              : 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {roleLabel[user.role] ?? user.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{
-                          backgroundColor: user.isActive
-                            ? 'var(--color-status-green-bg, rgba(34, 197, 94, 0.1))'
-                            : 'var(--color-status-red-bg, rgba(239, 68, 68, 0.1))',
-                          color: user.isActive ? 'var(--color-status-green)' : 'var(--color-status-red)',
-                        }}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--color-text-secondary)' }}>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <UserRecoveryMenu
-                        userId={user.userId}
-                        userName={user.fullName ?? 'Unknown'}
-                        isActive={user.isActive}
-                        onEdit={() => setPendingAction({ type: 'edit', userId: user.userId })}
-                        onToggleStatus={() => setPendingAction({ type: 'toggle', userId: user.userId })}
-                        onRecovery={() => setPendingAction({ type: 'recovery', userId: user.userId })}
-                        disabled={user.role === 'admin'}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{
+                            backgroundColor: user.isActive
+                              ? 'var(--color-status-green-bg, rgba(34, 197, 94, 0.1))'
+                              : 'var(--color-status-red-bg, rgba(239, 68, 68, 0.1))',
+                            color: user.isActive ? 'var(--color-status-green)' : 'var(--color-status-red)',
+                          }}
+                        >
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3" style={{ color: 'var(--color-text-secondary)' }}>
+                        {user.lastSignIn ? new Date(user.lastSignIn).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3" style={{ color: 'var(--color-text-secondary)' }}>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setPendingAction({ type: 'edit', userId: user.userId })}
+                            disabled={!canModify}
+                            title={isSelf ? 'Cannot edit your own account' : isAdminRow ? 'Cannot edit admin users' : 'Edit user'}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setPendingAction({ type: 'toggle', userId: user.userId })}
+                            disabled={!canModify}
+                            title={isSelf ? 'Cannot deactivate your own account' : isAdminRow ? 'Cannot modify admin users' : user.isActive ? 'Deactivate user' : 'Reactivate user'}
+                          >
+                            {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                          </Button>
+                          <UserRecoveryMenu
+                            userId={user.userId}
+                            userName={user.fullName ?? 'Unknown'}
+                            disabled={isAdminRow}
+                            onSuccess={refresh}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -201,7 +238,7 @@ export default function CompanyUsers() {
         onOpenChange={(open) => !open && setPendingAction(null)}
         onSuccess={refresh}
         currentCount={users.length}
-        maxCount={20}
+        maxCount={maxUserSlots}
       />
 
       {editUser && (
@@ -210,7 +247,7 @@ export default function CompanyUsers() {
           open={pendingAction?.type === 'edit'}
           onOpenChange={(open) => !open && setPendingAction(null)}
           onSuccess={refresh}
-          disabled={editUser.userId === users.find((u) => u.role === 'client_admin' && u.fullName === 'Current User')?.userId}
+          disabled={editUser.userId === currentUserId}
         />
       )}
 
@@ -220,6 +257,7 @@ export default function CompanyUsers() {
           open={pendingAction?.type === 'toggle'}
           onOpenChange={(open) => !open && setPendingAction(null)}
           onSuccess={refresh}
+          disabled={toggleUser.userId === currentUserId}
         />
       )}
     </div>
