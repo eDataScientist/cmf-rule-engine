@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { requestCompanySlots } from '@/lib/db/client-operations';
 
 interface RequestSlotsDialogProps {
@@ -15,8 +22,6 @@ export function RequestSlotsDialog({ isOpen, onClose, onSuccess, hasPending }: R
   const [slotsCount, setSlotsCount] = useState<string>('1');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,12 +51,12 @@ export function RequestSlotsDialog({ isOpen, onClose, onSuccess, hasPending }: R
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-zinc-950 border border-zinc-800 rounded-md p-6 max-w-md w-full space-y-4">
-        <div>
-          <h2 className="text-lg font-bold text-zinc-50">Request Additional Slots</h2>
-          <p className="text-sm text-zinc-400 mt-1">Submit a slot request for admin review.</p>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Request Additional Slots</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-zinc-400">Submit a slot request for admin review.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -76,7 +81,7 @@ export function RequestSlotsDialog({ isOpen, onClose, onSuccess, hasPending }: R
 
           {error && <div className="text-sm text-red-500">{error}</div>}
 
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -93,9 +98,9 @@ export function RequestSlotsDialog({ isOpen, onClose, onSuccess, hasPending }: R
             >
               {loading ? 'Submitting...' : 'Submit Request'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

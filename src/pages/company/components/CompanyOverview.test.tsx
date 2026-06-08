@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import CompanyOverview from '../index';
 import { useCompanyOverview } from '../hooks/useCompanyOverview';
+import { RequestSlotsDialog } from './RequestSlotsDialog';
 import { requestCompanySlots, cancelSlotRequest } from '@/lib/db/client-operations';
 
 // Mock client-operations
@@ -170,7 +171,7 @@ describe('CompanyOverview Page (Stream B)', () => {
     });
   });
 
-  it('shows cancel button when pending request exists (T-M3-4.B.3.2)', async () => {
+  it('shows cancel button when pending request exists', async () => {
     setupMockData({
       pendingRequest: {
         id: 'existing-req',
@@ -188,6 +189,21 @@ describe('CompanyOverview Page (Stream B)', () => {
     // Cancel button should be visible when there's a pending request (not Request More Slots)
     expect(screen.getByText('Cancel Pending Request')).toBeDefined();
     expect(screen.queryByText('Request More Slots')).toBeNull();
+  });
+
+  it('disables submit and surfaces inline message when pending request already exists (T-M3-4.B.3.2)', () => {
+    render(
+      <RequestSlotsDialog
+        isOpen={true}
+        onClose={() => {}}
+        onSuccess={() => {}}
+        hasPending={true}
+      />
+    );
+
+    const submitBtn = screen.getByText('Submit Request') as HTMLButtonElement;
+    expect(submitBtn.disabled).toBe(true);
+    expect(screen.getByText(/A pending slot request already exists/)).toBeDefined();
   });
 
   it('quick links button navigates to /company/users (T-M3-4.B.2.3)', async () => {
