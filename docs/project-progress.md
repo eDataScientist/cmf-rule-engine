@@ -27,8 +27,8 @@
 | Field     | Value |
 |-----------|-------|
 | Phase     | Phase 4 - Client Admin Features |
-| Objective | TBD — pending phase planning |
-| Status    | Planning |
+| Objective | Client-admin user management, slot lifecycle, write restrictions, regression coverage |
+| Status    | Complete |
 
 ---
 
@@ -99,7 +99,7 @@ M3 - Accounts & Roles
 |- Phase 1 - Database & Auth Foundation [complete]
 |- Phase 2 - Auth, Routes & Role Guards [in review]
 |- Phase 3 - Admin Console [complete]
-|- Phase 4 - Client Admin Features [not started]
+|- Phase 4 - Client Admin Features [complete]
 \- Phase 5 - Operations & Tree Assignment [complete]
 ```
 
