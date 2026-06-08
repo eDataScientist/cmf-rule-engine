@@ -83,6 +83,10 @@ vi.mock('@/lib/db/client-operations', () => ({
   resetCompanyUserAccess: vi.fn(),
 }));
 
+vi.mock('@/pages/company/hooks/useCompanyOverview', () => ({
+  useCompanyOverview: vi.fn(),
+}));
+
 // ─── Auth mock ────────────────────────────────────────────────────────────────
 
 let mockProfile: UserProfile | null = null;
@@ -124,6 +128,7 @@ beforeEach(() => {
 // ─── Lazy imports (after mocks) ───────────────────────────────────────────────
 
 import { RoleGuard, getRoleLandingPath } from '@/components/shared/RoleGuard';
+import { useCompanyOverview } from '@/pages/company/hooks/useCompanyOverview';
 import CompanyOverview from '@/pages/company';
 import CompanyUsers from '@/pages/company/users';
 
@@ -134,6 +139,18 @@ import CompanyUsers from '@/pages/company/users';
 describe('T-M3-4.0.5.1 — /company route access matrix', () => {
   it('allows client_admin: renders the company overview page', async () => {
     setAuth(clientAdminProfile);
+    vi.mocked(useCompanyOverview).mockReturnValue({
+      data: {
+        company: { id: 'co-1', name: 'Company A', maxUserSlots: 10, isActive: true },
+        totalUsers: 2,
+        activeUsers: 2,
+        pendingRequest: null,
+        activities: [],
+      },
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
 
     render(
       <MemoryRouter initialEntries={['/company']}>

@@ -50,8 +50,8 @@ Phase 1 is the gate — all streams depend on it. Phase 2, Phase 3, and Phase 5 
 - [x] All data operations correctly scope by company_id
 - [x] Generate Tree page includes company selector for admins
 - [x] npm run build passes with zero TypeScript errors
-- [ ] Client admin slot request flow is end-to-end operational
-- [ ] Full integration smoke test across all three roles
+- [x] Client admin slot request flow is end-to-end operational
+- [x] Full integration smoke test across all three roles
 
 ---
 

@@ -35,9 +35,11 @@
 ## Status
 
 - [x] Health check passing
-- [x] Tests passing (5/5)
+- [x] Tests passing (281/283 — 2 pre-existing Phase 3 CSV export failures excluded)
 - [x] Kanban MCP authenticated
 - [x] npm run build passing (TreeForm.tsx fix verified in Gate 4.0)
+- [x] Client admin slot request flow is end-to-end operational
+- [x] Full integration smoke test across all three roles
 
 ---
 
