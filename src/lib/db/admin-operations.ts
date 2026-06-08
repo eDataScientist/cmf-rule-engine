@@ -25,6 +25,7 @@ export interface AdminUser {
   companyName: string | null;
   isActive: boolean;
   createdAt: string;
+  lastSignIn: string | null;
 }
 
 export interface ActivityLogEntry {
@@ -341,6 +342,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
       companyName: row.company_name ?? null,
       isActive: row.is_active,
       createdAt: row.created_at,
+      lastSignIn: row.last_sign_in_at ?? null,
     }));
   }
 
@@ -363,6 +365,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
     companyName: row.companies?.name ?? null,
     isActive: row.is_active,
     createdAt: row.created_at,
+    lastSignIn: null,
   }));
 }
 
@@ -395,6 +398,7 @@ export async function getCompanyUsers(companyId: string): Promise<AdminUser[]> {
     companyName: row.companies?.name ?? null,
     isActive: row.is_active,
     createdAt: row.created_at,
+    lastSignIn: null,
   }));
 }
 
