@@ -97,7 +97,7 @@ M2 - Platform Foundation
 
 M3 - Accounts & Roles
 |- Phase 1 - Database & Auth Foundation [complete]
-|- Phase 2 - Auth, Routes & Role Guards [in review]
+|- Phase 2 - Auth, Routes & Role Guards [complete]
 |- Phase 3 - Admin Console [complete]
 |- Phase 4 - Client Admin Features [complete]
 \- Phase 5 - Operations & Tree Assignment [complete]
@@ -110,5 +110,5 @@ M3 - Accounts & Roles
 | # | Revision | Source | Status |
 |---|----------|--------|--------|
 | 1 | Fix `npm run build` - pre-existing `TreeForm.tsx:115` TS2345 error | Stream M3.1 stabilization review | **resolved** (verified in Gate 4.0 M3-4.0.2) |
-| 3 | Finish M3.1 stabilization patches (auth regression, refresh loop, dialog fix) | Phase M3.1 tasks.md | _in review_ |
+| 3 | Finish M3.1 stabilization patches (auth regression, refresh loop, dialog fix) | Phase M3.1 tasks.md | **resolved** (verified in Gate 4.0 M3-4.0.2) |
 
