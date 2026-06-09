@@ -467,6 +467,19 @@
       "milestone": "M3",
       "created_at": 1781006888597,
       "updated_at": 1781007618376
+    },
+    {
+      "id": "M3-BUG-005",
+      "title": "[BUG] Tree visualizer deep nodes overlap",
+      "description": "Symptom: In the tree visualizer, a single tree deeper than two levels causes decision nodes and leaf nodes to overlap horizontally.\n\nExpected: Deeper levels should preserve at least the same horizontal spacing used by two-level trees so nodes remain readable.\n\nRoot Cause: src/lib/utils/treeToReactFlow.ts used a fixed 800px layout span and recursively halved it at every depth. Level 3 collapsed adjacent nodes to 100px spacing and level 4 to 50px, below the 160px decision-node minimum width.\n\nFix Approach: Replace exponential fixed-span halving with a leaf-slot layout: each leaf receives a fixed horizontal slot, and each decision node is centered over its child subtree. Use computed tree dimensions when placing multiple trees to avoid ensemble overlap.\n\nFiles Affected:\n- src/lib/utils/treeToReactFlow.ts\n- src/lib/utils/treeToReactFlow.test.ts\n\nReproduction:\n1. Open a tree with at least three branch levels in /tree-visualizer/:treeId\n2. Observe descendants overlap/collapse horizontally\n3. Compare level-3+ spacing with the two-level layout spacing",
+      "state": "IN-REVIEW",
+      "phase": "M3",
+      "stream": "bug-fix",
+      "author": "Codex",
+      "implementation_notes": "Implemented compact contour packing for the tree visualizer layout.\n\nOriginal fix: replaced exponential fixed-span halving with deep-safe spacing.\nReview feedback: fixed leaf-slot layout made sparse deep trees too wide; sibling sides do not need equal global spacing, only an apparent edge gap between visible subtree contours.\nResponse: replaced equal leaf-slot positioning with contour-based subtree packing. Each subtree is laid out independently, the right subtree shifts only enough to clear the left subtree's visible right edge at overlapping levels, and node widths are estimated from rendered labels. Multi-tree ensemble offsets now use computed rendered bounds instead of leaf-count cell widths.\n\nFiles modified:\n- src/lib/utils/treeToReactFlow.ts\n- src/lib/utils/treeToReactFlow.test.ts\n\nVerification:\n- npx vitest run src/lib/utils/treeToReactFlow.test.ts\n- npx eslint src/lib/utils/treeToReactFlow.ts src/lib/utils/treeToReactFlow.test.ts\n- npm run build",
+      "milestone": "M3",
+      "created_at": 1781008331278,
+      "updated_at": 1781008970542
     }
   ],
   "comments": [
