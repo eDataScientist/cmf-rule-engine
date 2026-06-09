@@ -5,8 +5,8 @@
   five-level hierarchy: Project → Milestone → Phase → Gate/Stream → Task.
 
   Planning is progressive — milestones are planned loosely at the feature level, phases
-  are planned in full detail with tasks, and work is managed through a kanban board
-  (vibe-kanban MCP). All protocols, conventions, and workflows are defined in modular
+  are planned in full detail with tasks, and work is managed through the built-in
+  task tracker (SQLite backend + local Svelte SPA). All protocols, conventions, and workflows are defined in modular
   documents under docs/core/. This file is the entry point. It tells you what to assess,
   what to load, and what never to do.
 </Blueprint>
@@ -17,14 +17,11 @@
   PURPOSE: Orient the agent at the start of every session.
   This sequence runs EVERY time. No exceptions.
 
-  STEP 1: Load docs/core/health-check.md. Follow its protocol.
-    → IF health check fails → STOP. Resolve failures before proceeding.
-    → IF health check passes → Continue to STEP 2.
-
-  STEP 2: Load docs/project-progress.md. Check if it is populated.
+  STEP 1: Load docs/project-progress.md. Check if it is populated.
 
   IF project-progress.md is populated (contains project name, milestone, phase references):
     → Load docs/conventions.md.
+    → Load docs/core/tracker.md (provides HTTP API recipes and state-machine context for the built-in task tracker).
     → IF project-progress.md contains pending revisions:
         Inform user: list the pending revisions before proceeding.
     → GOTO <ModuleRouting>. Determine user intent and load the appropriate module.
@@ -63,6 +60,9 @@
   │ Execute tasks           │ docs/core/execution.md               │
   │ (start gate/stream)     │                                      │
   ├─────────────────────────┼──────────────────────────────────────┤
+  │ Orchestrate phase /     │ docs/core/orchestrate.md             │
+  │ stream execution        │                                      │
+  ├─────────────────────────┼──────────────────────────────────────┤
   │ Review gate/stream      │ docs/core/review.md                  │
   ├─────────────────────────┼──────────────────────────────────────┤
   │ Address review notes    │ docs/core/execution.md               │
@@ -82,18 +82,29 @@
   │ SRS discussion/planning │ docs/core/srs-planning.md            │
   │                         │                                      │
   ├─────────────────────────┼──────────────────────────────────────┤
-  │ Correct completed tasks │ docs/core/tweak-planning.md          │
-  │ in current phase (tweak)│                                      │
+  │ Quick change / tweak    │ docs/core/tweak-planning.md          │
+  │ (small, contained,      │                                      │
+  │ single concern)         │                                      │
   ├─────────────────────────┼──────────────────────────────────────┤
   │ Commit / git operations │ docs/core/git-execution-workflow.md  │
   │                         │ or docs/core/git-review-workflow.md  │
-  ├─────────────────────────┼──────────────────────────────────────┤
-  │ Check project health    │ docs/core/health-check.md            │
   ├─────────────────────────┼──────────────────────────────────────┤
   │ Modify docs structure   │ docs/core/blueprint-structure.md     │
   ├─────────────────────────┼──────────────────────────────────────┤
   │ Discuss / clarify       │ No module needed. Use loaded context.│
   └─────────────────────────┴──────────────────────────────────────┘
+
+  TWEAK INTENT CLASSIFICATION:
+    The agent must apply general intelligence to every incoming change
+    request — assessing scope, surface area, feature-ness, and test-plan
+    need — and proactively route to tweak planning when the request
+    qualifies, even when the user did not say "tweak". The agent must
+    surface the classification to the user before drafting.
+
+    When tweak intent is confirmed, the agent enters **Tweak Mode** and
+    follows the change-first loop: understand → restate → confirm → change
+    → cycle → verify → post-hoc doc. No tracker tasks, no planning
+    artifacts, no ceremony. The user is the live review loop.
 
   IF the user's request spans multiple intents (e.g., "finish this task and commit"):
     Load each required module before executing its corresponding workflow.
@@ -116,11 +127,7 @@
     Load only what the current intent requires.
     If intent changes mid-session, load the new module at that point.
 
-  RULE 3 — VALIDATION GATE
-    NEVER proceed past <SessionStart> without passing the health check.
-    All failures must be resolved before work begins.
-
-  RULE 4 — ASK BEFORE ASSUMING
+  RULE 3 — ASK BEFORE ASSUMING
     If intent is ambiguous, ASK. Do not infer and proceed.
     This applies to user requests, unclear scope, and missing context.
 </HardRules>

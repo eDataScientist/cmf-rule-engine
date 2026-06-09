@@ -433,14 +433,14 @@
       "id": "M3-BUG-004",
       "title": "[BUG] Table Visualizer dataset loading fails for all users due to storage RLS mismatch",
       "description": "Symptom: JavaScript alert 'Failed to load dataset' when any user (including admin) tries to load a dataset in the Table Visualizer.\n\nExpected: Dataset should load successfully from Supabase Storage.\n\nRoot Cause: Storage RLS policies on raw-datasets and aligned-datasets buckets checked auth.uid() = foldername(name)[1], but files are stored under company_id/ folders, not user UUID folders. Even admin users were blocked because there was no is_admin() bypass on storage policies.\n\nFix Approach: Updated storage.objects RLS policies to check company membership via get_user_company_id() instead of user ID, with is_admin() bypass for admin users.\n\nFiles Affected: Supabase migration fix_storage_rls_for_company_scoped_files\n\nReproduction:\n1. Open Table Visualizer\n2. Select any dataset\n3. Click 'Load Dataset'\n4. Observe 'Failed to load dataset from storage' alert",
-      "state": "TO-DO",
+      "state": "DONE",
       "phase": "M3",
       "stream": "bug-fix",
       "author": null,
-      "implementation_notes": null,
+      "implementation_notes": "Fixed by updating storage.objects RLS policies to use company-scoped access with is_admin() bypass.\n\nMigration applied: fix_storage_rls_for_company_scoped_files\n\nChanges:\n- Dropped old policies that checked auth.uid() against folder name\n- Created new SELECT/INSERT/DELETE policies for raw-datasets and aligned-datasets buckets\n- New policies check: is_admin() OR foldername(name)[1] = get_user_company_id()::text\n- This matches the actual file path structure: {company_id}/{dataset_id}/{filename}\n\nVerified working by user in production environment.",
       "milestone": "M3",
       "created_at": 1781005228645,
-      "updated_at": 1781005228645
+      "updated_at": 1781005241302
     }
   ],
   "comments": [

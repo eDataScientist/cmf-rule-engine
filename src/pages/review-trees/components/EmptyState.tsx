@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FileText, Plus } from 'lucide-react';
 
-export function EmptyState() {
+interface EmptyStateProps {
+  isAdmin?: boolean;
+}
+
+export function EmptyState({ isAdmin = false }: EmptyStateProps) {
   const navigate = useNavigate();
 
   return (
@@ -17,10 +21,12 @@ export function EmptyState() {
           Create your first decision tree to explore real-time fraud detection analysis.
         </p>
       </div>
-      <Button onClick={() => navigate('/generate-tree')} size="lg" className="mt-8">
-        <Plus className="h-4 w-4 mr-2" />
-        Create your first tree
-      </Button>
+      {isAdmin && (
+        <Button onClick={() => navigate('/generate-tree')} size="lg" className="mt-8">
+          <Plus className="h-4 w-4 mr-2" />
+          Create your first tree
+        </Button>
+      )}
     </Card>
   );
 }

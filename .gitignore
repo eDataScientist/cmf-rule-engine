@@ -42,3 +42,6 @@ preview_response.json
 # Potential sensitive files
 *.csv
 *.xlsx
+.agents
+.kimi-code
+test_arabic_check.js

@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import type { TreeAssociation } from '@/lib/db/operations';
 import { LinkTreeDialog } from '@/pages/datasets/components/LinkTreeDialog';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
+import { useAuth } from '@/lib/auth/context';
 
 interface LinkedTreesListProps {
   associations: TreeAssociation[];
@@ -26,6 +27,8 @@ export default function LinkedTreesList({
 }: LinkedTreesListProps) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
 
   const handleCreateTree = () => {
     navigate('/generate-tree', {
@@ -54,10 +57,12 @@ export default function LinkedTreesList({
                 <Link2 className="mr-2 h-4 w-4" />
                 Link Existing
               </Button>
-              <Button size="sm" onClick={handleCreateTree}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New
-              </Button>
+              {isAdmin && (
+                <Button size="sm" onClick={handleCreateTree}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -72,7 +77,7 @@ export default function LinkedTreesList({
             <p className="text-sm text-muted-foreground mb-4">
               No trees have been evaluated with this dataset yet
             </p>
-            {canWrite && (
+            {isAdmin && (
               <Button variant="outline" onClick={handleCreateTree}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Tree

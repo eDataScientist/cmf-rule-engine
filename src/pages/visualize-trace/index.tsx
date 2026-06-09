@@ -11,6 +11,7 @@ import { useDebouncedEvaluation } from './hooks/useDebouncedEvaluation';
 import { useImageExport } from './hooks/useImageExport';
 import { extractFeatures } from './utils/extractFeatures';
 import { getTrees } from '@/lib/db/operations';
+import { useAuth } from '@/lib/auth/context';
 import type { ClaimData } from '@/lib/types/claim';
 import type { Tree } from '@/lib/types/tree';
 import {
@@ -22,6 +23,8 @@ import {
 export default function VisualizeTrace() {
   const { treeId: urlTreeId } = useParams<{ treeId?: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
 
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(urlTreeId || null);
@@ -148,12 +151,14 @@ export default function VisualizeTrace() {
         style={{ backgroundColor: '#09090b' }}
       >
         <p style={{ color: '#71717a' }}>No trees available. Create a tree first.</p>
-        <Button
-          onClick={() => navigate('/generate-tree')}
-          style={{ backgroundColor: '#fafafa', color: '#09090b' }}
-        >
-          Create Tree
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => navigate('/generate-tree')}
+            style={{ backgroundColor: '#fafafa', color: '#09090b' }}
+          >
+            Create Tree
+          </Button>
+        )}
       </div>
     );
   }

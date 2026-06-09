@@ -188,14 +188,18 @@ async function processDatasetUpload(
       `Alignment received: ${matchedColumns}/${Object.keys(alignment).length} columns matched`
     );
 
-    console.log("Step 4: Creating initial dataset record...");
+    console.log("Step 4: Calling ArabicCheck API on original file...");
+    const arabicColumns = await callArabicCheckAPI(file);
+    console.log(`Arabic columns detected: ${arabicColumns}`);
+
+    console.log("Step 5: Creating initial dataset record...");
     state.datasetId = await createDatasetRecord({
       insuranceCompany: metadata.insuranceCompany,
       country: metadata.country,
       fileName: file.name,
       rows: previewData.shape.rows,
       columns: previewData.shape.columns,
-      arabicColumns: 0,
+      arabicColumns: arabicColumns,
       rawFilePath: "",
       alignedFilePath: "",
       userId: metadata.userId,
@@ -253,18 +257,7 @@ async function processDatasetUpload(
     );
     console.log(`Aligned file uploaded: ${state.alignedFilePath}`);
 
-    console.log("Step 9: Calling ArabicCheck API...");
-    const alignedBlob = await downloadFromStorage(
-      "aligned-datasets",
-      state.alignedFilePath
-    );
-    const alignedFile = new File([alignedBlob], file.name, {
-      type: "text/csv",
-    });
-    const arabicColumns = await callArabicCheckAPI(alignedFile);
-    console.log(`Arabic columns detected: ${arabicColumns}`);
-
-    console.log("Step 10: Updating dataset record with final file paths...");
+    console.log("Step 9: Updating dataset record with final file paths...");
     await updateDatasetRecord(datasetId, {
       rawFilePath: state.rawFilePath,
       alignedFilePath: state.alignedFilePath,
@@ -273,12 +266,12 @@ async function processDatasetUpload(
     });
     console.log("Dataset record updated");
 
-    console.log("Step 11: Creating column presence records...");
+    console.log("Step 10: Creating column presence records...");
     const dimensions = await getDimensions();
     await createColumnPresenceRecords(datasetId, alignment, dimensions);
     console.log(`Column presence records created`);
 
-    console.log("Step 12: Updating status to uploaded...");
+    console.log("Step 11: Updating status to uploaded...");
     await updateUploadStatus(
       state.uploadStatusId,
       {

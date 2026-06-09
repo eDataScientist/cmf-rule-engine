@@ -121,7 +121,7 @@ describe('ReviewTrees - Client User Negative Access', () => {
     expect(screen.getByRole('button', { name: /new tree/i })).toBeInTheDocument();
   });
 
-  it('shows "New Tree" button for client_admin', () => {
+  it('hides "New Tree" button for client_admin', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       session: null,
@@ -156,7 +156,7 @@ describe('ReviewTrees - Client User Negative Access', () => {
       </MemoryRouter>
     );
 
-    // New Tree button should be present for client_admin
-    expect(screen.getByRole('button', { name: /new tree/i })).toBeInTheDocument();
+    // New Tree button should not be present for client_admin (tree generation is admin-only)
+    expect(screen.queryByRole('button', { name: /new tree/i })).not.toBeInTheDocument();
   });
 });

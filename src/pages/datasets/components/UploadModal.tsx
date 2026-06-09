@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope, FileText, Receipt, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import {
   Dialog,
   DialogPortal,
@@ -35,6 +36,38 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
   const [granularity, setGranularity] = useState<DatasetGranularity>('claim');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [companiesError, setCompaniesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      fetchCompanies();
+    }
+  }, [open]);
+
+  const fetchCompanies = async () => {
+    setLoadingCompanies(true);
+    setCompaniesError(null);
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        throw error;
+      }
+
+      setCompanies(data?.map(c => ({ id: c.id, name: c.name })) ?? []);
+    } catch (err) {
+      console.error('Failed to fetch companies:', err);
+      setCompaniesError('Failed to load companies. Please try again.');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -272,14 +305,26 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
               <Label htmlFor="insurance-company" className="text-xs text-zinc-400">
                 Insurance Company *
               </Label>
-              <Input
-                id="insurance-company"
-                value={insuranceCompany}
-                onChange={(e) => setInsuranceCompany(e.target.value)}
-                placeholder="e.g., GIG, AXA"
-                className="h-8 bg-black border-zinc-800 text-sm mt-1"
-                required
-              />
+              {loadingCompanies ? (
+                <div className="h-8 flex items-center text-sm text-zinc-500 mt-1">
+                  <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                  Loading companies...
+                </div>
+              ) : (
+                <Select
+                  id="insurance-company"
+                  value={insuranceCompany}
+                  onChange={(e) => setInsuranceCompany(e.target.value)}
+                  options={[
+                    { value: '', label: '(Select a company)' },
+                    ...companies.map(c => ({
+                      value: c.name,
+                      label: c.name
+                    }))
+                  ]}
+                  className="h-8 bg-black border-zinc-800 text-sm mt-1"
+                />
+              )}
             </div>
             <div>
               <Label htmlFor="country" className="text-xs text-zinc-400">
@@ -308,10 +353,10 @@ export default function UploadModal({ open, onClose, onSuccess }: UploadModalPro
           </div>
 
           {/* Error Message */}
-          {error && (
+          {(error || companiesError) && (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
-              <span>{error}</span>
+              <span>{error || companiesError}</span>
             </div>
           )}
         </div>

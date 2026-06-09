@@ -5,8 +5,8 @@ import type {
   AIAlignmentResponse,
 } from "./types.ts";
 
-const DATA_PREVIEW_URL = "https://data-preview-376890531459.asia-south1.run.app";
-const ARABIC_CHECK_URL = "https://data-language-processor-534363377036.me-central1.run.app/api/stats";
+const DATA_PREVIEW_URL = "https://data.edata-arabia-uat.pp.ua/stats";
+const ARABIC_CHECK_URL = "https://data.edata-arabia-uat.pp.ua/api/stats";
 
 // Get AI alignment edge function URL
 const getAIAlignmentUrl = () => {
@@ -151,6 +151,8 @@ export async function callAIAlignment(
  */
 export async function callArabicCheckAPI(file: File): Promise<number> {
   return retryWithBackoff(async () => {
+    console.log(`ArabicCheck: Sending file: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+    
     const formData = new FormData();
     formData.append("file", file);
 
@@ -160,8 +162,9 @@ export async function callArabicCheckAPI(file: File): Promise<number> {
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
       throw new Error(
-        `ArabicCheck API failed: ${response.status} ${response.statusText}`
+        `ArabicCheck API failed: ${response.status} ${response.statusText} - ${errorBody}`
       );
     }
 

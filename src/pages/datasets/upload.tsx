@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileUp, AlertCircle, Loader2, CheckCircle2, Car, Stethoscope, FileText, Receipt, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth/context';
 import { supabase } from '@/lib/db/supabase';
@@ -22,6 +23,36 @@ export default function DatasetUpload() {
   const [granularity, setGranularity] = useState<DatasetGranularity>('claim');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [companiesError, setCompaniesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    setLoadingCompanies(true);
+    setCompaniesError(null);
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        throw error;
+      }
+
+      setCompanies(data?.map(c => ({ id: c.id, name: c.name })) ?? []);
+    } catch (err) {
+      console.error('Failed to fetch companies:', err);
+      setCompaniesError('Failed to load companies. Please try again.');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -214,13 +245,26 @@ export default function DatasetUpload() {
           {/* Insurance Company */}
           <div>
             <Label htmlFor="insurance-company">Insurance Company *</Label>
-            <Input
-              id="insurance-company"
-              value={insuranceCompany}
-              onChange={(e) => setInsuranceCompany(e.target.value)}
-              placeholder="e.g., AXA, Allianz, etc."
-              required
-            />
+            {loadingCompanies ? (
+              <div className="h-10 flex items-center text-sm text-muted-foreground mt-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading companies...
+              </div>
+            ) : (
+              <Select
+                id="insurance-company"
+                value={insuranceCompany}
+                onChange={(e) => setInsuranceCompany(e.target.value)}
+                options={[
+                  { value: '', label: '(Select a company)' },
+                  ...companies.map(c => ({
+                    value: c.name,
+                    label: c.name
+                  }))
+                ]}
+                className="mt-2"
+              />
+            )}
           </div>
 
           {/* Country */}
@@ -250,10 +294,10 @@ export default function DatasetUpload() {
           </div>
 
           {/* Error Message */}
-          {error && (
+          {(error || companiesError) && (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
-              <span>{error}</span>
+              <span>{error || companiesError}</span>
             </div>
           )}
 

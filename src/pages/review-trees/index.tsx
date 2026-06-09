@@ -12,6 +12,7 @@ import { Pagination } from './components/Pagination';
 import { useTreeList } from './hooks/useTreeList';
 import { useTreeDelete } from './hooks/useTreeDelete';
 import { useWriteAccess } from '@/hooks/useWriteAccess';
+import { useAuth } from '@/lib/auth/context';
 import { treeViewModeAtom, treeSearchQueryAtom, treeCurrentPageAtom, treePageSizeAtom } from '@/store/atoms/trees';
 
 export default function ReviewTrees() {
@@ -19,6 +20,8 @@ export default function ReviewTrees() {
   const { trees, isLoading, error } = useTreeList();
   const { remove, isDeleting } = useTreeDelete();
   const { canWrite } = useWriteAccess();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [viewMode, setViewMode] = useAtom(treeViewModeAtom);
   const [searchQuery, setSearchQuery] = useAtom(treeSearchQueryAtom);
   const [currentPage, setCurrentPage] = useAtom(treeCurrentPageAtom);
@@ -80,7 +83,7 @@ export default function ReviewTrees() {
       </div>
 
       {trees.length === 0 ? (
-        <EmptyState />
+        <EmptyState isAdmin={isAdmin} />
       ) : (
         <>
           {/* Toolbar */}
@@ -95,7 +98,7 @@ export default function ReviewTrees() {
                 onChange={setSearchQuery}
                 placeholder="Search trees..."
               />
-              {canWrite && (
+              {isAdmin && (
                 <Button
                   onClick={() => navigate('/generate-tree')}
                   style={{
