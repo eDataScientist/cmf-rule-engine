@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const syncVersionRef = useRef(0);
+  const isInitialCheckCompleteRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,21 +60,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return data;
     };
 
-    const syncAuthState = async (nextSession: Session | null) => {
+    const syncAuthState = async (nextSession: Session | null, isInitial: boolean) => {
       if (!isMounted) {
         return;
       }
 
       const syncVersion = ++syncVersionRef.current;
-      setLoading(true);
+
+      // Only show loading spinner during the initial auth check
+      if (isInitial) {
+        setLoading(true);
+      }
+
       setSession(nextSession);
       const nextUser = nextSession?.user ?? null;
       setUser(nextUser);
 
       if (!nextUser) {
         setProfile(null);
-        if (syncVersion === syncVersionRef.current) {
+        if (syncVersion === syncVersionRef.current && isMounted) {
           setLoading(false);
+          isInitialCheckCompleteRef.current = true;
         }
         return;
       }
@@ -88,19 +95,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(nextProfile);
-      setLoading(false);
+
+      if (isInitial) {
+        setLoading(false);
+        isInitialCheckCompleteRef.current = true;
+      }
     };
 
     // Get initial session
     void supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      void syncAuthState(initialSession);
+      void syncAuthState(initialSession, true);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncAuthState(nextSession);
+      void syncAuthState(nextSession, !isInitialCheckCompleteRef.current);
     });
 
     return () => {

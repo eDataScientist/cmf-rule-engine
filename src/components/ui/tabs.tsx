@@ -77,7 +77,17 @@ export function TabsContent({ value, children, className }: { value: string; chi
   const context = React.useContext(TabsContext);
   if (!context) throw new Error('TabsContent must be used within Tabs');
 
-  if (context.value !== value) return null;
+  const isActive = context.value === value;
 
-  return <div className={cn("mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", className)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        !isActive && 'hidden',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }

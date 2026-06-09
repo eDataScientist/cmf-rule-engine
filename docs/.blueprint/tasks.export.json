@@ -433,14 +433,40 @@
       "id": "M3-BUG-004",
       "title": "[BUG] Table Visualizer dataset loading fails for all users due to storage RLS mismatch",
       "description": "Symptom: JavaScript alert 'Failed to load dataset' when any user (including admin) tries to load a dataset in the Table Visualizer.\n\nExpected: Dataset should load successfully from Supabase Storage.\n\nRoot Cause: Storage RLS policies on raw-datasets and aligned-datasets buckets checked auth.uid() = foldername(name)[1], but files are stored under company_id/ folders, not user UUID folders. Even admin users were blocked because there was no is_admin() bypass on storage policies.\n\nFix Approach: Updated storage.objects RLS policies to check company membership via get_user_company_id() instead of user ID, with is_admin() bypass for admin users.\n\nFiles Affected: Supabase migration fix_storage_rls_for_company_scoped_files\n\nReproduction:\n1. Open Table Visualizer\n2. Select any dataset\n3. Click 'Load Dataset'\n4. Observe 'Failed to load dataset from storage' alert",
-      "state": "TO-DO",
+      "state": "DONE",
       "phase": "M3",
       "stream": "bug-fix",
       "author": null,
-      "implementation_notes": null,
+      "implementation_notes": "Fixed by updating storage.objects RLS policies to use company-scoped access with is_admin() bypass.\n\nMigration applied: fix_storage_rls_for_company_scoped_files\n\nChanges:\n- Dropped old policies that checked auth.uid() against folder name\n- Created new SELECT/INSERT/DELETE policies for raw-datasets and aligned-datasets buckets\n- New policies check: is_admin() OR foldername(name)[1] = get_user_company_id()::text\n- This matches the actual file path structure: {company_id}/{dataset_id}/{filename}\n\nVerified working by user in production environment.",
       "milestone": "M3",
       "created_at": 1781005228645,
-      "updated_at": 1781005228645
+      "updated_at": 1781005241302
+    },
+    {
+      "id": "M3-4.BUG-1",
+      "title": "[BUG] Fix auth loading state causing full-page remount on token refresh",
+      "description": "Symptom: When switching browser tabs or when Supabase refreshes the auth token, the entire app shows a full-screen spinner and all page state is lost (selected items, form inputs, scroll position).\n\nExpected: Token refreshes should happen silently in the background without remounting the app or losing state.\n\nRoot Cause: In src/lib/auth/context.tsx, the syncAuthState function calls setLoading(true) at line 68 on EVERY auth state change event, including silent token refreshes. This causes RoleGuard to render the loading spinner, which unmounts the entire page content.\n\nFix Approach: Track whether the initial auth check is complete separately from the loading state. Only show the loading spinner during the initial session fetch. Subsequent auth state changes (token refreshes) should update session/profile silently without setting loading=true.\n\nFiles Affected: src/lib/auth/context.tsx\n\nReproduction:\n1. Log in to the app\n2. Navigate to any page with state (e.g., dataset detail with a tab selected)\n3. Switch to another browser tab and wait ~5 minutes\n4. Switch back - the page reloads and selected tab is lost",
+      "state": "DONE",
+      "phase": "4",
+      "stream": "Bugfix",
+      "author": "OpenCode",
+      "implementation_notes": "FIXED: Added isInitialCheckCompleteRef to track whether the initial auth check has completed. Modified syncAuthState to accept an isInitial parameter. Only sets loading=true during the initial auth check (from getSession). Subsequent auth state changes (token refreshes, sign-outs) update session/profile silently without triggering the loading spinner.\n\nFiles modified:\n- src/lib/auth/context.tsx\n\nTests added:\n- src/lib/auth/context.test.tsx (2 tests)\n\nRegression verified: company-routes.test.tsx and admin/regression.test.tsx both pass.",
+      "milestone": "M3",
+      "created_at": 1781006878088,
+      "updated_at": 1781007617040
+    },
+    {
+      "id": "M3-4.BUG-2",
+      "title": "[BUG] Fix TabsContent unmounting inactive tabs causing state loss",
+      "description": "Symptom: When switching between tabs in the UI (e.g., on dataset detail page), the previously active tab content is completely unmounted. When switching back, all state within that tab is lost - data refetches, scroll position resets, and any selections are cleared.\n\nExpected: Switching tabs should preserve the state of inactive tabs. The content should remain mounted but hidden.\n\nRoot Cause: In src/components/ui/tabs.tsx at line 80, TabsContent returns null when the tab is not active. This causes React to fully unmount the tab content and all its children.\n\nFix Approach: Change TabsContent to always render its children but apply a hidden class when inactive. This keeps the component tree mounted while visually hiding inactive tabs.\n\nFiles Affected: src/components/ui/tabs.tsx\n\nReproduction:\n1. Go to a dataset detail page\n2. Switch to Data Grid tab\n3. Scroll down or interact with the grid\n4. Switch to Schema Map tab\n5. Switch back to Data Grid - the grid reloads and scroll position is lost",
+      "state": "DONE",
+      "phase": "4",
+      "stream": "Bugfix",
+      "author": "OpenCode",
+      "implementation_notes": "FIXED: Changed TabsContent from returning null for inactive tabs to always rendering children with a hidden CSS class when inactive. This preserves React component state across tab switches.\n\nFiles modified:\n- src/components/ui/tabs.tsx\n\nTests added:\n- src/components/ui/tabs.test.tsx (2 tests)\n\nRegression verified: admin/regression.test.tsx passes.",
+      "milestone": "M3",
+      "created_at": 1781006888597,
+      "updated_at": 1781007618376
     }
   ],
   "comments": [
