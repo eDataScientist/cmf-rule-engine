@@ -342,6 +342,17 @@ export async function createTreeAssociation(params: CreateTreeAssociationParams)
     throw new Error('User must be authenticated');
   }
 
+  // Fetch dataset to get company_id (required for multi-tenancy)
+  const { data: dataset, error: datasetError } = await supabase
+    .from('datasets')
+    .select('company_id')
+    .eq('id', params.datasetId)
+    .single();
+
+  if (datasetError || !dataset) {
+    throw new Error(`Failed to fetch dataset company: ${datasetError?.message || 'Dataset not found'}`);
+  }
+
   const { data, error } = await supabase
     .from('dataset_tree_associations')
     .insert({
@@ -350,6 +361,7 @@ export async function createTreeAssociation(params: CreateTreeAssociationParams)
       results_jsonb: params.resultsJsonb,
       metadata: params.metadata || null,
       user_id: user.id,
+      company_id: dataset.company_id,
     })
     .select('id')
     .single();
