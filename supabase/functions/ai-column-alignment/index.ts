@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { GoogleGenAI } from "npm:@google/genai";
+import OpenAI from "npm:openai";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 import { getDimensionsByCategory } from "../_shared/database.ts";
@@ -60,43 +60,54 @@ async function validateRequest(req: Request): Promise<void> {
   }
 }
 
-// Initialize Gemini AI client
-function getAIClient(): GoogleGenAI {
-  const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
+// Initialize OpenAI client
+function getAIClient(): OpenAI {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
-    throw new Error("GOOGLE_AI_API_KEY environment variable not set");
+    throw new Error("OPENAI_API_KEY environment variable not set");
   }
-  return new GoogleGenAI({ apiKey });
+  return new OpenAI({ apiKey });
 }
 
-// Call Gemini API for column alignment
+// Call OpenAI API for column alignment
 async function generateAlignment(
-  ai: GoogleGenAI,
+  openai: OpenAI,
   prompt: string,
   schema: object
 ): Promise<Record<string, string>> {
-  console.log("Calling Gemini API with structured output...");
+  console.log("Calling OpenAI API with structured output...");
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseJsonSchema: schema,
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.4-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a helpful assistant that maps dataset columns to standard insurance claim dimensions.",
+      },
+      { role: "user", content: prompt },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "column_alignment",
+        strict: true,
+        schema: schema,
+      },
     },
   });
 
-  const text = response.text;
-  if (!text) {
-    throw new Error("Empty response from Gemini API");
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("Empty response from OpenAI API");
   }
 
-  console.log("Gemini API response received, parsing JSON...");
+  console.log("OpenAI API response received, parsing JSON...");
 
   try {
-    return JSON.parse(text) as Record<string, string>;
+    return JSON.parse(content) as Record<string, string>;
   } catch (error) {
-    console.error("Failed to parse Gemini response:", text);
+    console.error("Failed to parse OpenAI response:", content);
     throw new Error(`Failed to parse AI response as JSON: ${error.message}`);
   }
 }
