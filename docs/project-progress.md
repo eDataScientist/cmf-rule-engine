@@ -16,9 +16,9 @@
 
 | Field     | Value |
 |-----------|-------|
-| Milestone | M3 - Accounts & Roles |
-| Goal      | Multi-tenant RBAC for client companies |
-| Status    | In Progress |
+| Milestone | M4 - Rebrand & Datasets |
+| Goal      | ClaimCPU identity and schema-mode datasets |
+| Status    | Planned |
 
 ---
 
@@ -26,29 +26,23 @@
 
 | Field     | Value |
 |-----------|-------|
-| Phase     | Phase 4 - Client Admin Features |
-| Objective | Client-admin user management, slot lifecycle, write restrictions, regression coverage |
-| Status    | Complete |
+| Phase     | — |
+| Objective | — |
+| Status    | — |
 
 ---
 
 ## Status
 
-- [x] Health check passing
-- [x] Tests passing (281/283 — 2 pre-existing Phase 3 CSV export failures excluded)
-- [x] Kanban MCP authenticated
-- [x] npm run build passing (TreeForm.tsx fix verified in Gate 4.0)
-- [x] Client admin slot request flow is end-to-end operational
-- [x] Full integration smoke test across all three roles
+- [x] M3 complete — all 5 phases done, full RBAC operational
+- [x] M4 milestone plan drafted and committed
+- [ ] M4 phase planning pending
 
 ---
 
 ## Execution Start
 
-- Start with `Gate 3.0 - Admin Baseline & Test Harness`.
-- After the gate completes, begin `Stream A`, `Stream B`, `Stream C`, and `Stream D.1-D.2` in parallel.
-- Start `Stream D.3-D.4` after the admin actions from Streams A-C are available for audit-log verification.
-- Start `Stream E` after Streams A-D land so the phase closes with regression coverage across the full admin console surface.
+- M4 planning complete. Begin phase planning for M4 Phase 1 (Rebrand & Identity).
 
 ---
 
@@ -61,6 +55,7 @@
 | 3 | MVP boundary at M2 | Platform Foundation delivered complete fraud analysis app | 2026-05-13 |
 | 4 | Admin Console merged into M3 (was separate M3.8) | Company and user provisioning are integral to the role system | 2026-05-13 |
 | 5 | Phase 3 - Admin Console completed | All 21 tasks done, full test suite green (130 tests, 7 files), all DoD criteria met | 2026-05-15 |
+| 6 | M4 milestone plan drafted | Rebrand scope: UI copy only. Schema datasets: full pipeline ready with company-scoped custom dimensions | 2026-06-10 |
 
 ---
 
@@ -70,8 +65,8 @@
 |---|-----------|--------|
 | M1 | Core Engine | Complete |
 | M2 | Platform Foundation | Complete (MVP) |
-| M3 | Accounts & Roles | In Progress |
-| M4 | Rebrand & Datasets | Not Started |
+| M3 | Accounts & Roles | Complete |
+| M4 | Rebrand & Datasets | Planned |
 | M5 | Client Onboarding | Not Started |
 | M6 | Detection APIs | Not Started |
 | M7 | Pipeline & Playground | Not Started |
@@ -101,14 +96,18 @@ M3 - Accounts & Roles
 |- Phase 3 - Admin Console [complete]
 |- Phase 4 - Client Admin Features [complete]
 \- Phase 5 - Operations & Tree Assignment [complete]
+
+M4 - Rebrand & Datasets
+|- Phase 1 - Rebrand & Identity [planned]
+|- Phase 2 - Dimension Catalogue Foundation [planned]
+|- Phase 3 - Schema Dataset Creation [planned]
+|- Phase 4 - Custom Dimensions [planned]
+\- Phase 5 - Pipeline Integration & Testing [planned]
 ```
 
 ---
 
 ## Pending Revisions
 
-| # | Revision | Source | Status |
-|---|----------|--------|--------|
-| 1 | Fix `npm run build` - pre-existing `TreeForm.tsx:115` TS2345 error | Stream M3.1 stabilization review | **resolved** (verified in Gate 4.0 M3-4.0.2) |
-| 3 | Finish M3.1 stabilization patches (auth regression, refresh loop, dialog fix) | Phase M3.1 tasks.md | **resolved** (verified in Gate 4.0 M3-4.0.2) |
+None.
 

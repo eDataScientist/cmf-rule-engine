@@ -119,7 +119,7 @@ The system should support two visual themes — Motor (blue tones) and Medical (
 
 #### SRS-017 — Product rebrand to ClaimCPU
 
-The system should be renamed from "Claims Rule Engine" to "ClaimCPU" across the codebase and user interface, including page titles, sidebar branding, favicon, and meta tags.
+The system should be renamed from "Claims Rule Engine" to "ClaimCPU" across all user-facing surfaces including page titles, sidebar branding, favicon, meta tags, error messages, email templates, and loading states. Codebase identifiers, package names, and repository references remain unchanged.
 
 #### SRS-022 — Pipeline visualizer
 
@@ -133,7 +133,7 @@ The system should provide an interactive rules testing page where users select a
 
 #### SRS-018 — Dataset schema mode without CSV upload
 
-The system could allow users to create a dataset by selecting columns from a dimension catalogue without uploading a CSV file. Schema-only datasets should be usable for rule building and tree generation.
+The system could allow users to create a dataset by selecting columns from a dimension catalogue without uploading a CSV file. The catalogue should align with existing upload/alignment dimensions. Users should be able to add company-scoped custom dimensions. Schema-only datasets must be fully usable for rule building and tree generation, behaving identically to uploaded datasets in the pipeline.
 
 #### SRS-019 — Client onboarding wizard
 
