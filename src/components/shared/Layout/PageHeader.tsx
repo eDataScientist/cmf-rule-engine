@@ -12,10 +12,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <span className="inline-flex items-center rounded-full border border-white/70 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            CMF Platform
-          </span>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
             {title}
           </h1>
           {description && (

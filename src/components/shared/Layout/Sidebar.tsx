@@ -19,7 +19,7 @@ import {
 import { useAuth, type UserRole } from '@/lib/auth/context';
 import { sidebarCollapsedAtom } from '@/store/atoms/ui';
 import { supabase } from '@/lib/db/supabase';
-import CMFLogo from '@/assets/cmf_dark.svg';
+import ClaimCPULogo from '@/assets/claims_cpu_logo.jpeg';
 
 interface NavItem {
   path: string;
@@ -189,8 +189,7 @@ export function Sidebar() {
     >
       <div className="flex h-16 items-center justify-between border-b px-6" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-3 overflow-hidden font-semibold tracking-tight">
-          <img src={CMFLogo} alt="CMF Logo" className="h-12 w-12 flex-shrink-0" />
-          {!isCollapsed && <span className="whitespace-nowrap text-lg">CMF</span>}
+          <img src={ClaimCPULogo} alt="ClaimCPU" className="h-8 w-auto flex-shrink-0 object-contain" />
         </div>
         <Button
           variant="ghost"

@@ -26,9 +26,9 @@
 
 | Field     | Value |
 |-----------|-------|
-| Phase     | — |
-| Objective | — |
-| Status    | — |
+| Phase     | M4-1 — Rebrand & Identity |
+| Objective | ClaimCPU branding across all UI surfaces |
+| Status    | Complete |
 
 ---
 
@@ -36,7 +36,8 @@
 
 - [x] M3 complete — all 5 phases done, full RBAC operational
 - [x] M4 milestone plan drafted and committed
-- [ ] M4 phase planning pending
+- [x] M4 Phase 1 complete — Rebrand & Identity done
+- [ ] M4 Phase 2 planning pending
 
 ---
 
@@ -56,6 +57,7 @@
 | 4 | Admin Console merged into M3 (was separate M3.8) | Company and user provisioning are integral to the role system | 2026-05-13 |
 | 5 | Phase 3 - Admin Console completed | All 21 tasks done, full test suite green (130 tests, 7 files), all DoD criteria met | 2026-05-15 |
 | 6 | M4 milestone plan drafted | Rebrand scope: UI copy only. Schema datasets: full pipeline ready with company-scoped custom dimensions | 2026-06-10 |
+| 7 | M4 Phase 1 complete | All user-facing strings rebranded to ClaimCPU. Build passes, tests green (291 passed, 2 pre-existing M3 failures). Gate 1.0 + Streams A/B/C all DONE. | 2026-06-10 |
 
 ---
 
@@ -98,7 +100,7 @@ M3 - Accounts & Roles
 \- Phase 5 - Operations & Tree Assignment [complete]
 
 M4 - Rebrand & Datasets
-|- Phase 1 - Rebrand & Identity [planned]
+|- Phase 1 - Rebrand & Identity [complete]
 |- Phase 2 - Dimension Catalogue Foundation [planned]
 |- Phase 3 - Schema Dataset Creation [planned]
 |- Phase 4 - Custom Dimensions [planned]
