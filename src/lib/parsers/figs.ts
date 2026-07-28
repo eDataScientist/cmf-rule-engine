@@ -17,7 +17,7 @@ export function parseFIGS(text: string): { title: string; root: TreeNode }[] {
     const lines: ParsedLine[] = treeString
       .split('\n')
       .map((line) => {
-        const indentMatch = line.match(/^\t*/);
+        const indentMatch = line.match(/^[\t ]*/);
         const level = indentMatch ? indentMatch[0].length : 0;
         const content = line.trim();
         return { level, content };
