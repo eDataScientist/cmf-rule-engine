@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const syncVersionRef = useRef(0);
+  const sessionRef = useRef<Session | null>(null);
   const isInitialCheckCompleteRef = useRef(false);
 
   useEffect(() => {
@@ -66,9 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const syncVersion = ++syncVersionRef.current;
+      const shouldShowLoading = isInitial || (!sessionRef.current && nextSession !== null);
+      sessionRef.current = nextSession;
 
-      // Only show loading spinner during the initial auth check
-      if (isInitial) {
+      if (shouldShowLoading) {
         setLoading(true);
       }
 
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setProfile(nextProfile);
 
-      if (isInitial) {
+      if (shouldShowLoading) {
         setLoading(false);
         isInitialCheckCompleteRef.current = true;
       }

@@ -610,6 +610,32 @@
       "milestone": "M4",
       "created_at": 1781080724254,
       "updated_at": 1781081161714
+    },
+    {
+      "id": "M3-BUG-006",
+      "title": "[BUG] Prevent OTP login from redirecting before profile hydration",
+      "description": "Symptom: After a valid email OTP is verified, the app returns to /auth before login completes, requiring another code.\nExpected: A verified OTP routes the provisioned active user to their role landing page once their profile is loaded.\nRoot Cause: AuthProvider sets user/session immediately on SIGNED_IN but leaves loading false while user_profiles is still fetched. RoleLandingRedirect therefore sees user with no profile and redirects to /auth.\nFix Approach: Keep the auth route guarded by loading only for a new signed-in session until its profile has resolved; preserve silent token refresh behavior.\nFiles Affected: src/lib/auth/context.tsx; src/lib/auth/context.test.tsx\nReproduction: Run npm test -- --run src/lib/auth/context.test.tsx; the new SIGNED_IN profile-hydration test fails.\nReview Notes:\n(empty — populated during review)",
+      "state": "IN-REVIEW",
+      "phase": "M3",
+      "stream": "bug-fix",
+      "author": "Hermes Agent",
+      "implementation_notes": "Files modified: src/lib/auth/context.tsx; src/lib/auth/context.test.tsx. Added a session ref so a newly signed-in user remains in loading state until their profile resolves; silent token refreshes remain non-blocking. Regression test: npm test -- --run src/lib/auth/context.test.tsx (3 passed). Shared verification: npm run build passed.",
+      "milestone": "M3",
+      "created_at": 1788774421094,
+      "updated_at": 1788774775743
+    },
+    {
+      "id": "M3-BUG-007",
+      "title": "[BUG] Expose admin company reassignment for users",
+      "description": "Symptom: The main admin user page shows a user company but has no way to change it.\nExpected: An admin can choose a different active company in a modal and save the reassignment.\nRoot Cause: The existing admin-only updateUser operation already updates company_id and writes an audit record, but /admin/users only exposes active-status toggling.\nFix Approach: Reuse updateUser and the existing dialog/select primitives in a small modal for non-admin users, then refresh the list.\nFiles Affected: src/pages/admin/users/index.tsx; src/pages/admin/navigation.test.tsx\nReproduction: Admin users page has no Change company action.\nReview Notes:\n(empty — populated during review)",
+      "state": "IN-REVIEW",
+      "phase": "M3",
+      "stream": "bug-fix",
+      "author": "Hermes Agent",
+      "implementation_notes": "Files modified: src/pages/admin/users/index.tsx; src/pages/admin/users/components/ChangeUserCompanyDialog.tsx; src/pages/admin/navigation.test.tsx. Reused the existing admin-only updateUser operation and dialog/select primitives; active companies only, then refreshes the list. Regression test: npm test -- --run src/pages/admin/navigation.test.tsx (21 passed). Shared verification: npm run build passed. Full suite has 294 passed and 2 pre-existing CSV-export failures in src/pages/admin/logs/index.test.tsx.",
+      "milestone": "M3",
+      "created_at": 1788774421107,
+      "updated_at": 1788774775752
     }
   ],
   "comments": [

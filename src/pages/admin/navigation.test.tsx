@@ -56,6 +56,7 @@ vi.mock('@/lib/db/admin-operations', () => ({
   approveSlotRequest: vi.fn(),
   denySlotRequest: vi.fn(),
   toggleUserActive: vi.fn(),
+  updateUser: vi.fn(),
 }));
 
 // Supabase stub (used by AdminUsers for register-user function invoke).
@@ -396,6 +397,41 @@ describe('M3-3.E.1 - Admin navigation integration', () => {
       await waitFor(() => {
         expect(screen.getByText('Admin Dashboard')).toBeDefined();
         expect(getAdminDashboardCounts).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
+  describe('AdminUsers company reassignment', () => {
+    it('lets an admin assign a non-admin user to a different active company', async () => {
+      const user = userEvent.setup();
+      const { getAdminUsers, getCompanies, updateUser } = await import('@/lib/db/admin-operations');
+      vi.mocked(getAdminUsers).mockResolvedValue([
+        {
+          userId: 'user-1',
+          fullName: 'Alice Example',
+          email: 'alice@example.com',
+          role: 'client_user',
+          companyId: 'company-a',
+          companyName: 'Company A',
+          isActive: true,
+          createdAt: '2026-01-01T00:00:00Z',
+          lastSignIn: null,
+        },
+      ]);
+      vi.mocked(getCompanies).mockResolvedValue([
+        { id: 'company-a', name: 'Company A', country: 'AE', insuranceType: 'motor', maxUserSlots: 10, isActive: true, createdAt: '2026-01-01T00:00:00Z', createdBy: null },
+        { id: 'company-b', name: 'Company B', country: 'AE', insuranceType: 'motor', maxUserSlots: 10, isActive: true, createdAt: '2026-01-01T00:00:00Z', createdBy: null },
+      ]);
+
+      render(<AdminUsers />);
+      await screen.findByText('Alice Example');
+
+      await user.click(screen.getByRole('button', { name: /change company/i }));
+      await user.selectOptions(screen.getByLabelText('Company'), 'company-b');
+      await user.click(screen.getByRole('button', { name: /save company/i }));
+
+      await waitFor(() => {
+        expect(updateUser).toHaveBeenCalledWith('user-1', { companyId: 'company-b' });
       });
     });
   });

@@ -7,7 +7,32 @@ import { AuthProvider, useAuth } from './context';
 const mockUnsubscribe = vi.fn();
 let mockAuthStateChangeCallback: ((event: string, session: object | null) => void) | null = null;
 
-const createMockSupabase = (initialSession: object | null) => ({
+type ProfileResult = {
+  data: {
+    user_id: string;
+    role: 'admin';
+    company_id: null;
+    full_name: string;
+    is_active: boolean;
+  };
+  error: null;
+};
+
+const defaultProfileResult: ProfileResult = {
+  data: {
+    user_id: 'test-user',
+    role: 'admin',
+    company_id: null,
+    full_name: 'Test User',
+    is_active: true,
+  },
+  error: null,
+};
+
+const createMockSupabase = (
+  initialSession: object | null,
+  profileResult: PromiseLike<ProfileResult> | ProfileResult = defaultProfileResult
+) => ({
   auth: {
     getSession: vi.fn().mockResolvedValue({ data: { session: initialSession }, error: null }),
     onAuthStateChange: vi.fn().mockImplementation((callback) => {
@@ -25,16 +50,7 @@ const createMockSupabase = (initialSession: object | null) => ({
   from: vi.fn().mockImplementation(() => ({
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockResolvedValue({
-      data: {
-        user_id: 'test-user',
-        role: 'admin',
-        company_id: null,
-        full_name: 'Test User',
-        is_active: true,
-      },
-      error: null,
-    }),
+    maybeSingle: vi.fn().mockImplementation(() => profileResult),
   })),
 });
 
@@ -107,6 +123,35 @@ describe('AuthProvider loading state', () => {
     // User should be updated but without loading state
     await waitFor(() => {
       expect(screen.getByTestId('user').textContent).toBe('test-user');
+    });
+  });
+
+  it('shows loading while a newly signed-in user profile is loading', async () => {
+    let resolveProfile: (result: ProfileResult) => void;
+    const profileResult = new Promise<ProfileResult>((resolve) => {
+      resolveProfile = resolve;
+    });
+    mockSupabase = createMockSupabase(null, profileResult);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+
+    act(() => {
+      mockAuthStateChangeCallback?.('SIGNED_IN', { user: { id: 'test-user' } });
+    });
+
+    expect(screen.getByTestId('loading').textContent).toBe('true');
+
+    await act(async () => {
+      resolveProfile!(defaultProfileResult);
+      await profileResult;
     });
   });
 

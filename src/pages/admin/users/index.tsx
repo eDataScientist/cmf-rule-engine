@@ -15,11 +15,13 @@ import {
   getAdminUsers,
   getCompanies,
   toggleUserActive,
+  updateUser,
   type AdminUser,
   type Company,
 } from '@/lib/db/admin-operations';
 import { supabase } from '@/lib/db/supabase';
 import { RegisterUserDialog } from './components/RegisterUserDialog';
+import { ChangeUserCompanyDialog } from './components/ChangeUserCompanyDialog';
 
 export default function AdminUsers() {
   const setBreadcrumbs = useSetAtom(headerBreadcrumbsAtom);
@@ -29,6 +31,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [companyUser, setCompanyUser] = useState<AdminUser | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -95,6 +98,13 @@ export default function AdminUsers() {
     } finally {
       setTogglingId(null);
     }
+  }
+
+  async function handleChangeCompany(companyId: string) {
+    if (!companyUser) return;
+    await updateUser(companyUser.userId, { companyId });
+    await loadData();
+    setCompanyUser(null);
   }
 
   const filtered = useMemo(() => {
@@ -218,23 +228,32 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {user.role !== 'admin' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleToggleActive(user)}
-                          disabled={togglingId === user.userId}
-                          title={user.isActive ? 'Deactivate' : 'Reactivate'}
-                        >
-                          {togglingId === user.userId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Power
-                              className="h-4 w-4"
-                              style={{ color: user.isActive ? 'var(--color-status-red)' : 'var(--color-status-green)' }}
-                            />
-                          )}
-                        </Button>
+                        <div className="inline-flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCompanyUser(user)}
+                          >
+                            Change company
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleToggleActive(user)}
+                            disabled={togglingId === user.userId}
+                            title={user.isActive ? 'Deactivate' : 'Reactivate'}
+                          >
+                            {togglingId === user.userId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Power
+                                className="h-4 w-4"
+                                style={{ color: user.isActive ? 'var(--color-status-red)' : 'var(--color-status-green)' }}
+                              />
+                            )}
+                          </Button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -250,6 +269,14 @@ export default function AdminUsers() {
         onOpenChange={setRegisterOpen}
         companies={companies}
         onSubmit={handleRegister}
+      />
+      <ChangeUserCompanyDialog
+        user={companyUser}
+        companies={companies}
+        onOpenChange={(open) => {
+          if (!open) setCompanyUser(null);
+        }}
+        onSubmit={handleChangeCompany}
       />
     </div>
   );
